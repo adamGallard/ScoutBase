@@ -1,0 +1,6 @@
+@ScoutBase.Server_HostAddress = http://localhost:5067
+
+GET {{ScoutBase.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
