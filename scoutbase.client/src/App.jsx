@@ -1,7 +1,8 @@
 // ScoutBase Sign In App with Supabase integration
 import { useEffect, useState } from 'react';
-import { QRCode } from 'react-qrcode-logo';
 import { supabase } from './lib/supabaseClient';
+import './App.css';
+import logo from './assets/scoutbase-logo.png';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -42,7 +43,6 @@ const SignInForm = ({ member, onSign, parentName, latestStatus }) => {
                 placeholder="Comment (optional)"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
-                style={{ width: '100%', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
             />
             <div style={{ display: 'flex', gap: '8px' }}>
                 {lastAction !== 'signed in' && <button onClick={() => handleSubmit('signed in')}>Sign In</button>}
@@ -121,117 +121,98 @@ const SignInOutPage = () => {
     const filteredYouthList = youthList.filter((m) => sectionFilter === '' || m.section === sectionFilter);
 
     return (
-        <div style={{ padding: '1rem', maxWidth: '600px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: '1.5rem', textAlign: 'center' }}>Scout Sign In / Out</h1>
+        <>
+            <img src={logo} alt="ScoutBase Logo" style={{ maxWidth: '150px', margin: '1rem auto 0', display: 'block' }} />
+            <div className="scout-container">
+                <h1 className="text-center" style={{ fontSize: '2rem', marginBottom: '1rem' }}>Scout Sign In / Out</h1>
 
-            {!submitted ? (
-                <form
-                    onSubmit={async (e) => {
-                        e.preventDefault();
-                        await fetchYouthByParent(parentName);
-                        setSubmitted(true);
-                    }}
-                    style={{ marginBottom: '1rem', textAlign: 'center' }}
-                >
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label htmlFor="parentName">Enter your name:</label>
-                        <input
-                            id="parentName"
-                            type="text"
-                            value={parentName}
-                            onChange={(e) => setParentName(e.target.value)}
-                            placeholder="Parent name"
-                            style={{ marginLeft: '0.5rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '4px' }}
-                        />
-                    </div>
-                    <div style={{ marginBottom: '1rem' }}>
-                        <label htmlFor="sectionFilter">Filter by section:</label>
-                        <select
-                            id="sectionFilter"
-                            value={sectionFilter}
-                            onChange={(e) => setSectionFilter(e.target.value)}
-                            style={{ marginLeft: '0.5rem', padding: '0.5rem' }}
-                        >
-                            <option value="">All</option>
-                            <option value="Joeys">Joeys</option>
-                            <option value="Cubs">Cubs</option>
-                            <option value="Scouts">Scouts</option>
-                            <option value="Venturers">Venturers</option>
-                        </select>
-                    </div>
-                    <button type="submit" style={{ padding: '0.5rem 1rem' }}>Continue</button>
-                </form>
-            ) : (
-                <>
-                    {loading ? <p>Loading children...</p> : null}
-
-                    {filteredYouthList.length === 0 && !loading && (
-                        <p>No children found for "{parentName}" in section "{sectionFilter || 'All'}"</p>
-                    )}
-
-                    {!selectedMember ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {filteredYouthList.map((m) => {
-                                const latest = statusByDate[today]?.[m.id]?.slice(-1)[0];
-                                return (
-                                    <div key={m.id} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px' }}>
-                                        <button
-                                            style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '8px' }}
-                                            onClick={() => setSelectedMember(m)}
-                                        >
-                                            <div>
-                                                <div>{m.name}</div>
-                                                <div style={{ fontSize: '0.8rem', color: '#666' }}>{m.section}</div>
-                                            </div>
-                                            <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'green' : 'gray' }}>
-                                                {latest ? `${latest.action} at ${latest.time}` : 'Not signed in'}
-                                            </div>
-                                        </button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <>
-                            <SignInForm
-                                member={selectedMember}
-                                parentName={parentName}
-                                onSign={handleSign}
-                                latestStatus={statusByDate[today]?.[selectedMember.id]?.slice(-1)[0] || null}
+                {!submitted ? (
+                    <form
+                        onSubmit={async (e) => {
+                            e.preventDefault();
+                            await fetchYouthByParent(parentName);
+                            setSubmitted(true);
+                        }}
+                        className="text-center"
+                    >
+                        <div className="space-y-4">
+                            <label htmlFor="parentName">Enter your name:</label>
+                            <input
+                                id="parentName"
+                                type="text"
+                                value={parentName}
+                                onChange={(e) => setParentName(e.target.value)}
+                                placeholder="Parent name"
                             />
-                            <button style={{ marginTop: '12px' }} onClick={() => setSelectedMember(null)}>Back</button>
-                        </>
-                    )}
+                            <label htmlFor="sectionFilter">Filter by section:</label>
+                            <select
+                                id="sectionFilter"
+                                value={sectionFilter}
+                                onChange={(e) => setSectionFilter(e.target.value)}
+                            >
+                                <option value="">All</option>
+                                <option value="Joeys">Joeys</option>
+                                <option value="Cubs">Cubs</option>
+                                <option value="Scouts">Scouts</option>
+                                <option value="Venturers">Venturers</option>
+                            </select>
+                            <button type="submit">Continue</button>
+                        </div>
+                    </form>
+                ) : (
+                    <>
+                        {loading ? <p>Loading children...</p> : null}
 
-                    <button style={{ marginTop: '1rem' }} onClick={() => { setSubmitted(false); setParentName(''); setYouthList([]); }}>Switch Parent</button>
-                </>
-            )}
-        </div>
-    );
-};
+                        {filteredYouthList.length === 0 && !loading && (
+                            <p>No children found for "{parentName}" in section "{sectionFilter || 'All'}"</p>
+                        )}
 
-const QRCodeScreen = () => {
-    const eventLink = `${window.location.origin}/signin/event/12345`;
+                        {!selectedMember ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                {filteredYouthList.map((m) => {
+                                    const latest = statusByDate[today]?.[m.id]?.slice(-1)[0];
+                                    return (
+                                        <div key={m.id} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px', backgroundColor: '#fff' }}>
+                                            <button
+                                                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '8px' }}
+                                                onClick={() => setSelectedMember(m)}
+                                            >
+                                                <div>
+                                                    <div>{m.name}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{m.section}</div>
+                                                </div>
+                                                <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'green' : 'gray' }}>
+                                                    {latest ? `${latest.action} at ${latest.time}` : 'Not signed in'}
+                                                </div>
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <>
+                                <SignInForm
+                                    member={selectedMember}
+                                    parentName={parentName}
+                                    onSign={handleSign}
+                                    latestStatus={statusByDate[today]?.[selectedMember.id]?.slice(-1)[0] || null}
+                                />
+                                <button style={{ marginTop: '12px' }} onClick={() => setSelectedMember(null)}>Back</button>
+                            </>
+                        )}
 
-    return (
-        <div style={{ padding: '16px', textAlign: 'center' }}>
-            <h2>Scan to Sign In</h2>
-            <QRCode value={eventLink} size={200} />
-            <p style={{ fontSize: '0.875rem', color: '#666' }}>This QR links to today’s sign-in sheet</p>
-        </div>
+                        <button style={{ marginTop: '1rem' }} onClick={() => { setSubmitted(false); setParentName(''); setYouthList([]); }}>Switch Parent</button>
+                    </>
+                )}
+            </div>
+        </>
     );
 };
 
 export default function App() {
-    const [mode, setMode] = useState('signin');
-
     return (
-        <div style={{ minHeight: '100vh', backgroundColor: '#f9f9f9', paddingBottom: '2rem' }}>
-            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                <button onClick={() => setMode('signin')}>Sign In/Out</button>
-                <button onClick={() => setMode('qr')}>Show QR Code</button>
-            </div>
-            {mode === 'signin' ? <SignInOutPage /> : <QRCodeScreen />}
+        <div id="root">
+            <SignInOutPage />
         </div>
     );
 }
