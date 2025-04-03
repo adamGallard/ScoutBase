@@ -1,13 +1,42 @@
-// ScoutBase Sign In App with Supabase integration
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import logo from './assets/scoutbase-logo.png';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import AdminLogin from './AdminLogin';
-
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import AdminPage from './AdminPage';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
+
+const AdminLogin = () => {
+    const navigate = useNavigate();
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleLogin = (e) => {
+        e.preventDefault();
+        if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
+            navigate('/admin');
+        } else {
+            setError('Incorrect password');
+        }
+    };
+
+    return (
+        <div className="scout-container">
+            <h2>Admin Login</h2>
+            <form onSubmit={handleLogin}>
+                <input
+                    type="password"
+                    placeholder="Enter admin password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+                <button type="submit">Login</button>
+                {error && <p style={{ color: 'red' }}>{error}</p>}
+            </form>
+        </div>
+    );
+};
 
 const SignInForm = ({ member, onSign, parentName, latestStatus }) => {
     const [comment, setComment] = useState('');
@@ -127,10 +156,10 @@ const SignInOutPage = () => {
         <>
             <img src={logo} alt="ScoutBase Logo" style={{ maxWidth: '150px', margin: '1rem auto 0', display: 'block' }} />
             <div className="scout-container">
-                <h1 className="text-center" style={{ fontSize: '2rem', marginBottom: '1rem' }}>Scout Sign In / Out</h1>
+                <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '1rem' }}>Scout Sign In / Out</h1>
 
                 <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-                    <Link to="/admin" style={{ textDecoration: 'underline', fontSize: '0.9rem' }}>Admin Area</Link>
+                    <Link to="/admin-login" style={{ textDecoration: 'underline', fontSize: '0.9rem' }}>Admin Area</Link>
                 </div>
 
                 {!submitted ? (
@@ -221,6 +250,7 @@ export default function App() {
         <Router>
             <Routes>
                 <Route path="/" element={<SignInOutPage />} />
+                <Route path="/admin-login" element={<AdminLogin />} />
                 <Route path="/admin" element={<AdminPage />} />
             </Routes>
         </Router>
