@@ -10,6 +10,7 @@ export default function AdminLogin() {
     const handleLogin = (e) => {
         e.preventDefault();
         if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
+            localStorage.setItem('scoutbase-admin-authed', 'true'); // Save auth state
             navigate('/admin');
         } else {
             setError('Incorrect password');
