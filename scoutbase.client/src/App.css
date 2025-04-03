@@ -26,8 +26,22 @@ body {
 }
 
 
+select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background: white url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23666' class='bi bi-caret-down-fill' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658c-.566-.682-.106-1.658.753-1.658h9.592c.86 0 1.32.976.753 1.658l-4.796 5.482a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E") no-repeat right 0.75rem center;
+    padding-right: 2rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    height: 2.2rem;
+    font-size: 1rem;
+    color: #333;
+    padding: 0.5rem;
+}
+
 /* Form element styling */
-input, select, textarea, button {
+input, textarea, button {
     all: unset;
     font-family: inherit;
     font-size: 1rem;
@@ -87,3 +101,6 @@ button {
     .scout-table button {
         margin-right: 4px;
     }
+a:hover svg {
+    stroke: #084080;
+}

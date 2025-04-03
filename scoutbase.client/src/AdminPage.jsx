@@ -3,6 +3,7 @@ import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, P
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import { useNavigate } from 'react-router-dom';
+import logo from './assets/scoutbase-logo.png';
 
 function RequireAuth({ children }) {
     const navigate = useNavigate();
@@ -34,7 +35,18 @@ function Sidebar({ onNavigate }) {
             flexDirection: 'column',
             alignItems: collapsed ? 'center' : 'flex-start',
             borderRight: '1px solid #ddd'
-        }}>
+        }}><img
+                src={logo}
+                alt="ScoutBase Logo"
+                style={{
+                    maxWidth: '50px',
+                    marginTop: '2rem',
+                    marginBottom: '1rem',
+                    display: 'block',
+                    marginLeft: 'auto',
+                    marginRight: 'auto',
+                }}
+            />
             <button onClick={() => setCollapsed(!collapsed)} title="Toggle sidebar" style={btnStyle}>
                 {collapsed ? <Menu size={16} /> : <ArrowLeft size={16} />}
             </button>

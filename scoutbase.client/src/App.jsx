@@ -4,6 +4,7 @@ import './App.css';
 import logo from './assets/scoutbase-logo.png';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import AdminPage from './AdminPage';
+import { Shield } from 'lucide-react';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -157,11 +158,15 @@ const SignInOutPage = () => {
         <>
             <img src={logo} alt="ScoutBase Logo" style={{ maxWidth: '150px', margin: '1rem auto 0', display: 'block' }} />
             <div className="scout-container">
-                <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '1rem' }}>Scout Sign In / Out</h1>
-
                 <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-                    <Link to="/admin-login" style={{ textDecoration: 'underline', fontSize: '0.9rem' }}>Admin Area</Link>
+                    <Link to="/admin-login" title="Admin Area" style={{ color: '#0F5BA4' }}>
+                        <Shield size={30} />
+                    </Link>
                 </div>
+                <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.5rem' }}>Scout Sign In / Out</h1>
+                <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
+                    Enter your name to see the youth members linked to you. Then select a child to sign them in or out, with an optional comment.
+                </p>
 
                 {!submitted ? (
                     <form
@@ -181,24 +186,32 @@ const SignInOutPage = () => {
                                 onChange={(e) => setParentName(e.target.value)}
                                 placeholder="Parent name"
                             />
-                            <label htmlFor="sectionFilter">Filter by section:</label>
-                            <select
-                                id="sectionFilter"
-                                value={sectionFilter}
-                                onChange={(e) => setSectionFilter(e.target.value)}
-                            >
-                                <option value="">All</option>
-                                <option value="Joeys">Joeys</option>
-                                <option value="Cubs">Cubs</option>
-                                <option value="Scouts">Scouts</option>
-                                <option value="Venturers">Venturers</option>
-                            </select>
+
                             <button type="submit">Continue</button>
                         </div>
                     </form>
                 ) : (
                     <>
                         {loading ? <p>Loading children...</p> : null}
+
+                            {!selectedMember && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                    <label htmlFor="sectionFilter" style={{ display: 'block', fontWeight: 'bold', color: '#333' }}>
+                                        Filter by section:
+                                    </label>
+                                    <select
+                                        id="sectionFilter"
+                                        value={sectionFilter}
+                                        onChange={(e) => setSectionFilter(e.target.value)}
+                                    >
+                                        <option value="">All</option>
+                                        <option value="Joeys">Joeys</option>
+                                        <option value="Cubs">Cubs</option>
+                                        <option value="Scouts">Scouts</option>
+                                        <option value="Venturers">Venturers</option>
+                                    </select>
+                                </div>
+                            )}
 
                         {filteredYouthList.length === 0 && !loading && (
                             <p>No children found for "{parentName}" in section "{sectionFilter || 'All'}"</p>
@@ -216,9 +229,9 @@ const SignInOutPage = () => {
                                             >
                                                 <div>
                                                     <div>{m.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: '#666' }}>{m.section}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'lightgoldenrodyellow' }}>{m.section}</div>
                                                 </div>
-                                                <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'green' : 'gray' }}>
+                                                <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'lime' : 'tomato' }}>
                                                     {latest ? `${latest.action} at ${latest.time}` : 'Not signed in'}
                                                 </div>
                                             </button>
