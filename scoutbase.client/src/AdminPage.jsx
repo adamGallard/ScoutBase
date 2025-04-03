@@ -17,8 +17,8 @@ function Sidebar({ onNavigate }) {
     const [collapsed, setCollapsed] = useState(false);
     const navItems = [
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
-        { key: 'add-parent', label: 'Add Parent', icon: <UserPlus size={16} /> },
-        { key: 'add-youth', label: 'Add Youth', icon: <Users size={16} /> },
+        { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
+        { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
         { key: 'link', label: 'Link Parent/Youth', icon: <Link2 size={16} /> },
         { key: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
     ];
@@ -88,7 +88,7 @@ export default function AdminPage() {
     const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
 
     const [youthList, setYouthList] = useState([]);
-    const [youthForm, setYouthForm] = useState({ name: '', dob: '', section: '' });
+    const [youthForm, setYouthForm] = useState({ name: '', dob: '', section: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
     const [sectionFilter, setSectionFilter] = useState('');
 
@@ -144,7 +144,11 @@ export default function AdminPage() {
     };
 
     const fetchYouth = async () => {
-        const { data } = await supabase.from('youth').select('*').order('name');
+        const { data } = await supabase
+            .from('youth')
+            .select('id, name, dob, section, membership_stage') 
+            .order('name');
+
         if (data) setYouthList(data);
     };
 
@@ -184,6 +188,19 @@ export default function AdminPage() {
                                 <option value="Venturers">Venturers</option>
                             </select>}
                         </td>
+                        {type === 'youth' && (
+                            <td>
+                                <select
+                                    value={currentForm.membership_stage || ''}
+                                    onChange={(e) => updateForm(e, type, 'membership_stage')}
+                                >
+                                    <option value="">Select</option>
+                                    <option value="Invested">Invested</option>
+                                    <option value="Have a Go">Have a Go</option>
+                                    <option value="Linking">Linking</option>
+                                </select>
+                            </td>
+                        )}
                         <td>
                             <button title="Save" onClick={() => saveEntry(type, entry.id)}><Check size={16} /></button>
                             <button title="Cancel" onClick={() => cancelEdit(type)}><X size={16} /></button>
@@ -193,7 +210,22 @@ export default function AdminPage() {
                     <>
                         <td>{entry.name}</td>
                         <td>{type === 'parent' ? entry.email : entry.dob}</td>
-                        <td>{type === 'parent' ? entry.phone : entry.section}</td>
+                            <td>{type === 'parent' ? entry.phone : entry.section}</td>
+                            <td>
+                                {type === 'parent'
+                                    ? null
+                                    : isEditing ? (
+                                        <select value={currentForm.membership_stage} onChange={(e) => updateForm(e, type, 'membership_stage')}>
+                                            <option value="">Select</option>
+                                            <option value="Invested">Invested</option>
+                                            <option value="Have a Go">Have a Go</option>
+                                            <option value="Linking">Linking</option>
+                                        </select>
+                                    ) : (
+                                        entry.membership_stage || '-'
+                                    )
+                                }
+                            </td>
                         <td>
                             <button title="Edit" onClick={() => startEdit(type, entry)}><Pencil size={16} /></button>
                             <button title="Delete" onClick={() => type === 'parent' ? deleteParent(entry.id) : deleteYouth(entry.id)}><Trash size={16} /></button>
@@ -208,12 +240,14 @@ export default function AdminPage() {
         const value = e.target.value;
         type === 'parent'
             ? setFormData({ ...formData, [field]: value })
-            : setYouthForm({ ...youthForm, [field]: value });
+            : setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
+
     };
 
     const cancelEdit = (type) => {
         type === 'parent' ? setEditingParentId(null) : setEditingYouthId(null);
-        type === 'parent' ? setFormData({ name: '', phone: '', email: '' }) : setYouthForm({ name: '', dob: '', section: '' });
+        type === 'parent' ? setFormData({ name: '', phone: '', email: '' }) : setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
+
     };
 
     const saveEntry = async (type, id) => {
@@ -225,9 +259,18 @@ export default function AdminPage() {
     };
 
     const startEdit = (type, entry) => {
-        type === 'parent'
-            ? (setEditingParentId(entry.id), setFormData(entry))
-            : (setEditingYouthId(entry.id), setYouthForm(entry));
+        if (type === 'parent') {
+            setEditingParentId(entry.id);
+            setFormData(entry);
+        } else {
+            setEditingYouthId(entry.id);
+            setYouthForm({
+                name: entry.name,
+                dob: entry.dob,
+                section: entry.section,
+                membership_stage: entry.membership_stage || ''
+            });
+        }
     };
 
     const renderContent = () => {
@@ -389,7 +432,13 @@ export default function AdminPage() {
                         <div className="table-container">
                             <table className="scout-table">
                                 <thead>
-                                    <tr><th>Name</th><th>DOB</th><th>Section</th><th></th></tr>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>DOB</th>
+                                        <th>Section</th>
+                                        <th>Stage</th> 
+                                        <th></th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     {youthList.filter((y) => !sectionFilter || y.section === sectionFilter).map((y) => renderTableRow(y, 'youth'))}
@@ -404,6 +453,14 @@ export default function AdminPage() {
                                                     <option value="Cubs">Cubs</option>
                                                     <option value="Scouts">Scouts</option>
                                                     <option value="Venturers">Venturers</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select value={youthForm.membership_stage} onChange={(e) => updateForm(e, 'youth', 'membership_stage')}>
+                                                    <option value="">Select</option>
+                                                    <option value="Invested">Invested</option>
+                                                    <option value="Have a Go">Have a Go</option>
+                                                    <option value="Linking">Linking</option>
                                                 </select>
                                             </td>
                                             <td>
