@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import logo from './assets/scoutbase-logo.png';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import AdminLogin from './AdminLogin';
+
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -126,6 +129,10 @@ const SignInOutPage = () => {
             <div className="scout-container">
                 <h1 className="text-center" style={{ fontSize: '2rem', marginBottom: '1rem' }}>Scout Sign In / Out</h1>
 
+                <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+                    <Link to="/admin" style={{ textDecoration: 'underline', fontSize: '0.9rem' }}>Admin Area</Link>
+                </div>
+
                 {!submitted ? (
                     <form
                         onSubmit={async (e) => {
@@ -211,8 +218,11 @@ const SignInOutPage = () => {
 
 export default function App() {
     return (
-        <div id="root">
-            <SignInOutPage />
-        </div>
+        <Router>
+            <Routes>
+                <Route path="/" element={<SignInOutPage />} />
+                <Route path="/admin" element={<AdminPage />} />
+            </Routes>
+        </Router>
     );
 }
