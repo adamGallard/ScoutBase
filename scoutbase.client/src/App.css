@@ -14,16 +14,17 @@ body {
 
 /* Container styling */
 .scout-container {
-    width: 100%;
-    max-width: 700px;
-    margin: 2rem auto;
-    background-color: #fff;
+    background: white;
+    padding: 1.5rem;
+    margin: 1rem;
     border-radius: 8px;
-    padding: 2rem;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    flex: 1;
+    min-width: 0; /* 💡 Allows flex shrink/grow */
+    overflow-x: auto;
+    max-width: 100%; /* 💡 Prevents overflow */
 }
+
 
 /* Form element styling */
 input, select, textarea, button {
@@ -58,3 +59,31 @@ button {
 .space-y-4 > * + * {
     margin-top: 1rem;
 }
+/* App.css */
+
+.table-container {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+}
+
+.scout-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+    .scout-table th,
+    .scout-table td {
+        text-align: left;
+        padding: 8px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    .scout-table input {
+        width: 100%;
+        padding: 4px;
+        box-sizing: border-box;
+    }
+
+    .scout-table button {
+        margin-right: 4px;
+    }
