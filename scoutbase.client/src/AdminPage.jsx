@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar } from 'lucide-react';
+import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar, ChevronUp, ChevronDown } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import { useNavigate } from 'react-router-dom';
@@ -97,6 +97,12 @@ export default function AdminPage() {
     const [editingYouthId, setEditingYouthId] = useState(null);
     const [sectionFilter, setSectionFilter] = useState('');
     const { userName } = useTerrainUser(); // Get the user name
+    const [parentFilter, setParentFilter] = useState(''); 
+    const [youthFilter, setYouthFilter] = useState('');
+    const [parentSortField, setParentSortField] = useState('name');
+    const [parentSortAsc, setParentSortAsc] = useState(true);
+    const [youthSortField, setYouthSortField] = useState('name');
+    const [youthSortAsc, setYouthSortAsc] = useState(true);
 
 
     useEffect(() => {
@@ -173,75 +179,111 @@ export default function AdminPage() {
         }
     };
 
+    const [linkModalOpen, setLinkModalOpen] = useState(false);
+    const [selectedParentId, setSelectedParentId] = useState(null);
+    const [linkedYouth, setLinkedYouth] = useState([]);
+    const [availableYouth, setAvailableYouth] = useState([]);
+
+    const openLinkModal = async (parentId) => {
+        setSelectedParentId(parentId);
+        setLinkModalOpen(true);
+
+        // Load linked youth
+        const { data: links } = await supabase
+            .from('parent_youth')
+            .select('youth (id, name, section)')
+            .eq('parent_id', parentId);
+
+        setLinkedYouth(links.map(l => l.youth));
+
+        // Load all youth for dropdown
+        const { data: allYouth } = await supabase
+            .from('youth')
+            .select('id, name, section');
+
+        setAvailableYouth(allYouth);
+    };
+
+    const addLink = async (youthId) => {
+        await supabase.from('parent_youth').insert([
+            { parent_id: selectedParentId, youth_id: youthId }
+        ]);
+        openLinkModal(selectedParentId); // reload list
+    };
+
+    const removeLink = async (youthId) => {
+        await supabase.from('parent_youth')
+            .delete()
+            .eq('parent_id', selectedParentId)
+            .eq('youth_id', youthId);
+        openLinkModal(selectedParentId); // reload list
+    };
+
+
     const renderTableRow = (entry, type) => {
         const isEditing = type === 'parent' ? editingParentId === entry.id : editingYouthId === entry.id;
         const currentForm = type === 'parent' ? formData : youthForm;
 
-
-
-
         return (
             <tr key={entry.id}>
-                {isEditing ? (
-                    <>
-                        <td><input value={currentForm.name} onChange={(e) => updateForm(e, type, 'name')} /></td>
-                        <td>{type === 'parent' ?
-                            <input value={currentForm.email} onChange={(e) => updateForm(e, type, 'email')} /> :
-                            <input type="date" value={currentForm.dob} onChange={(e) => updateForm(e, type, 'dob')} />}
-                        </td>
-                        <td>{type === 'parent' ?
-                            <input value={currentForm.phone} onChange={(e) => updateForm(e, type, 'phone')} /> :
-                            <select value={currentForm.section} onChange={(e) => updateForm(e, type, 'section')}>
+                <td>{isEditing ? <input value={currentForm.name} onChange={(e) => updateForm(e, type, 'name')} /> : entry.name}</td>
+                <td>
+                    {isEditing
+                        ? type === 'parent'
+                            ? <input value={currentForm.email} onChange={(e) => updateForm(e, type, 'email')} />
+                            : <input type="date" value={currentForm.dob} onChange={(e) => updateForm(e, type, 'dob')} />
+                        : type === 'parent'
+                            ? entry.email
+                            : entry.dob
+                    }
+                </td>
+                <td>
+                    {isEditing
+                        ? type === 'parent'
+                            ? <input value={currentForm.phone} onChange={(e) => updateForm(e, type, 'phone')} />
+                            : <select value={currentForm.section} onChange={(e) => updateForm(e, type, 'section')}>
                                 <option value="Joeys">Joeys</option>
                                 <option value="Cubs">Cubs</option>
                                 <option value="Scouts">Scouts</option>
                                 <option value="Venturers">Venturers</option>
-                            </select>}
-                        </td>
-                        {type === 'youth' && (
-                            <td>
-                                <select
-                                    value={currentForm.membership_stage || ''}
-                                    onChange={(e) => updateForm(e, type, 'membership_stage')}
-                                >
-                                    <option value="">Select</option>
-                                    <option value="Invested">Invested</option>
-                                    <option value="Have a Go">Have a Go</option>
-                                    <option value="Linking">Linking</option>
-                                </select>
-                            </td>
-                        )}
-                        <td>
+                            </select>
+                        : type === 'parent'
+                            ? entry.phone
+                            : entry.section
+                    }
+                </td>
+                <td>
+                    {type === 'youth' ? (
+                        isEditing ? (
+                            <select value={currentForm.membership_stage || ''} onChange={(e) => updateForm(e, type, 'membership_stage')}>
+                                <option value="">Select</option>
+                                <option value="Invested">Invested</option>
+                                <option value="Have a Go">Have a Go</option>
+                                <option value="Linking">Linking</option>
+                            </select>
+                        ) : (
+                            entry.membership_stage || '-'
+                        )
+                    ) : (
+                        '' // <-- placeholder cell for parent rows
+                    )}
+                </td>
+                <td>
+                    {isEditing ? (
+                        <>
                             <button title="Save" onClick={() => saveEntry(type, entry.id)}><Check size={16} /></button>
                             <button title="Cancel" onClick={() => cancelEdit(type)}><X size={16} /></button>
-                        </td>
-                    </>
-                ) : (
-                    <>
-                        <td>{entry.name}</td>
-                        <td>{type === 'parent' ? entry.email : entry.dob}</td>
-                            <td>{type === 'parent' ? entry.phone : entry.section}</td>
-                            <td>
-                                {type === 'parent'
-                                    ? null
-                                    : isEditing ? (
-                                        <select value={currentForm.membership_stage} onChange={(e) => updateForm(e, type, 'membership_stage')}>
-                                            <option value="">Select</option>
-                                            <option value="Invested">Invested</option>
-                                            <option value="Have a Go">Have a Go</option>
-                                            <option value="Linking">Linking</option>
-                                        </select>
-                                    ) : (
-                                        entry.membership_stage || '-'
-                                    )
-                                }
-                            </td>
-                        <td>
+                        </>
+                    ) : (
+                        <>
                             <button title="Edit" onClick={() => startEdit(type, entry)}><Pencil size={16} /></button>
                             <button title="Delete" onClick={() => type === 'parent' ? deleteParent(entry.id) : deleteYouth(entry.id)}><Trash size={16} /></button>
-                        </td>
-                    </>
-                )}
+                            {type === 'parent' && (
+                                <button title="Details" onClick={() => openLinkModal(entry.id)}><Link2 size={16} /></button>
+                            )}
+                        </>
+                    )}
+                </td>
             </tr>
         );
     };
@@ -283,7 +325,23 @@ export default function AdminPage() {
         }
     };
 
+    const toggleSort = (field) => {
+        if (parentSortField === field) {
+            setParentSortAsc(!parentSortAsc);
+        } else {
+            setParentSortField(field);
+            setParentSortAsc(true);
+        }
+    };
 
+    const toggleYouthSort = (field) => {
+        if (youthSortField === field) {
+            setYouthSortAsc(!youthSortAsc);
+        } else {
+            setYouthSortField(field);
+            setYouthSortAsc(true);
+        }
+    };
 
     const renderContent = () => {
         switch (view) {
@@ -303,7 +361,7 @@ export default function AdminPage() {
 
                     const csvContent = 'data:text/csv;charset=utf-8,' +
                         rows.map(e => e.join(',')).join('\n');
-
+                    
                     const encodedUri = encodeURI(csvContent);
                     const link = document.createElement('a');
                     link.setAttribute('href', encodedUri);
@@ -412,26 +470,75 @@ export default function AdminPage() {
             case 'add-parent':
                 return (
                     <div className="content-box">
-                        <h2>Add/Edit Parent</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ margin: 0 }}>Add/Edit Parent</h2>
+                            <input
+                                type="text"
+                                placeholder="Search by name or email..."
+                                value={parentFilter}
+                                onChange={(e) => setParentFilter(e.target.value.toLowerCase())}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid #ccc',
+                                    width: '100%',
+                                    maxWidth: '300px'
+                                }}
+                            />
+                        </div>
                         <div className="table-container">
                             <table className="scout-table">
                                 <thead>
-                                    <tr><th>Name</th><th>Email</th><th>Phone</th><th></th></tr>
+                                    <tr>
+                                        <th onClick={() => toggleSort('name')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Name
+                                            {parentSortField === 'name' &&
+                                                (parentSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th onClick={() => toggleSort('email')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Email
+                                            {parentSortField === 'email' &&
+                                                (parentSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th onClick={() => toggleSort('phone')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Phone
+                                            {parentSortField === 'phone' &&
+                                                (parentSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th></th>
+                                        <th>Actions</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                    {parents.map((p) => renderTableRow(p, 'parent'))}
+                                    {[...parents]
+                                        .filter((p) =>
+                                            p.name.toLowerCase().includes(parentFilter) ||
+                                            p.email.toLowerCase().includes(parentFilter)
+                                        )
+                                        .sort((a, b) => {
+                                            const valA = a[parentSortField]?.toLowerCase?.() || '';
+                                            const valB = b[parentSortField]?.toLowerCase?.() || '';
+                                            return parentSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                                        })
+                                        .map((p) => renderTableRow(p, 'parent'))}
                                     {editingParentId === null && (
                                         <tr>
                                             <td><input value={formData.name} onChange={(e) => updateForm(e, 'parent', 'name')} /></td>
                                             <td><input value={formData.email} onChange={(e) => updateForm(e, 'parent', 'email')} /></td>
                                             <td><input value={formData.phone} onChange={(e) => updateForm(e, 'parent', 'phone')} /></td>
+                                            <td></td>
                                             <td>
-                                                <button title="Add" onClick={async () => {
-                                                    if (!formData.name || !formData.email || !formData.phone) return;
-                                                    await supabase.from('parent').insert([formData]);
-                                                    fetchParents();
-                                                    setFormData({ name: '', phone: '', email: '' });
-                                                }}><Plus size={16} /></button>
+                                                <button
+                                                    title="Add"
+                                                    onClick={async () => {
+                                                        if (!formData.name || !formData.email || !formData.phone) return;
+                                                        await supabase.from('parent').insert([formData]);
+                                                        fetchParents();
+                                                        setFormData({ name: '', phone: '', email: '' });
+                                                    }}
+                                                >
+                                                    <Plus size={16} />
+                                                </button>
                                             </td>
                                         </tr>
                                     )}
@@ -443,7 +550,22 @@ export default function AdminPage() {
             case 'add-youth':
                 return (
                     <div className="content-box">
-                        <h2>Add/Edit Youth</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 style={{ margin: 0 }}>Add/Edit Youth</h2>
+                            <input
+                                type="text"
+                                placeholder="Search by name..."
+                                value={youthFilter}
+                                onChange={(e) => setYouthFilter(e.target.value.toLowerCase())}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '6px',
+                                    border: '1px solid #ccc',
+                                    width: '100%',
+                                    maxWidth: '300px'
+                                }}
+                            />
+                        </div>
                         <label>
                             Filter by section:
                             <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)}>
@@ -458,15 +580,33 @@ export default function AdminPage() {
                             <table className="scout-table">
                                 <thead>
                                     <tr>
-                                        <th>Name</th>
-                                        <th>DOB</th>
-                                        <th>Section</th>
-                                        <th>Stage</th> 
-                                        <th></th>
+                                        <th onClick={() => toggleYouthSort('name')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Name {youthSortField === 'name' && (youthSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th onClick={() => toggleYouthSort('dob')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            DOB {youthSortField === 'dob' && (youthSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th onClick={() => toggleYouthSort('section')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Section {youthSortField === 'section' && (youthSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th onClick={() => toggleYouthSort('membership_stage')} style={{ cursor: 'pointer', display: 'table-cell', alignItems: 'center', gap: '0.3rem' }}>
+                                            Stage {youthSortField === 'membership_stage' && (youthSortAsc ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                                        </th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {youthList.filter((y) => !sectionFilter || y.section === sectionFilter).map((y) => renderTableRow(y, 'youth'))}
+                                    {[...youthList]
+                                        .filter((y) =>
+                                            (!sectionFilter || y.section === sectionFilter) &&
+                                            y.name.toLowerCase().includes(youthFilter)
+                                        )
+                                        .sort((a, b) => {
+                                            const valA = a[youthSortField]?.toLowerCase?.() || a[youthSortField] || '';
+                                            const valB = b[youthSortField]?.toLowerCase?.() || b[youthSortField] || '';
+                                            return youthSortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                                        })
+                                        .map((y) => renderTableRow(y, 'youth'))}
                                     {editingYouthId === null && (
                                         <tr>
                                             <td><input value={youthForm.name} onChange={(e) => updateForm(e, 'youth', 'name')} /></td>
@@ -548,6 +688,36 @@ export default function AdminPage() {
                 <div className="scout-container">{renderContent()}</div>
                 </div>
             </div>
+            {linkModalOpen && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <h3>Youth linked to this parent</h3>
+
+                        <ul>
+                            {linkedYouth.map((youth) => (
+                                <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>{youth.name} ({youth.section})</span>
+                                    <button onClick={() => removeLink(youth.id)}>Remove</button>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <h4>Add Youth</h4>
+                        <select onChange={(e) => addLink(e.target.value)} defaultValue="">
+                            <option value="" disabled>Select a youth...</option>
+                            {availableYouth
+                                .filter(y => !linkedYouth.find(l => l.id === y.id))
+                                .map(y => (
+                                    <option key={y.id} value={y.id}>{y.name} ({y.section})</option>
+                                ))}
+                        </select>
+
+                        <div style={{ marginTop: '1rem' }}>
+                            <button onClick={() => setLinkModalOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </RequireAuth>
     );
 }
