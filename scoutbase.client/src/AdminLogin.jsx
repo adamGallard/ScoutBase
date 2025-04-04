@@ -1,20 +1,79 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './App.css';
 import logo from './assets/scoutbase-logo.png';
+import './App.css';
+
+const branches = [
+    { label: 'QLD', value: 'qld' },
+    { label: 'NSW', value: 'nsw' },
+    { label: 'ACT', value: 'act' },
+    { label: 'VIC', value: 'vic' },
+    { label: 'TAS', value: 'tas' },
+    { label: 'SA', value: 'sa' },
+    { label: 'WA', value: 'wa' },
+    { label: 'NT', value: 'nt' }
+];
 
 export default function AdminLogin() {
     const navigate = useNavigate();
+    const [region, setRegion] = useState('qld');
+    const [memberId, setMemberId] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const clientIds = [
+        '6v98tbc09aqfvh52fml3usas3c',
+        '5g9rg6ppc5g1pcs5odb7nf7hf9',
+        '1u4uajve0lin0ki5n6b61ovva7',
+        '21m9o832lp5krto1e8ioo6ldg2'
+    ];
+
+    const loginToTerrain = async (region, memberId, password) => {
+        const fullUsername = `${region}-${memberId}`;
+
+        for (const clientId of clientIds) {
+            const response = await fetch('https://cognito-idp.ap-southeast-2.amazonaws.com/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-amz-json-1.1',
+                    'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+                },
+                body: JSON.stringify({
+                    AuthFlow: 'USER_PASSWORD_AUTH',
+                    ClientId: clientId,
+                    AuthParameters: {
+                        USERNAME: fullUsername,
+                        PASSWORD: password
+                    }
+                })
+            });
+
+            const data = await response.json();
+            if (response.ok && data.AuthenticationResult) {
+                localStorage.setItem('scoutbase-client-id', clientId);
+                localStorage.setItem('scoutbase-terrain-idtoken', data.AuthenticationResult.IdToken); // For name lookup
+                localStorage.setItem('scoutbase-terrain-token', data.AuthenticationResult.AccessToken); // For fallback
+                return;
+            }
+        }
+
+        throw new Error('Login failed: Invalid credentials or no valid client ID');
+    };
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
-            localStorage.setItem('scoutbase-admin-authed', 'true'); // Save auth state
+        setLoading(true);
+        setError('');
+
+        try {
+            await loginToTerrain(region, memberId, password);
+            localStorage.setItem('scoutbase-admin-authed', 'true');
             navigate('/admin');
-        } else {
-            setError('Incorrect password');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -29,26 +88,43 @@ export default function AdminLogin() {
                     marginBottom: '1rem',
                     display: 'block',
                     marginLeft: 'auto',
-                    marginRight: 'auto',
+                    marginRight: 'auto'
                 }}
             />
-            <img src="/src/assets/scoutbase-logo.png" alt="ScoutBase Logo" />
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Admin Login</h2>
+            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>Admin Login (Terrain)</h2>
+
             <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <select
+                    value={region}
+                    onChange={(e) => setRegion(e.target.value)}
+                    style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                >
+                    {branches.map((b) => (
+                        <option key={b.value} value={b.value}>{b.label}</option>
+                    ))}
+                </select>
+
+                <input
+                    type="text"
+                    placeholder="Member Number"
+                    value={memberId}
+                    onChange={(e) => setMemberId(e.target.value)}
+                    required
+                    style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }}
+                />
+
                 <input
                     type="password"
-                    placeholder="Enter admin password"
+                    placeholder="Terrain Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                        padding: '0.75rem',
-                        borderRadius: '6px',
-                        border: '1px solid #ccc',
-                        fontSize: '1rem',
-                    }}
+                    required
+                    style={{ padding: '0.75rem', borderRadius: '6px', border: '1px solid #ccc' }}
                 />
+
                 <button
                     type="submit"
+                    disabled={loading}
                     style={{
                         padding: '0.75rem',
                         borderRadius: '6px',
@@ -56,14 +132,14 @@ export default function AdminLogin() {
                         color: 'white',
                         border: 'none',
                         fontSize: '1rem',
-                        cursor: 'pointer',
+                        cursor: 'pointer'
                     }}
                 >
-                    Login
+                    {loading ? 'Logging in...' : 'Login'}
                 </button>
+
                 {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
             </form>
         </div>
     );
-};
-
+}

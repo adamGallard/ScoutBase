@@ -5,40 +5,10 @@ import logo from './assets/scoutbase-logo.png';
 import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
 import AdminPage from './AdminPage';
 import { Shield } from 'lucide-react';
+import AdminLogin from './AdminLogin';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
-const AdminLogin = () => {
-    const navigate = useNavigate();
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
-    const handleLogin = (e) => {
-        e.preventDefault();
-        if (password === import.meta.env.VITE_ADMIN_PASSWORD) {
-            localStorage.setItem('scoutbase-admin-authed', 'true'); // Add this line
-            navigate('/admin');
-        } else {
-            setError('Incorrect password');
-        }
-    };
-
-    return (
-        <div className="scout-container">
-            <h2>Admin Login</h2>
-            <form onSubmit={handleLogin}>
-                <input
-                    type="password"
-                    placeholder="Enter admin password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-                <button type="submit">Login</button>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
-            </form>
-        </div>
-    );
-};
 
 const SignInForm = ({ member, onSign, parentName, latestStatus }) => {
     const [comment, setComment] = useState('');

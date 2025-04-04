@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
-import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download } from 'lucide-react';
+import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import { useNavigate } from 'react-router-dom';
 import logo from './assets/scoutbase-logo.png';
+import { useTerrainUser } from './hooks/useTerrainUser';
+
+
 
 function RequireAuth({ children }) {
     const navigate = useNavigate();
@@ -35,19 +38,7 @@ function Sidebar({ onNavigate }) {
             flexDirection: 'column',
             alignItems: collapsed ? 'center' : 'flex-start',
             borderRight: '1px solid #ddd'
-        }}><img
-                src={logo}
-                alt="ScoutBase Logo"
-                style={{
-                    maxWidth: '50px',
-                    marginTop: '2rem',
-                    marginBottom: '1rem',
-                    display: 'block',
-                    marginLeft: 'auto',
-                    marginRight: 'auto',
-                }}
-            />
-            <button onClick={() => setCollapsed(!collapsed)} title="Toggle sidebar" style={btnStyle}>
+        }}><button onClick={() => setCollapsed(!collapsed)} title="Toggle sidebar" style={btnStyle}>
                 {collapsed ? <Menu size={16} /> : <ArrowLeft size={16} />}
             </button>
             <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
@@ -63,6 +54,8 @@ function Sidebar({ onNavigate }) {
                     <button
                         onClick={() => {
                             localStorage.removeItem('scoutbase-admin-authed');
+                            localStorage.removeItem('scoutbase-terrain-token');
+                            localStorage.removeItem('scoutbase-username');
                             window.location.href = '/admin-login';
                         }}
                         style={{ ...btnStyle, color: '#b00' }}
@@ -103,6 +96,8 @@ export default function AdminPage() {
     const [youthForm, setYouthForm] = useState({ name: '', dob: '', section: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
     const [sectionFilter, setSectionFilter] = useState('');
+    const { userName } = useTerrainUser(); // Get the user name
+
 
     useEffect(() => {
         if (view === 'add-parent') fetchParents();
@@ -181,6 +176,9 @@ export default function AdminPage() {
     const renderTableRow = (entry, type) => {
         const isEditing = type === 'parent' ? editingParentId === entry.id : editingYouthId === entry.id;
         const currentForm = type === 'parent' ? formData : youthForm;
+
+
+
 
         return (
             <tr key={entry.id}>
@@ -285,6 +283,8 @@ export default function AdminPage() {
         }
     };
 
+
+
     const renderContent = () => {
         switch (view) {
             case 'attendance':
@@ -319,6 +319,7 @@ export default function AdminPage() {
                 return (
                     <div className="content-box">
                         <h2>Attendance Records</h2>
+                        
 
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
                             <label>
@@ -338,6 +339,18 @@ export default function AdminPage() {
                                     type="date"
                                     value={selectedDate}
                                     onChange={(e) => setSelectedDate(e.target.value)}
+                                    style={{
+                                        padding: '0.5rem',
+                                        borderRadius: '6px',
+                                        border: '1px solid #ccc',
+                                        fontSize: '1rem',
+                                        backgroundImage: `url('data:image/svg+xml;utf8,<svg fill="gray" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zm0-13H5V6h14v1z"/></svg>')`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 0.75rem center',
+                                        backgroundSize: '20px 20px',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none', // for Safari
+                                    }}
                                 />
                             </label>
 
@@ -495,11 +508,45 @@ export default function AdminPage() {
         }
     };
 
+    const { userInfo, loading: userLoading, error: userError } = useTerrainUser();
+   // console.log('Terrain user info:', userInfo);
+
     return (
         <RequireAuth>
+            <div style={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
+
+                {/* Header Bar */}
+                <div style={{
+                    backgroundColor: '#0F5BA4',
+                    color: 'white',
+                    padding: '0.75rem 1rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    {/* Logo and Title Group */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <img
+                            src={logo}
+                            alt="ScoutBase Logo"
+                            style={{
+                                maxWidth: '40px',
+                                height: 'auto'
+                            }}
+                        />
+                        <h1 style={{ margin: 0, fontSize: '1.25rem' }}>Admin</h1>
+                    </div>
+
+                    {/* Logged In User */}
+                    <div style={{ fontSize: '0.9rem' }}>
+                        Logged in as: <strong>{userLoading ? 'Loading...' : userInfo?.name || 'Unknown User'}</strong>
+                    </div>
+                </div>
+
             <div style={{ display: 'flex', height: '100vh' }}>
                 <Sidebar onNavigate={setView} />
                 <div className="scout-container">{renderContent()}</div>
+                </div>
             </div>
         </RequireAuth>
     );
