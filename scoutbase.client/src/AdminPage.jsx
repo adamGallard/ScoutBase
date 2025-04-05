@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar, ChevronUp, ChevronDown } from 'lucide-react';
+import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar, ChevronUp, ChevronDown, Key } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
 import './App.css';
 import { useNavigate } from 'react-router-dom';
 import logo from './assets/scoutbase-logo.png';
 import { useTerrainUser } from './hooks/useTerrainUser';
+import bcrypt from 'bcryptjs';
 
 
 
@@ -103,6 +104,10 @@ export default function AdminPage() {
     const [parentSortAsc, setParentSortAsc] = useState(true);
     const [youthSortField, setYouthSortField] = useState('name');
     const [youthSortAsc, setYouthSortAsc] = useState(true);
+
+    const [showPinModal, setShowPinModal] = useState(false);
+    const [pinParentId, setPinParentId] = useState(null);
+    const [newPin, setNewPin] = useState('');
 
 
     useEffect(() => {
@@ -279,7 +284,21 @@ export default function AdminPage() {
                             <button title="Edit" onClick={() => startEdit(type, entry)}><Pencil size={16} /></button>
                             <button title="Delete" onClick={() => type === 'parent' ? deleteParent(entry.id) : deleteYouth(entry.id)}><Trash size={16} /></button>
                             {type === 'parent' && (
-                                <button title="Details" onClick={() => openLinkModal(entry.id)}><Link2 size={16} /></button>
+                                <>
+                                    <button title="Details" onClick={() => openLinkModal(entry.id)}>
+                                        <Link2 size={16} />
+                                    </button>
+                                    <button
+                                        title="Update PIN"
+                                        onClick={() => {
+                                            setPinParentId(entry.id);
+                                            setNewPin('');
+                                            setShowPinModal(true);
+                                        }}
+                                    >
+                                        <Key size={16} />
+                                    </button>
+                                </>
                             )}
                         </>
                     )}
@@ -653,6 +672,48 @@ export default function AdminPage() {
 
     return (
         <RequireAuth>
+            {showPinModal && (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <h3>Update PIN</h3>
+                        <p>Enter a new 4-digit PIN for this parent:</p>
+                        <input
+                            type="password"
+                            value={newPin}
+                            maxLength={4}
+                            onChange={(e) => setNewPin(e.target.value)}
+                            placeholder="1234"
+                        />
+                        <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                            <button
+                                onClick={async () => {
+                                    if (!newPin) {
+                                        alert('Please enter a new PIN');
+                                        return;
+                                    }
+
+                                    const salt = await bcrypt.genSalt(10);
+                                    const hashedPin = await bcrypt.hash(newPin, salt);
+
+                                    await supabase
+                                        .from('parent')
+                                        .update({ pin_hash: hashedPin })
+                                        .eq('id', pinParentId);
+
+                                    setShowPinModal(false);
+                                    setPinParentId(null);
+                                    setNewPin('');
+                                    fetchParents();
+                                }}
+                            >
+                                Save
+                            </button>
+                            <button onClick={() => setShowPinModal(false)}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div style={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
 
                 {/* Header Bar */}

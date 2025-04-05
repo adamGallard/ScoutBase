@@ -6,6 +6,8 @@ import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react
 import AdminPage from './AdminPage';
 import { Shield } from 'lucide-react';
 import AdminLogin from './AdminLogin';
+import bcrypt from 'bcryptjs';
+
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 
@@ -66,6 +68,10 @@ const SignInOutPage = () => {
     const [youthList, setYouthList] = useState([]);
     const [loading, setLoading] = useState(false);
     const [sectionFilter, setSectionFilter] = useState('');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [pin, setPin] = useState('');
+    const [matchingParent, setMatchingParent] = useState(null);
+    const [error, setError] = useState('');
 
     useEffect(() => {
         const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -93,20 +99,45 @@ const SignInOutPage = () => {
         setSelectedMember(null);
     };
 
-    const fetchYouthByParent = async (name) => {
-        setLoading(true);
-        const { data: parents } = await supabase
-            .from('parent')
-            .select('id')
-            .ilike('name', name);
+    const verifyPin = async (enteredPin, storedHash) => {
+        return await bcrypt.compare(enteredPin, storedHash);
+    };
 
-        if (!parents || parents.length === 0) {
-            setYouthList([]);
-            setLoading(false);
+    const handleSearch = async () => {
+        setError('');
+        const { data, error } = await supabase
+            .from('parent')
+            .select('*')
+            .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+
+        if (error) {
+            setError('Error searching.');
             return;
         }
 
-        const parentId = parents[0].id;
+        if (!data || data.length === 0) {
+            setError('No matching parent found.');
+            return;
+        }
+
+        const found = data[0];
+        const isValid = await verifyPin(pin, found.pin_hash);
+
+        if (isValid) {
+            setMatchingParent(found); // optional if you want to store the whole object
+            setParentName(found.name); //  <-- fix: set correct parent name
+            await fetchYouthByParent(found.id); // or use `found.id` instead
+            setSubmitted(true); // 
+        } else {
+            setError('Incorrect PIN.');
+            return;
+        }
+    };
+
+
+
+    const fetchYouthByParent = async (parentId) => {
+        setLoading(true);
         const { data, error } = await supabase
             .from('parent_youth')
             .select('youth (id, name, dob, section)')
@@ -142,22 +173,30 @@ const SignInOutPage = () => {
                     <form
                         onSubmit={async (e) => {
                             e.preventDefault();
-                            await fetchYouthByParent(parentName);
-                            setSubmitted(true);
-                        }}
+                          }}
                         className="text-center"
                     >
                         <div className="space-y-4">
                             <label htmlFor="parentName">Enter your name:</label>
                             <input
-                                id="parentName"
                                 type="text"
-                                value={parentName}
-                                onChange={(e) => setParentName(e.target.value)}
-                                placeholder="Parent name"
+                                placeholder="Enter parent name or phone number"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
+                            /> <br></br><input
+                                type="password"
+                                placeholder="Enter 4-digit PIN"
+                                value={pin}
+                                onChange={(e) => setPin(e.target.value)}
+                                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
                             />
 
-                            <button type="submit">Continue</button>
+                            <button onClick={handleSearch} style={{ padding: '0.5rem 1rem' }}>
+                                Continue
+                            </button>
+
+                            {error && <p style={{ color: 'red' }}>{error}</p>}
                         </div>
                     </form>
                 ) : (
