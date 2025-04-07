@@ -1,18 +1,15 @@
 import { supabase } from '../lib/supabaseClient';
 import bcrypt from 'bcryptjs';
 
-export const authenticateParent = async (searchTerm, pin) => {
-    const { data, error } = await supabase
-        .from('parent')
-        .select('*')
-        .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
-
-    if (error || !data || data.length === 0) {
-        return { isValid: false, error: 'Invalid name or PIN.' };
+export const verifyPin = async (enteredPin, storedHash) => {
+    if (typeof storedHash !== 'string') {
+        console.error('Invalid storedHash:', storedHash);
+        return false;
     }
-
-    const found = data[0];
-    const isValid = await bcrypt.compare(pin, found.pin_hash);
-
-    return { isValid, parentData: found, error: isValid ? null : 'Invalid name or PIN.' };
+    try {
+        return await bcrypt.compare(enteredPin, storedHash);
+    } catch (err) {
+        console.error('Error comparing PIN hash:', err);
+        return false;
+    }
 };

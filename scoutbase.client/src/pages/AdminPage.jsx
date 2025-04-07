@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { FileText, UserPlus, Users, Link2, BarChart2, Menu, ArrowLeft, LogOut, Pencil, Check, X, Trash, Plus, RefreshCcw, Download, Calendar, ChevronUp, ChevronDown, Key } from 'lucide-react';
-import { supabase } from './lib/supabaseClient';
-import './App.css';
+import { supabase } from '../lib/supabaseClient';
+import '../App.css';
 import { useNavigate } from 'react-router-dom';
-import logo from './assets/scoutbase-logo.png';
-import { useTerrainUser } from './hooks/useTerrainUser';
+import logo from '../assets/scoutbase-logo.png';
+import { useTerrainUser } from '../hooks/useTerrainUser';
 import bcrypt from 'bcryptjs';
 import { useLocation } from 'react-router-dom';
 

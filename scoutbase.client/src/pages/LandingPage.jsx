@@ -1,5 +1,5 @@
-﻿import './App.css';
-import logo from './assets/scoutbase-logo.png';
+﻿import '../App.css';
+import logo from '../assets/scoutbase-logo.png';
 
 export default function LandingPage() {
     return (

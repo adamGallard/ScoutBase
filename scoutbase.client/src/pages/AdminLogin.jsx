@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import logo from './assets/scoutbase-logo.png';
-import './App.css';
+import logo from '../assets/scoutbase-logo.png';
+import '../App.css';
 
 const branches = [
     { label: 'QLD', value: 'qld' },

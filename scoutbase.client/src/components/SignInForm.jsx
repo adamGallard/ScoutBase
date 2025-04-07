@@ -1,15 +1,14 @@
 import { useState } from 'react';
-import { insertAttendance } from '../helpers/supabaseHelpers';
-import { getTodayDate } from '../helpers/date';
+import { supabase } from '../lib/supabaseClient';
+import { getTodayDate } from '../utils/dateUtils';
 
-const SignInForm = ({ member, onSign, parentName, latestStatus, groupId }) => {
+export default function SignInForm({ member, onSign, parentName, latestStatus, groupId }) {
     const [comment, setComment] = useState('');
     const lastAction = latestStatus?.action;
 
     const handleSubmit = async (action) => {
         const timestamp = new Date();
-
-        const record = {
+        const data = {
             action,
             signed_by: parentName,
             event_date: getTodayDate(),
@@ -19,19 +18,21 @@ const SignInForm = ({ member, onSign, parentName, latestStatus, groupId }) => {
             group_id: groupId,
         };
 
-        try {
-            await insertAttendance(record);
+        const { error } = await supabase.from('attendance').insert([data]);
+
+        if (error) {
+            alert('Error saving attendance');
+            console.error(error);
+        } else {
             onSign(member.id, {
                 action,
                 time: timestamp.toLocaleTimeString(),
                 by: parentName,
                 comment,
             });
-        } catch (err) {
-            alert('Error saving attendance');
-            console.error(err);
         }
     };
+
 
     return (
         <div className="space-y-4">
@@ -42,15 +43,9 @@ const SignInForm = ({ member, onSign, parentName, latestStatus, groupId }) => {
                 onChange={(e) => setComment(e.target.value)}
             />
             <div style={{ display: 'flex', gap: '8px' }}>
-                {lastAction !== 'signed in' && (
-                    <button onClick={() => handleSubmit('signed in')}>Sign In</button>
-                )}
-                {lastAction === 'signed in' && (
-                    <button onClick={() => handleSubmit('signed out')}>Sign Out</button>
-                )}
+                {lastAction !== 'signed in' && <button onClick={() => handleSubmit('signed in')}>Sign In</button>}
+                {lastAction === 'signed in' && <button onClick={() => handleSubmit('signed out')}>Sign Out</button>}
             </div>
         </div>
     );
-};
-
-export default SignInForm;
+}

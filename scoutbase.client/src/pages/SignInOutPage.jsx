@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import logo from './assets/scoutbase-logo.png';
+import logo from '../assets/scoutbase-logo.png';
 import { Shield } from 'lucide-react';
 
-import { fetchGroupBySlug } from './helpers/groupHelper';
-import { searchParentByNameOrPhone, verifyParentPin } from './helpers/authHelper';
-import { fetchYouthByParentId, saveAttendanceRecord } from './helpers/attendanceHelper';
-import SignInForm from './components/SignInForm';
+import { fetchGroupBySlug } from '../helpers/groupHelper';
+import { verifyPin } from '../helpers/authHelper';
+import { searchParentByNameOrPhone, fetchYouthByParentId } from '../helpers/attendanceHelper';
+
+import SignInForm from '../components/SignInForm';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 const LOCAL_STORAGE_KEY = 'scout-attendance-data';
@@ -82,25 +83,24 @@ export default function SignInOutPage() {
 
     const handleSearch = async () => {
         setError('');
-        const { data: parents, error } = await searchParentByNameOrPhone(searchTerm);
+        const { parent, error: searchError } = await searchParentByNameOrPhone(searchTerm, pin, groupId);
 
-        if (error || !parents?.length) {
-            setError('Invalid name or PIN. Please try again.');
-            return;
-        }
-
-        const parent = parents[0];
-        const isValid = await verifyParentPin(pin, parent.pin_hash);
-
-        if (!isValid || parent.group_id !== groupId) {
-            setError('Invalid name or PIN. Please try again.');
+        if (searchError) {
+            setError(searchError);
             return;
         }
 
         setMatchingParent(parent);
         setParentName(parent.name);
-        const { data: youth } = await fetchYouthByParentId(parent.id);
-        setYouthList(youth || []);
+
+        const { youthList, error: youthError } = await fetchYouthByParentId(parent.id);
+
+        if (youthError) {
+            setError(youthError);
+            return;
+        }
+
+        setYouthList(youthList);
         setSubmitted(true);
     };
 
