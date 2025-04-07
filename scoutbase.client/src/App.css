@@ -124,3 +124,23 @@ a:hover svg {
     width: 90%;
     max-width: 500px;
 }
+
+@media (max-width: 600px) {
+    .scout-container {
+        padding: 1rem;
+    }
+
+    .scout-table th, .scout-table td {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+
+    button {
+        font-size: 1rem;
+        padding: 0.5rem;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+}

@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import logo from './assets/scoutbase-logo.png';
 import { useTerrainUser } from './hooks/useTerrainUser';
 import bcrypt from 'bcryptjs';
-
+import { useLocation } from 'react-router-dom';
 
 
 function RequireAuth({ children }) {
@@ -371,9 +371,9 @@ export default function AdminPage() {
                         ...filteredAttendance.map(({ youth, signIn, signOut }) => [
                             youth.name,
                             youth.section,
-                            signIn ? new Date(signIn.timestamp).toLocaleTimeString() : '',
+                            signIn ? new Date(signIn.timestamp).toLocaleString() : '',
                             signIn?.signed_by || '',
-                            signOut ? new Date(signOut.timestamp).toLocaleTimeString() : '',
+                            signOut ? new Date(signOut.timestamp).toLocaleString() : '',
                             signOut?.signed_by || ''
                         ])
                     ];
