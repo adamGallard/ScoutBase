@@ -158,6 +158,11 @@ const SignInOutPage = ({ group }) => {
             return;
         }
 
+        const filtered = data.find(p => p.group_id === groupId);
+        if (!filtered) {
+            setError('Invalid name or PIN. Please try again.');
+            return;
+        }
         const found = data[0];
         const isValid = await verifyPin(pin, found.pin_hash);
 
