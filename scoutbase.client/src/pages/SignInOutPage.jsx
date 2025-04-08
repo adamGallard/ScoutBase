@@ -8,6 +8,8 @@ import { verifyPin } from '../helpers/authHelper';
 import { searchParentByNameOrPhone, fetchYouthByParentId } from '../helpers/attendanceHelper';
 
 import SignInForm from '../components/SignInForm';
+import { fetchLatestAttendanceForYouthList } from '../helpers/attendanceHelper';
+import { supabase } from '../lib/supabaseClient';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 const LOCAL_STORAGE_KEY = 'scout-attendance-data';
@@ -37,19 +39,8 @@ export default function SignInOutPage() {
 
     const today = getTodayDate();
     const filteredYouthList = youthList.filter((m) => sectionFilter === '' || m.section === sectionFilter);
+    const [latestStatusMap, setLatestStatusMap] = useState({});
 
-    // Load cached attendance
-    useEffect(() => {
-        const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (stored) {
-            setStatusByDate(JSON.parse(stored));
-        }
-    }, []);
-
-    // Save cached attendance
-    useEffect(() => {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(statusByDate));
-    }, [statusByDate]);
 
     // Load group info
     useEffect(() => {
@@ -67,17 +58,9 @@ export default function SignInOutPage() {
         if (groupSlug) loadGroup();
     }, [groupSlug]);
 
-    const handleSign = (memberId, data) => {
-        setStatusByDate((prev) => {
-            const existing = prev[today]?.[memberId] || [];
-            return {
-                ...prev,
-                [today]: {
-                    ...(prev[today] || {}),
-                    [memberId]: [...existing, data],
-                },
-            };
-        });
+    const handleSign = async (memberId, data) => {
+        const newStatusMap = await fetchLatestAttendanceForYouthList(supabase, youthList, groupId);
+        setLatestStatusMap(newStatusMap);
         setSelectedMember(null);
     };
 
@@ -101,6 +84,8 @@ export default function SignInOutPage() {
         }
 
         setYouthList(youthList);
+        const statusMap = await fetchLatestAttendanceForYouthList(supabase, youthList, groupId);
+        setLatestStatusMap(statusMap);
         setSubmitted(true);
     };
 
@@ -193,7 +178,7 @@ export default function SignInOutPage() {
                         {!selectedMember ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                                 {filteredYouthList.map((m) => {
-                                    const latest = statusByDate[today]?.[m.id]?.slice(-1)[0];
+                                    const latest = latestStatusMap[m.id];
                                     return (
                                         <div key={m.id} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px', backgroundColor: '#fff' }}>
                                             <button
@@ -205,7 +190,15 @@ export default function SignInOutPage() {
                                                     <div style={{ fontSize: '0.8rem', color: 'lightgoldenrodyellow' }}>{m.section}</div>
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'lime' : 'tomato' }}>
-                                                    {latest ? `${latest.action} at ${latest.time}` : 'Not signed in'}
+                                                    {latest
+                                                        ? `${latest.action} at ${new Date(latest.timestamp).toLocaleString('en-AU', {
+                                                            weekday: 'short',
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        })}`
+                                                        : 'Not signed in'}
                                                 </div>
                                             </button>
                                         </div>
@@ -218,7 +211,7 @@ export default function SignInOutPage() {
                                     member={selectedMember}
                                     parentName={parentName}
                                     onSign={handleSign}
-                                    latestStatus={statusByDate[today]?.[selectedMember.id]?.slice(-1)[0] || null}
+                                            latestStatus={latestStatusMap[selectedMember.id] || null}
                                     groupId={groupId}
                                 />
                                 <button style={{ marginTop: '12px' }} onClick={() => setSelectedMember(null)}>Back</button>

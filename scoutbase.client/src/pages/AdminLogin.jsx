@@ -54,6 +54,7 @@ export default function AdminLogin() {
                 localStorage.setItem('scoutbase-client-id', clientId);
                 localStorage.setItem('scoutbase-terrain-idtoken', data.AuthenticationResult.IdToken); // For name lookup
                 localStorage.setItem('scoutbase-terrain-token', data.AuthenticationResult.AccessToken); // For fallback
+                localStorage.setItem('scoutbase-terrain-userid', `${region}-${memberId}`);
                 return;
             }
         }

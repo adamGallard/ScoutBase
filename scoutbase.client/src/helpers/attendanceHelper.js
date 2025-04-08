@@ -35,3 +35,26 @@ export const fetchYouthByParentId = async (parentId) => {
 
     return { youthList: data.map((entry) => entry.youth) };
 };
+
+
+export async function fetchLatestAttendanceForYouthList(supabase, youthList, groupId) {
+    const today = new Date().toISOString().split("T")[0];
+    const statuses = {};
+
+    for (const youth of youthList) {
+        const { data, error } = await supabase
+            .from("attendance")
+            .select("*")
+            .eq("youth_id", youth.id)
+            .eq("group_id", groupId)
+            .gte("timestamp", `${today}T00:00:00`)
+            .order("timestamp", { ascending: false })
+            .limit(1);
+
+        if (!error && data.length > 0) {
+            statuses[youth.id] = data[0];
+        }
+    }
+
+    return statuses;
+}
