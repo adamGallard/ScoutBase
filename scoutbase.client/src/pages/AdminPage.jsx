@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import logo from '../assets/scoutbase-logo.png';
 import { useNavigate } from 'react-router-dom';
 import { useTerrainUser } from '../hooks/useTerrainUser';
+import UserManagementView from '../components/admin/UserManagementView';
 
 import RequireAuth from '../components/RequireAuth';
 import Sidebar from '../components/admin/Sidebar';
@@ -77,10 +78,13 @@ export default function AdminPage() {
                 );
             case 'add-youth':
                 return <YouthView groupId={activeGroupId} />;
+case 'user-management':
+  return <UserManagementView activeGroupId={activeGroupId} />;
             default:
                 return <p>Coming soon...</p>;
         }
     };
+
 
     return (
         <RequireAuth>
@@ -137,7 +141,7 @@ export default function AdminPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexGrow: 1 }}>
-                    <Sidebar onNavigate={setView} />
+                    <Sidebar onNavigate={setView} userInfo={userInfo} />
                     <div className="scout-container">{renderContent()}</div>
                 </div>
             </div>

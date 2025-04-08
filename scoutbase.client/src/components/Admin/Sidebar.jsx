@@ -7,7 +7,8 @@ import {
     BarChart2,
     Menu,
     ArrowLeft,
-    LogOut
+    LogOut,
+    User
 } from 'lucide-react';
 
 const btnStyle = {
@@ -25,7 +26,7 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
-export default function Sidebar({ onNavigate }) {
+export default function Sidebar({ onNavigate, userInfo }) {
     const [collapsed, setCollapsed] = useState(false);
     const navItems = [
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
@@ -34,6 +35,9 @@ export default function Sidebar({ onNavigate }) {
         { key: 'link', label: 'Link Parent/Youth', icon: <Link2 size={16} /> },
         { key: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
     ];
+    if (userInfo?.role === 'superadmin') {
+        navItems.push({ key: 'user-management', label: 'Users', icon: <User size={16} /> });
+    }
 
     return (
         <div
