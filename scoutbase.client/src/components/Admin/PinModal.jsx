@@ -4,8 +4,8 @@ import { supabase } from '../../lib/supabaseClient';
 
 export default function PinModal({ parentId, onClose, groupId }) {
     const [newPin, setNewPin] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [error]= useState('');
+    const [loading] = useState(false);
 
     const handleSave = async () => {
         if (!newPin || newPin.length !== 4) {

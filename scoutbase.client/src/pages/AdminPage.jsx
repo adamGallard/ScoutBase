@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import logo from '../assets/scoutbase-logo.png';
-import { useNavigate } from 'react-router-dom';
 import { useTerrainUser } from '../hooks/useTerrainUser';
 import UserManagementView from '../components/admin/UserManagementView';
 

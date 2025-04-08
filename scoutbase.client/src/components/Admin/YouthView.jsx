@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
+import { useCallback } from 'react';
 
 export default function YouthView({ groupId }) {
     const [youthList, setYouthList] = useState([]);
@@ -9,18 +10,18 @@ export default function YouthView({ groupId }) {
     const [filter, setFilter] = useState('');
     const [sectionFilter, setSectionFilter] = useState('');
 
-    useEffect(() => {
-        if (groupId) fetchYouth();
-    }, [groupId]);
-
-    const fetchYouth = async () => {
+    const fetchYouth = useCallback(async () => {
         const { data } = await supabase
             .from('youth')
             .select('id, name, dob, section, membership_stage')
             .eq('group_id', groupId)
             .order('name');
         setYouthList(data || []);
-    };
+    }, [groupId]);
+
+    useEffect(() => {
+        if (groupId) fetchYouth();
+    }, [groupId, fetchYouth]);
 
     const addYouth = async () => {
         if (!youthForm.name || !youthForm.dob || !youthForm.section) return;

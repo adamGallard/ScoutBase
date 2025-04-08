@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Link2, Key, Check, X } from 'lucide-react';
+import { useCallback } from 'react';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal }) {
     const [parents, setParents] = useState([]);
@@ -8,18 +9,18 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
 
-    useEffect(() => {
-        if (groupId) fetchParents();
-    }, [groupId]);
-
-    const fetchParents = async () => {
+    const fetchParents = useCallback(async () => {
         const { data } = await supabase
             .from('parent')
             .select('*')
             .eq('group_id', groupId)
             .order('name');
-        setParents(data || []);
-    };
+        if (data) setParents(data);
+    }, [groupId]);
+
+    useEffect(() => {
+        if (groupId) fetchParents();
+    }, [groupId, fetchParents]);
 
     const addParent = async () => {
         if (!formData.name || !formData.email || !formData.phone) return;

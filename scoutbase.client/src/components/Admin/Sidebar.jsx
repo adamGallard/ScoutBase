@@ -8,7 +8,7 @@ import {
     Menu,
     ArrowLeft,
     LogOut,
-    User
+    User,
 } from 'lucide-react';
 
 const btnStyle = {
@@ -28,6 +28,7 @@ const btnStyle = {
 
 export default function Sidebar({ onNavigate, userInfo }) {
     const [collapsed, setCollapsed] = useState(false);
+
     const navItems = [
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
         { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
@@ -35,9 +36,20 @@ export default function Sidebar({ onNavigate, userInfo }) {
         { key: 'link', label: 'Link Parent/Youth', icon: <Link2 size={16} /> },
         { key: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
     ];
+
     if (userInfo?.role === 'superadmin') {
         navItems.push({ key: 'user-management', label: 'Users', icon: <User size={16} /> });
     }
+
+    const handleLogout = () => {
+        localStorage.removeItem('scoutbase-admin-authed');
+        localStorage.removeItem('scoutbase-terrain-idtoken');
+        localStorage.removeItem('scoutbase-terrain-token');
+        localStorage.removeItem('scoutbase-role');
+        localStorage.removeItem('scoutbase-group-id');
+        localStorage.removeItem('scoutbase-client-id');
+        window.location.href = '/admin-login';
+    };
 
     return (
         <div
@@ -68,18 +80,10 @@ export default function Sidebar({ onNavigate, userInfo }) {
                 ))}
 
                 <li style={{ marginTop: 'auto', width: '100%' }}>
-                    <button
-                        onClick={() => {
-                            localStorage.removeItem('scoutbase-admin-authed');
-                            localStorage.removeItem('scoutbase-terrain-token');
-                            localStorage.removeItem('scoutbase-username');
-                            window.location.href = '/admin-login';
-                        }}
-                        style={{ ...btnStyle, color: '#b00' }}
-                    >
+                    <button onClick={handleLogout} style={{ ...btnStyle, color: '#b00' }}>
                         {!collapsed ? (
                             <>
-                                <LogOut size={16} style={{ marginRight: '8px' }} />Logout
+                                <LogOut size={16} style={{ marginRight: '8px' }} /> Logout
                             </>
                         ) : (
                             <LogOut size={16} />

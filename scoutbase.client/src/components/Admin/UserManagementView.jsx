@@ -1,24 +1,27 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
+import { useCallback } from 'react';
 
 export default function UserManagementView({ activeGroupId }) {
     const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({ name: '', email: '', role: 'admin', terrain_user_id: '' });
     const [editingUserId, setEditingUserId] = useState(null);
 
-    useEffect(() => {
-        if (activeGroupId) fetchUsers();
-    }, [activeGroupId]);
-
-    const fetchUsers = async () => {
+        const fetchUsers = useCallback(async () => {
         const { data } = await supabase
             .from('users')
             .select('id, name, email, role, terrain_user_id')
             .eq('group_id', activeGroupId)
             .order('name');
         setUsers(data || []);
-    };
+    }, [activeGroupId]);
+
+    useEffect(() => {
+        if (activeGroupId) fetchUsers();
+    }, [activeGroupId, fetchUsers]);
+
+
 
     const addUser = async () => {
         if (!formData.name || !formData.email || !formData.terrain_user_id) return;
