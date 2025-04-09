@@ -12,13 +12,12 @@ import SignInForm from '../components/SignInForm';
 import Footer from '../components/Footer';
 import {
     PageWrapper,
-    Header,
-    TitleGroup,
-    Nav,
     Main,
     Content,
     LogoWrapper
 } from '../components/SharedStyles';
+import Header from '../components/Header';
+
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 const LOCAL_STORAGE_KEY = 'scout-attendance-data';
@@ -106,19 +105,7 @@ export default function SignInOutPage() {
     if (groupNotFound) {
         return (
             <PageWrapper>
-                <Header>
-                    <TitleGroup>
-                        <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
-                        <strong>ScoutBase</strong>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Built for Scouts</span>
-                    </TitleGroup>
-                    <Nav>
-                        <a href="/">Home</a>
-                        <a href="mailto:281959@scoutsqld.com.au">Contact</a>
-                        <a href="/privacy">Privacy</a>
-                        <a href="/admin-login"> Admin Area</a>
-                    </Nav>
-                </Header>
+                <Header />
 
      
                 <Main style={{ display: 'block', maxWidth: '48rem', margin: '0 auto' }}>
@@ -135,19 +122,7 @@ export default function SignInOutPage() {
 
     return (
         <PageWrapper>
-            <Header>
-                <TitleGroup>
-                    <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
-                    <strong>ScoutBase</strong>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Built for Scouts</span>
-                </TitleGroup>
-                <Nav>
-                    <a href="/">Home</a>
-                    <a href="mailto:281959@scoutsqld.com.au">Contact</a>
-                    <a href="/privacy">Privacy</a>
-                    <a href="/admin-login"> Admin Area</a>
-                </Nav>
-            </Header>
+            <Header />
 
             {submitted && matchingParent && (
                 <div

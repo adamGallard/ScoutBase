@@ -1,28 +1,16 @@
 import React from 'react';
 import {
     PageWrapper,
-    Header,
-    TitleGroup,
-    Nav,
     Main,
     Content,
 } from '../components/SharedStyles';
 import Footer from '../components/Footer'; // from separate file
+import Header from '../components/Header';
 
 const Privacy = () => (
     <PageWrapper>
-        <Header>
-            <TitleGroup>
-                <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
-                <strong>ScoutBase</strong>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Built for Scouts</span>
-            </TitleGroup>
-            <Nav>
-                <a href="/">Home</a>
-                <a href="/features">Features</a>
-                <a href="mailto:281959@scoutsqld.com.au">Contact</a>
-            </Nav>
-        </Header>
+        <Header />
+           
 
         <Main style={{ display: 'block', maxWidth: '48rem', margin: '0 auto' }}>
             <Content>

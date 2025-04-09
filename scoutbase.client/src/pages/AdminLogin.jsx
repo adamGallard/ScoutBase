@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     PageWrapper,
-    Header,
-    TitleGroup,
-    Nav,
     Main,
     Content
 } from '../components/SharedStyles';
 import Footer from '../components/Footer';
-import { Shield } from 'lucide-react';
+import Header from '../components/Header';
 
 const branches = [
     { label: 'QLD', value: 'qld' },
@@ -88,19 +85,8 @@ export default function AdminLogin() {
 
     return (
         <PageWrapper>
-            <Header>
-                <TitleGroup>
-                    <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
-                    <strong>ScoutBase</strong>
-                    <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Admin Area</span>
-                </TitleGroup>
-                <Nav>
-                    <a href="/">Home</a>
-                    <a href="mailto:281959@scoutsqld.com.au">Contact</a>
-                    <a href="/privacy">Privacy</a>
-                </Nav>
-            </Header>
-
+            <Header />
+               
             <Main style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
                 <Content style={{ maxWidth: '400px', width: '100%' }}>
                     <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
