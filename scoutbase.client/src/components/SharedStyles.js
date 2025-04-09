@@ -16,11 +16,30 @@ export const Header = styled.header`
   padding: 1.5rem 2rem;
   border-bottom: 1px solid #e5e7eb;
 `;
+export const HeaderBar = styled.header`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e5e7eb;
+`;
 
 export const TitleGroup = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    background-color: #facc15;
+    border-radius: 9999px;
+  }
+
+  .tagline {
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
 `;
 
 export const Nav = styled.nav`

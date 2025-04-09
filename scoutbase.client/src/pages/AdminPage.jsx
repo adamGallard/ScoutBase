@@ -12,12 +12,9 @@ import GroupManagementView from '../components/admin/GroupManagementView';
 import PinModal from '../components/admin/PinModal';
 import LinkModal from '../components/admin/LinkModal';
 import Footer from '../components/Footer';
-
+import Header from '../components/Header';
 import {
     PageWrapper,
-    Header,
-    TitleGroup,
-    Nav,
     Content
 } from '../components/SharedStyles';
 
@@ -115,18 +112,8 @@ export default function AdminPage() {
             )}
 
             <PageWrapper style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header>
-                    <TitleGroup>
-                        <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
-                        <strong>ScoutBase</strong>
-                        <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Admin Area</span>
-                    </TitleGroup>
-                    <Nav>
-                        <a href="/">Home</a>
-                        <a href="mailto:281959@scoutsqld.com.au">Contact</a>
-                        <a href="/privacy">Privacy</a>
-                    </Nav>
-                </Header>
+                <Header />
+                    
 
                 <div style={{ display: 'flex', flex: 1 }}>
                     <Sidebar onNavigate={setView} userInfo={userInfo} />

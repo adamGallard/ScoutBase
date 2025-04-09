@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import bcrypt from 'bcryptjs';
 import { supabase } from '../../lib/supabaseClient';
+import styled from 'styled-components';
 
 export default function PinModal({ parentId, onClose, groupId }) {
     const [newPin, setNewPin] = useState('');
-    const [error]= useState('');
+    const [error] = useState('');
     const [loading] = useState(false);
 
     const handleSave = async () => {
@@ -21,7 +22,7 @@ export default function PinModal({ parentId, onClose, groupId }) {
                 .from('parent')
                 .update({ pin_hash: hashedPin })
                 .eq('id', parentId)
-                .eq('group_id', groupId); // Optional, but good to include
+                .eq('group_id', groupId);
 
             if (error) {
                 console.error('Error saving pin:', error);
@@ -36,8 +37,8 @@ export default function PinModal({ parentId, onClose, groupId }) {
     };
 
     return (
-        <div className="modal-overlay">
-            <div className="modal">
+        <ModalOverlay>
+            <ModalBox>
                 <h3>Update PIN</h3>
                 <p>Enter a new 4-digit PIN for this parent:</p>
                 <input
@@ -49,11 +50,79 @@ export default function PinModal({ parentId, onClose, groupId }) {
                     disabled={loading}
                 />
                 {error && <p style={{ color: 'red' }}>{error}</p>}
-                <div style={{ marginTop: '1rem', display: 'flex', gap: '1rem' }}>
+                <ButtonRow>
                     <button onClick={handleSave} disabled={loading}>Save</button>
                     <button onClick={onClose} disabled={loading}>Cancel</button>
-                </div>
-            </div>
-        </div>
+                </ButtonRow>
+            </ModalBox>
+        </ModalOverlay>
     );
 }
+
+// Styled components
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+`;
+
+const ModalBox = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: sans-serif; 
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    margin: 1rem 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    background: #0F5BA4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+
+    &:hover {
+      background: #0c4784;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+`;
+
+
+const ButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+`;
