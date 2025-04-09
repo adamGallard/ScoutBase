@@ -66,7 +66,7 @@ const Header = () => {
             <Nav>
                 <a href="/">Home</a>
                 <a href="/features">Features</a>
-                <a href="mailto:281959@scoutsqld.com.au">Contact</a>
+                <a href="mailto:281595@scoutsqld.com.au">Contact</a>
                 <a href="/privacy">Privacy</a>
                 <a href="/admin-login">Admin Area</a>
             </Nav>
@@ -85,7 +85,7 @@ const Header = () => {
                 <MobileDropdown>
                     <a href="/">Home</a>
                     <a href="/features">Features</a>
-                    <a href="mailto:281959@scoutsqld.com.au">Contact</a>
+                    <a href="mailto:281595@scoutsqld.com.au">Contact</a>
                     <a href="/privacy">Privacy</a>
                 </MobileDropdown>
             )}
