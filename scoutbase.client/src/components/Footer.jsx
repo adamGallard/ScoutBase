@@ -56,7 +56,7 @@ const Footer = () => (
             </Section>
 
             <Section>
-                <FooterLink href="mailto:281959@scoutsqld.com.au">Support</FooterLink>
+                <FooterLink href="mailto:281595@scoutsqld.com.au">Support</FooterLink>
                 <FooterLink href="/privacy">Privacy Policy</FooterLink>
             </Section>
 
