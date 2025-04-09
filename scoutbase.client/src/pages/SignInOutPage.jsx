@@ -5,11 +5,20 @@ import { Shield } from 'lucide-react';
 
 import { fetchGroupBySlug } from '../helpers/groupHelper';
 import { verifyPin } from '../helpers/authHelper';
-import { searchParentByNameOrPhone, fetchYouthByParentId } from '../helpers/attendanceHelper';
+import { searchParentByNameOrPhone, fetchYouthByParentId, fetchLatestAttendanceForYouthList } from '../helpers/attendanceHelper';
+import { supabase } from '../lib/supabaseClient';
 
 import SignInForm from '../components/SignInForm';
-import { fetchLatestAttendanceForYouthList } from '../helpers/attendanceHelper';
-import { supabase } from '../lib/supabaseClient';
+import Footer from '../components/Footer';
+import {
+    PageWrapper,
+    Header,
+    TitleGroup,
+    Nav,
+    Main,
+    Content,
+    LogoWrapper
+} from '../components/SharedStyles';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 const LOCAL_STORAGE_KEY = 'scout-attendance-data';
@@ -42,11 +51,16 @@ export default function SignInOutPage() {
     const [latestStatusMap, setLatestStatusMap] = useState({});
 
 
-    // Load group info
+
+
     useEffect(() => {
         const loadGroup = async () => {
             const { data, error } = await fetchGroupBySlug(groupSlug);
             if (data) {
+                if (!data.active) {
+                    setGroupNotFound(true); // Treat inactive group like not found
+                    return;
+                }
                 setGroupId(data.id);
                 setGroupName(data.name);
                 setGroupNotFound(false);
@@ -91,150 +105,233 @@ export default function SignInOutPage() {
 
     if (groupNotFound) {
         return (
-            <div className="scout-container">
-                <h1>Group Not Found</h1>
-                <p>We couldn't find the Scout group you're looking for. Please check the link or contact your Scout leader.</p>
-                <Link to="/">Return to Home</Link>
-            </div>
+            <PageWrapper>
+                <Header>
+                    <TitleGroup>
+                        <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
+                        <strong>ScoutBase</strong>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Built for Scouts</span>
+                    </TitleGroup>
+                    <Nav>
+                        <a href="/">Home</a>
+                        <a href="mailto:281959@scoutsqld.com.au">Contact</a>
+                        <a href="/privacy">Privacy</a>
+                        <a href="/admin-login"> Admin Area</a>
+                    </Nav>
+                </Header>
+
+     
+                <Main style={{ display: 'block', maxWidth: '48rem', margin: '0 auto' }}>
+                    <Content style={{ maxWidth: '600px', margin: '0 auto' }}>
+                        <h1>Group Not Found</h1>
+                        <p>We couldn't find the Scout group you're looking for. Please check the link or contact your Scout leader.</p>
+                        <Link to="/">Return to Home</Link>
+                    </Content>
+                </Main>
+                <Footer />
+            </PageWrapper>
         );
     }
 
     return (
-        <>
-            <img src={logo} alt="ScoutBase Logo" style={{ maxWidth: '150px', margin: '1rem auto 0', display: 'block' }} />
-            <div className="scout-container">
-                <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
-                    <Link to="/admin-login" title="Admin Area" style={{ color: '#0F5BA4' }}>
-                        <Shield size={30} />
-                    </Link>
-                </div>
+        <PageWrapper>
+            <Header>
+                <TitleGroup>
+                    <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
+                    <strong>ScoutBase</strong>
+                    <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Built for Scouts</span>
+                </TitleGroup>
+                <Nav>
+                    <a href="/">Home</a>
+                    <a href="mailto:281959@scoutsqld.com.au">Contact</a>
+                    <a href="/privacy">Privacy</a>
+                    <a href="/admin-login"> Admin Area</a>
+                </Nav>
+            </Header>
 
-                <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.25rem' }}>
-                    {groupName ? `${groupName} Sign In / Out` : 'Scout Sign In / Out'}
-                </h1>
-                <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
-                    Enter your name to see the youth members linked to you. Then select a child to sign them in or out, with an optional comment.
-                </p>
-
-                {!submitted ? (
-                    <form
-                        onSubmit={async (e) => {
-                            e.preventDefault();
-                            await handleSearch();
+            {submitted && matchingParent && (
+                <div
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        boxSizing: 'border-box',
+                        maxWidth: '72rem',
+                        margin: '0 auto',
+                        padding: '0.5rem 1rem',
+                    }}
+                >
+                    <span
+                        style={{
+                            fontSize: '0.875rem',
+                            color: '#0F5BA4',
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
                         }}
-                        className="text-center"
                     >
-                        <div className="space-y-4">
-                            <input
-                                type="text"
-                                placeholder="Enter parent name or phone number"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-                            />
-                            <input
-                                type="password"
-                                placeholder="Enter 4-digit PIN"
-                                value={pin}
-                                onChange={(e) => setPin(e.target.value)}
-                                style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
-                            />
-                            <button type="submit" style={{ padding: '0.5rem 1rem' }}>
-                                Continue
-                            </button>
-                            {error && <p style={{ color: 'red' }}>{error}</p>}
-                        </div>
-                    </form>
-                ) : (
-                    <>
-                        {loading && <p>Loading children...</p>}
+                        Logged in as: {matchingParent.name}
+                    </span>
+                </div>
+            )}
 
-                        {!selectedMember && (
-                            <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div>
-                                    <label htmlFor="sectionFilter" style={{ display: 'block', fontWeight: 'bold', color: '#333' }}>
-                                        Filter by section:
-                                    </label>
-                                    <select
-                                        id="sectionFilter"
-                                        value={sectionFilter}
-                                        onChange={(e) => setSectionFilter(e.target.value)}
-                                    >
-                                        <option value="">All</option>
-                                        <option value="Joeys">Joeys</option>
-                                        <option value="Cubs">Cubs</option>
-                                        <option value="Scouts">Scouts</option>
-                                        <option value="Venturers">Venturers</option>
-                                    </select>
-                                </div>
-                                {matchingParent && (
-                                    <div style={{ fontWeight: 'bold', color: '#0F5BA4' }}>
-                                        Logged in as: {matchingParent.name}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {!selectedMember ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                {filteredYouthList.map((m) => {
-                                    const latest = latestStatusMap[m.id];
-                                    return (
-                                        <div key={m.id} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '12px', backgroundColor: '#fff' }}>
-                                            <button
-                                                style={{ width: '100%', display: 'flex', justifyContent: 'space-between', padding: '8px' }}
-                                                onClick={() => setSelectedMember(m)}
-                                            >
-                                                <div>
-                                                    <div>{m.name}</div>
-                                                    <div style={{ fontSize: '0.8rem', color: 'lightgoldenrodyellow' }}>{m.section}</div>
-                                                </div>
-                                                <div style={{ fontSize: '0.8rem', textAlign: 'right', color: latest?.action === 'signed in' ? 'lime' : 'tomato' }}>
-                                                    {latest
-                                                        ? `${latest.action} at ${new Date(latest.timestamp).toLocaleString('en-AU', {
-                                                            weekday: 'short',
-                                                            month: 'short',
-                                                            day: 'numeric',
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        })}`
-                                                        : 'Not signed in'}
-                                                </div>
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <>
-                                <SignInForm
-                                    member={selectedMember}
-                                    parentName={parentName}
-                                    onSign={handleSign}
-                                            latestStatus={latestStatusMap[selectedMember.id] || null}
-                                    groupId={groupId}
-                                />
-                                <button style={{ marginTop: '12px' }} onClick={() => setSelectedMember(null)}>Back</button>
-                            </>
-                        )}
-
-                        <button
-                            style={{ marginTop: '1rem' }}
-                            onClick={() => {
-                                setSubmitted(false);
-                                setParentName('');
-                                setSearchTerm('');
-                                setPin('');
-                                setMatchingParent(null);
-                                setYouthList([]);
-                                setSelectedMember(null);
-                            }}
-                        >
-                            Switch Parent
-                        </button>
-                    </>
+            <Main style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+                {!submitted && (
+                    <LogoWrapper>
+                        <img src={logo} alt="ScoutBase Logo" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+                    </LogoWrapper>
                 )}
-            </div>
-        </>
+
+                <Content style={{ maxWidth: '500px', margin: '0 auto', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+
+                    <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.25rem' }}>
+                        {groupName ? `${groupName}` : 'Scout Group'}
+                    </h1>
+                    <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.25rem' }}>
+                        Sign In / Out
+                    </h1>
+                        <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
+                        Enter your name to see the youth members linked to you. Then select a child to sign them in or out, with an optional comment.
+                    </p>
+
+                    {!submitted ? (
+                        <form
+                            onSubmit={async (e) => {
+                                e.preventDefault();
+                                await handleSearch();
+                            }}
+                            className="text-center"
+                        >
+                            <div className="space-y-4">
+                                <input
+                                    type="text"
+                                    placeholder="Enter parent name or phone number"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    style={{ width: '100%', maxWidth: '300px', margin: '0 auto 1rem', padding: '0.5rem' }}
+                                />
+                                <input
+                                    type="password"
+                                    placeholder="Enter 4-digit PIN"
+                                    value={pin}
+                                    onChange={(e) => setPin(e.target.value)}
+                                    style={{ width: '100%', maxWidth: '300px', margin: '0 auto 1rem', padding: '0.5rem' }}
+                                />
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
+                                    <button type="submit" style={{ padding: '0.5rem 1rem' }}>
+                                        Continue
+                                    </button>
+                                </div>
+                                {error && <p style={{ color: 'red' }}>{error}</p>}
+                            </div>
+                        </form>
+                    ) : (
+                        <>
+                            {loading && <p>Loading children...</p>}
+
+                            {!selectedMember && (
+                                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <label htmlFor="sectionFilter" style={{ display: 'block', fontWeight: 'bold', color: '#333' }}>
+                                            Filter by section:
+                                        </label>
+                                        <select
+                                            id="sectionFilter"
+                                            value={sectionFilter}
+                                            onChange={(e) => setSectionFilter(e.target.value)}
+                                        >
+                                            <option value="">All</option>
+                                            <option value="Joeys">Joeys</option>
+                                            <option value="Cubs">Cubs</option>
+                                            <option value="Scouts">Scouts</option>
+                                            <option value="Venturers">Venturers</option>
+                                        </select>
+                                    </div>
+
+                                </div>
+                            )}
+
+                            {!selectedMember ? (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+                                    {filteredYouthList.map((m) => {
+                                        const latest = latestStatusMap[m.id];
+                                        return (
+                                            <div key={m.id} style={{ border: '1px solid #ccc', borderRadius: '8px', padding: '16px', backgroundColor: '#fff', maxWidth: '600px', width: '100%', margin: '0 auto' }}>
+                                                <button
+                                                    style={{
+                                                        width: '100%',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '0.75rem 1rem',
+                                                        fontWeight: '600',
+                                                        borderRadius: '6px',
+                                                        backgroundColor: '#ffffff',
+                                                        border: '1px solid #d1d5db',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                    onClick={() => setSelectedMember(m)}
+                                                >
+                                                    <div>
+                                                        <div>{m.name}</div>
+                                                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{m.section}</div>
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.75rem',
+                                                        color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
+                                                        fontWeight: 'bold',
+                                                        textAlign: 'right'
+                                                    }}>
+                                                        {latest
+                                                            ? `${latest.action} at ${new Date(latest.timestamp).toLocaleString('en-AU', {
+                                                                weekday: 'short',
+                                                                month: 'short',
+                                                                day: 'numeric',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                            })}`
+                                                            : 'Not signed in'}
+                                                    </div>
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <>
+                                    <SignInForm
+                                        member={selectedMember}
+                                        parentName={parentName}
+                                        onSign={handleSign}
+                                        latestStatus={latestStatusMap[selectedMember.id] || null}
+                                        groupId={groupId}
+                                    />
+                                    <button style={{ marginTop: '12px' }} onClick={() => setSelectedMember(null)}>Back</button>
+                                </>
+                            )}
+
+                            <button
+                                style={{ marginTop: '1rem' }}
+                                onClick={() => {
+                                    setSubmitted(false);
+                                    setParentName('');
+                                    setSearchTerm('');
+                                    setPin('');
+                                    setMatchingParent(null);
+                                    setYouthList([]);
+                                    setSelectedMember(null);
+                                }}
+                            >
+                                Switch Parent
+                            </button>
+                        </>
+                    )}
+                </Content>
+            </Main>
+
+            <Footer />
+        </PageWrapper>
     );
 }

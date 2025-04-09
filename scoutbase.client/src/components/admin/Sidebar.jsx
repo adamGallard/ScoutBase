@@ -9,6 +9,7 @@ import {
     ArrowLeft,
     LogOut,
     User,
+    MapPin,
 } from 'lucide-react';
 
 const btnStyle = {
@@ -39,6 +40,7 @@ export default function Sidebar({ onNavigate, userInfo }) {
 
     if (userInfo?.role === 'superadmin') {
         navItems.push({ key: 'user-management', label: 'Users', icon: <User size={16} /> });
+        navItems.push({ key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> });
     }
 
     const handleLogout = () => {

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Link2, Key, Check, X } from 'lucide-react';
-import { useCallback } from 'react';
+import { AdminTable } from '../SharedStyles';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal }) {
     const [parents, setParents] = useState([]);
@@ -32,7 +32,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
     const updateParent = async (id) => {
         await supabase.from('parent').update(formData).eq('id', id);
         setEditingParentId(null);
-        setFormData({ name: '', email: '', phone: '' }); 
+        setFormData({ name: '', email: '', phone: '' });
         fetchParents();
     };
 
@@ -50,35 +50,64 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
     return (
         <div className="content-box">
             <h2>Parents</h2>
+
             <input
                 type="text"
                 placeholder="Search"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value.toLowerCase())}
-                style={{ marginBottom: '1rem' }}
+                style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
             />
-            <table className="scout-table">
+
+            <AdminTable>
                 <thead>
                     <tr>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
-                        <th>Actions</th>
+                        <th style={{ width: '140px' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {sortedFiltered.map(p => (
                         <tr key={p.id}>
-                            <td>{editingParentId === p.id ? <input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} /> : p.name}</td>
-                            <td>{editingParentId === p.id ? <input value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} /> : p.email}</td>
-                            <td>{editingParentId === p.id ? <input value={formData.phone} onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))} /> : p.phone}</td>
                             <td>
+                                {editingParentId === p.id ? (
+                                    <input
+                                        value={formData.name}
+                                        onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                                    />
+                                ) : (
+                                    p.name
+                                )}
+                            </td>
+                            <td>
+                                {editingParentId === p.id ? (
+                                    <input
+                                        value={formData.email}
+                                        onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))}
+                                    />
+                                ) : (
+                                    p.email
+                                )}
+                            </td>
+                            <td>
+                                {editingParentId === p.id ? (
+                                    <input
+                                        value={formData.phone}
+                                        onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+                                    />
+                                ) : (
+                                    p.phone
+                                )}
+                            </td>
+                            <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingParentId === p.id ? (
                                     <>
                                         <button onClick={() => updateParent(p.id)}><Check size={16} /></button>
                                         <button onClick={() => {
                                             setEditingParentId(null);
-                                            setFormData({ name: '', email: '', phone: '' }); 
+                                            setFormData({ name: '', email: '', phone: '' });
                                         }}>
                                             <X size={16} />
                                         </button>
@@ -94,16 +123,35 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                             </td>
                         </tr>
                     ))}
+
+                    {/* Add new parent row */}
                     {editingParentId === null && (
                         <tr>
-                            <td><input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} /></td>
-                            <td><input value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} /></td>
-                            <td><input value={formData.phone} onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))} /></td>
-                            <td><button onClick={addParent}><Plus size={16} /></button></td>
+                            <td>
+                                <input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.email}
+                                    onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <button onClick={addParent}><Plus size={16} /></button>
+                            </td>
                         </tr>
                     )}
                 </tbody>
-            </table>
+            </AdminTable>
         </div>
     );
 }

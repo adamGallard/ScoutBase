@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
-import { useCallback } from 'react';
+import { AdminTable } from '../SharedStyles';
 
 export default function YouthView({ groupId }) {
     const [youthList, setYouthList] = useState([]);
@@ -54,14 +54,20 @@ export default function YouthView({ groupId }) {
     return (
         <div className="content-box">
             <h2>Youth</h2>
+
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                 <input
                     type="text"
                     placeholder="Search"
                     value={filter}
                     onChange={(e) => setFilter(e.target.value.toLowerCase())}
+                    style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                 />
-                <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)}>
+                <select
+                    value={sectionFilter}
+                    onChange={(e) => setSectionFilter(e.target.value)}
+                    style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
+                >
                     <option value="">All Sections</option>
                     <option value="Joeys">Joeys</option>
                     <option value="Cubs">Cubs</option>
@@ -69,7 +75,8 @@ export default function YouthView({ groupId }) {
                     <option value="Venturers">Venturers</option>
                 </select>
             </div>
-            <table className="scout-table">
+
+            <AdminTable>
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -82,30 +89,51 @@ export default function YouthView({ groupId }) {
                 <tbody>
                     {filteredList.map((y) => (
                         <tr key={y.id}>
-                            <td>{editingYouthId === y.id
-                                ? <input value={youthForm.name} onChange={(e) => setYouthForm(f => ({ ...f, name: e.target.value }))} />
-                                : y.name}</td>
-                            <td>{editingYouthId === y.id
-                                ? <input type="date" value={youthForm.dob} onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))} />
-                                : y.dob}</td>
-                            <td>{editingYouthId === y.id
-                                ? <select value={youthForm.section} onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}>
-                                    <option value="">Select</option>
-                                    <option value="Joeys">Joeys</option>
-                                    <option value="Cubs">Cubs</option>
-                                    <option value="Scouts">Scouts</option>
-                                    <option value="Venturers">Venturers</option>
-                                </select>
-                                : y.section}</td>
-                            <td>{editingYouthId === y.id
-                                ? <select value={youthForm.membership_stage || ''} onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}>
-                                    <option value="">Select</option>
-                                    <option value="Have a Go">Have a Go</option>
-                                    <option value="Linking">Linking</option>
-                                    <option value="Invested">Invested</option>
-                                </select>
-                                : (y.membership_stage || '-')}</td>
                             <td>
+                                {editingYouthId === y.id ? (
+                                    <input
+                                        value={youthForm.name}
+                                        onChange={(e) => setYouthForm(f => ({ ...f, name: e.target.value }))}
+                                    />
+                                ) : y.name}
+                            </td>
+                            <td>
+                                {editingYouthId === y.id ? (
+                                    <input
+                                        type="date"
+                                        value={youthForm.dob}
+                                        onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))}
+                                    />
+                                ) : y.dob}
+                            </td>
+                            <td>
+                                {editingYouthId === y.id ? (
+                                    <select
+                                        value={youthForm.section}
+                                        onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="Joeys">Joeys</option>
+                                        <option value="Cubs">Cubs</option>
+                                        <option value="Scouts">Scouts</option>
+                                        <option value="Venturers">Venturers</option>
+                                    </select>
+                                ) : y.section}
+                            </td>
+                            <td>
+                                {editingYouthId === y.id ? (
+                                    <select
+                                        value={youthForm.membership_stage || ''}
+                                        onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}
+                                    >
+                                        <option value="">Select</option>
+                                        <option value="Have a Go">Have a Go</option>
+                                        <option value="Linking">Linking</option>
+                                        <option value="Invested">Invested</option>
+                                    </select>
+                                ) : (y.membership_stage || '-')}
+                            </td>
+                            <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingYouthId === y.id ? (
                                     <>
                                         <button onClick={() => updateYouth(y.id)}><Check size={16} /></button>
@@ -123,12 +151,27 @@ export default function YouthView({ groupId }) {
                             </td>
                         </tr>
                     ))}
+
                     {editingYouthId === null && (
                         <tr>
-                            <td><input value={youthForm.name} onChange={(e) => setYouthForm(f => ({ ...f, name: e.target.value }))} /></td>
-                            <td><input type="date" value={youthForm.dob} onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))} /></td>
                             <td>
-                                <select value={youthForm.section} onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}>
+                                <input
+                                    value={youthForm.name}
+                                    onChange={(e) => setYouthForm(f => ({ ...f, name: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    type="date"
+                                    value={youthForm.dob}
+                                    onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <select
+                                    value={youthForm.section}
+                                    onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}
+                                >
                                     <option value="">Select</option>
                                     <option value="Joeys">Joeys</option>
                                     <option value="Cubs">Cubs</option>
@@ -137,18 +180,23 @@ export default function YouthView({ groupId }) {
                                 </select>
                             </td>
                             <td>
-                                <select value={youthForm.membership_stage} onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}>
+                                <select
+                                    value={youthForm.membership_stage}
+                                    onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}
+                                >
                                     <option value="">Select</option>
                                     <option value="Have a Go">Have a Go</option>
                                     <option value="Linking">Linking</option>
                                     <option value="Invested">Invested</option>
                                 </select>
                             </td>
-                            <td><button onClick={addYouth}><Plus size={16} /></button></td>
+                            <td>
+                                <button onClick={addYouth}><Plus size={16} /></button>
+                            </td>
                         </tr>
                     )}
                 </tbody>
-            </table>
+            </AdminTable>
         </div>
     );
 }

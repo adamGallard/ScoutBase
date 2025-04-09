@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
-import { useCallback } from 'react';
+import { AdminTable } from '../SharedStyles';
 
 export default function UserManagementView({ activeGroupId }) {
     const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({ name: '', email: '', role: 'admin', terrain_user_id: '' });
     const [editingUserId, setEditingUserId] = useState(null);
 
-        const fetchUsers = useCallback(async () => {
+    const fetchUsers = useCallback(async () => {
         const { data } = await supabase
             .from('users')
             .select('id, name, email, role, terrain_user_id')
@@ -21,25 +21,15 @@ export default function UserManagementView({ activeGroupId }) {
         if (activeGroupId) fetchUsers();
     }, [activeGroupId, fetchUsers]);
 
-
-
     const addUser = async () => {
         if (!formData.name || !formData.email || !formData.terrain_user_id) return;
-        await supabase.from('users').insert([{
-            ...formData,
-            group_id: activeGroupId
-        }]);
+        await supabase.from('users').insert([{ ...formData, group_id: activeGroupId }]);
         setFormData({ name: '', email: '', role: 'admin', terrain_user_id: '' });
         fetchUsers();
     };
 
     const updateUser = async (id) => {
-        await supabase.from('users').update({
-            name: formData.name,
-            email: formData.email,
-            role: formData.role,
-            terrain_user_id: formData.terrain_user_id
-        }).eq('id', id);
+        await supabase.from('users').update(formData).eq('id', id);
         setEditingUserId(null);
         setFormData({ name: '', email: '', role: 'admin', terrain_user_id: '' });
         fetchUsers();
@@ -55,7 +45,8 @@ export default function UserManagementView({ activeGroupId }) {
     return (
         <div className="content-box">
             <h2>Manage Users</h2>
-            <table className="scout-table">
+
+            <AdminTable>
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -68,20 +59,49 @@ export default function UserManagementView({ activeGroupId }) {
                 <tbody>
                     {users.map((u) => (
                         <tr key={u.id}>
-                            <td>{editingUserId === u.id ? <input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} /> : u.name}</td>
-                            <td>{editingUserId === u.id ? <input value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} /> : u.email}</td>
-                            <td>{editingUserId === u.id ? (
-                                <select value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}>
-                                    <option value="admin">admin</option>
-                                    <option value="superadmin">superadmin</option>
-                                </select>
-                            ) : u.role}</td>
-                            <td>{editingUserId === u.id ? <input value={formData.terrain_user_id} onChange={(e) => setFormData(f => ({ ...f, terrain_user_id: e.target.value }))} /> : u.terrain_user_id}</td>
                             <td>
+                                {editingUserId === u.id ? (
+                                    <input
+                                        value={formData.name}
+                                        onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                                    />
+                                ) : u.name}
+                            </td>
+                            <td>
+                                {editingUserId === u.id ? (
+                                    <input
+                                        value={formData.email}
+                                        onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))}
+                                    />
+                                ) : u.email}
+                            </td>
+                            <td>
+                                {editingUserId === u.id ? (
+                                    <select
+                                        value={formData.role}
+                                        onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}
+                                    >
+                                        <option value="admin">admin</option>
+                                        <option value="superadmin">superadmin</option>
+                                    </select>
+                                ) : u.role}
+                            </td>
+                            <td>
+                                {editingUserId === u.id ? (
+                                    <input
+                                        value={formData.terrain_user_id}
+                                        onChange={(e) => setFormData(f => ({ ...f, terrain_user_id: e.target.value }))}
+                                    />
+                                ) : u.terrain_user_id}
+                            </td>
+                            <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingUserId === u.id ? (
                                     <>
                                         <button onClick={() => updateUser(u.id)}><Check size={16} /></button>
-                                        <button onClick={() => { setEditingUserId(null); setFormData({ name: '', email: '', role: 'admin', terrain_user_id: '' }); }}><X size={16} /></button>
+                                        <button onClick={() => {
+                                            setEditingUserId(null);
+                                            setFormData({ name: '', email: '', role: 'admin', terrain_user_id: '' });
+                                        }}><X size={16} /></button>
                                     </>
                                 ) : (
                                     <>
@@ -92,22 +112,43 @@ export default function UserManagementView({ activeGroupId }) {
                             </td>
                         </tr>
                     ))}
+
                     {editingUserId === null && (
                         <tr>
-                            <td><input value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} /></td>
-                            <td><input value={formData.email} onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))} /></td>
                             <td>
-                                <select value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}>
+                                <input
+                                    value={formData.name}
+                                    onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.email}
+                                    onChange={(e) => setFormData(f => ({ ...f, email: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <select
+                                    value={formData.role}
+                                    onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}
+                                >
                                     <option value="admin">admin</option>
                                     <option value="superadmin">superadmin</option>
                                 </select>
                             </td>
-                            <td><input value={formData.terrain_user_id} onChange={(e) => setFormData(f => ({ ...f, terrain_user_id: e.target.value }))} /></td>
-                            <td><button onClick={addUser}><Plus size={16} /></button></td>
+                            <td>
+                                <input
+                                    value={formData.terrain_user_id}
+                                    onChange={(e) => setFormData(f => ({ ...f, terrain_user_id: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <button onClick={addUser}><Plus size={16} /></button>
+                            </td>
                         </tr>
                     )}
                 </tbody>
-            </table>
+            </AdminTable>
         </div>
     );
 }
