@@ -120,4 +120,29 @@ export const Footer = styled.footer`
   border-top: 1px solid #e5e7eb;
 `;
 
+export const AdminTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
 
+  th, td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  tr:hover {
+    background-color: #f3f4f6;
+  }
+
+  td {
+    color: #111827;
+  }
+`;

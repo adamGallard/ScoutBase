@@ -50,10 +50,17 @@ export default function SignInOutPage() {
     const filteredYouthList = youthList.filter((m) => sectionFilter === '' || m.section === sectionFilter);
     const [latestStatusMap, setLatestStatusMap] = useState({});
 
+
+
+
     useEffect(() => {
         const loadGroup = async () => {
             const { data, error } = await fetchGroupBySlug(groupSlug);
             if (data) {
+                if (!data.active) {
+                    setGroupNotFound(true); // Treat inactive group like not found
+                    return;
+                }
                 setGroupId(data.id);
                 setGroupName(data.name);
                 setGroupNotFound(false);
@@ -180,9 +187,12 @@ export default function SignInOutPage() {
 
 
                     <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.25rem' }}>
-                        {groupName ? `${groupName} Sign In / Out` : 'Scout Sign In / Out'}
+                        {groupName ? `${groupName}` : 'Scout Group'}
                     </h1>
-                    <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
+                    <h1 style={{ fontSize: '2rem', textAlign: 'center', marginBottom: '0.25rem' }}>
+                        Sign In / Out
+                    </h1>
+                        <p style={{ textAlign: 'center', fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
                         Enter your name to see the youth members linked to you. Then select a child to sign them in or out, with an optional comment.
                     </p>
 

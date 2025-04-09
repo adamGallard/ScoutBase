@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import logo from '../assets/scoutbase-logo.png';
 import { useTerrainUser } from '../hooks/useTerrainUser';
-import UserManagementView from '../components/admin/UserManagementView';
 
 import RequireAuth from '../components/RequireAuth';
 import Sidebar from '../components/admin/Sidebar';
 import AttendanceView from '../components/admin/AttendanceView';
 import ParentView from '../components/admin/ParentView';
 import YouthView from '../components/admin/YouthView';
+import UserManagementView from '../components/admin/UserManagementView';
+import GroupManagementView from '../components/admin/GroupManagementView';
 import PinModal from '../components/admin/PinModal';
 import LinkModal from '../components/admin/LinkModal';
+import Footer from '../components/Footer';
+
+import {
+    PageWrapper,
+    Header,
+    TitleGroup,
+    Nav,
+    Content
+} from '../components/SharedStyles';
 
 export default function AdminPage() {
     const [view, setView] = useState('attendance');
@@ -24,23 +33,22 @@ export default function AdminPage() {
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [sectionFilter, setSectionFilter] = useState('');
 
-
     useEffect(() => {
         if (!userLoading && userInfo) {
             if (userInfo.role === 'superadmin') {
-                // Fetch all groups for the dropdown
                 supabase.from('groups').select('id, name').then(({ data }) => {
                     setGroups(data || []);
-                    if (data?.length) {
-                        setActiveGroupId(String(data[0].id));
-                    }
+                    if (data?.length) setActiveGroupId(String(data[0].id));
                 });
             } else if (userInfo.group_id) {
-                // Fetch only the user's group and still show it in dropdown
-                supabase.from('groups').select('id, name').eq('id', userInfo.group_id).then(({ data }) => {
-                    setGroups(data || []);
-                    setActiveGroupId(String(userInfo.group_id));
-                });
+                supabase
+                    .from('groups')
+                    .select('id, name')
+                    .eq('id', userInfo.group_id)
+                    .then(({ data }) => {
+                        setGroups(data || []);
+                        setActiveGroupId(String(userInfo.group_id));
+                    });
             }
         }
     }, [userInfo, userLoading]);
@@ -60,7 +68,6 @@ export default function AdminPage() {
                         onSectionChange={setSectionFilter}
                     />
                 );
-
             case 'add-parent':
                 return (
                     <ParentView
@@ -77,13 +84,14 @@ export default function AdminPage() {
                 );
             case 'add-youth':
                 return <YouthView groupId={activeGroupId} />;
-case 'user-management':
-  return <UserManagementView activeGroupId={activeGroupId} />;
+            case 'user-management':
+                return <UserManagementView activeGroupId={activeGroupId} />;
+            case 'group-management':
+                return <GroupManagementView />;
             default:
                 return <p>Coming soon...</p>;
         }
     };
-
 
     return (
         <RequireAuth>
@@ -95,7 +103,6 @@ case 'user-management':
                         setShowPinModal(false);
                         setPinParentId(null);
                     }}
-                    
                 />
             )}
 
@@ -107,43 +114,48 @@ case 'user-management':
                 />
             )}
 
-            <div style={{ display: 'flex', height: '100vh', flexDirection: 'column' }}>
-                {/* Header */}
-                <div
-                    style={{
-                        backgroundColor: '#0F5BA4',
-                        color: 'white',
-                        padding: '0.75rem 1rem',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <img src={logo} alt="ScoutBase Logo" style={{ maxWidth: '40px' }} />
-                        <h1 style={{ margin: 0, fontSize: '1.25rem' }}>Admin</h1>
-                    </div>
-                    <div style={{ fontSize: '0.9rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        Logged in as: <strong>{userLoading ? 'Loading...' : userInfo?.name || 'Unknown User'}</strong>
-                        {groups.length > 0 && (
-                            <select
-                                value={activeGroupId}
-                                onChange={(e) => setActiveGroupId(e.target.value)}
-                                disabled={userInfo?.role !== 'superadmin'} // disable for regular admins
-                            >
-                                {groups.map((g) => (
-                                    <option key={g.id} value={g.id}>{g.name}</option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
+            <PageWrapper style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+                <Header>
+                    <TitleGroup>
+                        <span style={{ width: '12px', height: '12px', backgroundColor: '#facc15', borderRadius: '9999px' }}></span>
+                        <strong>ScoutBase</strong>
+                        <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>Admin Area</span>
+                    </TitleGroup>
+                    <Nav>
+                        <a href="/">Home</a>
+                        <a href="mailto:281959@scoutsqld.com.au">Contact</a>
+                        <a href="/privacy">Privacy</a>
+                    </Nav>
+                </Header>
+
+                <div style={{ display: 'flex', flex: 1 }}>
+                    <Sidebar onNavigate={setView} userInfo={userInfo} />
+                    <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
+                            {groups.length > 0 && (
+                                <select
+                                    value={activeGroupId}
+                                    onChange={(e) => setActiveGroupId(e.target.value)}
+                                    disabled={userInfo?.role !== 'superadmin'}
+                                >
+                                    {groups.map((g) => (
+                                        <option key={g.id} value={g.id}>
+                                            {g.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            <div style={{ fontWeight: 'bold', color: '#0F5BA4' }}>
+                                Logged in as: {userLoading ? 'Loading...' : userInfo?.name || 'Unknown User'}
+                            </div>
+                        </div>
+
+                        {renderContent()}
+                    </Content>
                 </div>
 
-                <div style={{ display: 'flex', flexGrow: 1 }}>
-                    <Sidebar onNavigate={setView} userInfo={userInfo} />
-                    <div className="scout-container">{renderContent()}</div>
-                </div>
-            </div>
+                <Footer />
+            </PageWrapper>
         </RequireAuth>
     );
 }
