@@ -151,7 +151,7 @@ export default function SignInOutPage() {
                 </div>
             )}
 
-            <Main style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <Main>
                 {!submitted && (
                     <LogoWrapper>
                         <img src={logo} alt="ScoutBase Logo" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
