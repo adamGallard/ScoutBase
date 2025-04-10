@@ -46,3 +46,50 @@ export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, gro
 
     return { success: true, parent: match };
 };
+
+export const updateParentPin = async (parentId, currentPin, newPin) => {
+    const { data, error } = await supabase
+        .from('parent')
+        .select('pin_hash')
+        .eq('id', parentId)
+        .single();
+
+    if (error || !data?.pin_hash) {
+        console.error('Error fetching current pin_hash:', error);
+        return { success: false, error: 'Could not verify current PIN' };
+    }
+
+    const isValid = await verifyPin(currentPin, data.pin_hash);
+    if (!isValid) {
+        return { success: false, error: 'Current PIN is incorrect' };
+    }
+
+    const newHash = await bcrypt.hash(newPin, 10);
+    const { error: updateError } = await supabase
+        .from('parent')
+        .update({ pin_hash: newHash })
+        .eq('id', parentId);
+
+    if (updateError) {
+        console.error('Error updating PIN:', updateError);
+        return { success: false, error: 'Failed to update PIN' };
+    }
+
+    return { success: true };
+};
+
+export const resetParentPin = async (parentId, newPin) => {
+    const newHash = await bcrypt.hash(newPin, 10);
+
+    const { error } = await supabase
+        .from('parent')
+        .update({ pin_hash: newHash })
+        .eq('id', parentId);
+
+    if (error) {
+        console.error('Error resetting PIN:', error);
+        return { success: false, error: 'Failed to reset PIN' };
+    }
+
+    return { success: true };
+};

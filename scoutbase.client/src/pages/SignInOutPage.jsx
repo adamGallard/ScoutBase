@@ -20,6 +20,7 @@ import {
     LogoWrapper
 } from '../components/SharedStyles';
 import Header from '../components/Header';
+import UpdatePinModal from '../components/UpdatePinModal';
 
 const getTodayDate = () => new Date().toISOString().split('T')[0];
 const useQuery = () => new URLSearchParams(useLocation().search);
@@ -44,7 +45,7 @@ export default function SignInOutPage() {
     const [parentName, setParentName] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-
+    const [showUpdatePinModal, setShowUpdatePinModal] = useState(false);
     const filteredYouthList = youthList.filter(
         (m) => sectionFilter === '' || m.section === sectionFilter
     );
@@ -97,6 +98,10 @@ export default function SignInOutPage() {
         setSubmitted(true);
     };
 
+
+
+
+
     if (groupNotFound) {
         return (
             <PageWrapper>
@@ -128,9 +133,27 @@ export default function SignInOutPage() {
                         padding: '0.5rem 1rem',
                     }}
                 >
-                    <span style={{ fontSize: '0.875rem', color: '#0F5BA4', fontWeight: 600 }}>
-                        Logged in as: {matchingParent.name}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <span style={{ fontSize: '0.875rem', color: '#0F5BA4', fontWeight: 600 }}>
+                            Logged in as: {matchingParent.name}
+                        </span>
+                        <button
+                            style={{
+                                fontSize: '0.75rem',
+                                backgroundColor: '#0F5BA4',
+                                color: '#fff',
+                                borderRadius: '4px',
+                                padding: '4px 8px',
+                                fontWeight: 500
+                            }}
+                            onClick={() => {
+                                console.log('Opening modal');
+                                setShowUpdatePinModal(true);
+                            }}
+                        >
+                            Update PIN
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -280,14 +303,22 @@ export default function SignInOutPage() {
                                         setSelectedMember(null);
                                     }}
                                 >
-                                    Switch Parent
+										Logout
                                 </button>
                             </div>
                         </div>
                     )}
                 </Content>
             </Main>
-
+            {
+                matchingParent && (
+                    <UpdatePinModal
+                        isOpen={showUpdatePinModal}
+                        onClose={() => setShowUpdatePinModal(false)}
+                        parentId={matchingParent.id}
+                    />
+                )
+            }
             <Footer />
         </PageWrapper>
     );
