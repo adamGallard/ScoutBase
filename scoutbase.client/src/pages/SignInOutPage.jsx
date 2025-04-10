@@ -311,7 +311,7 @@ export default function SignInOutPage() {
                 </Content>
             </Main>
             {
-                matchingParent && (
+                showUpdatePinModal && matchingParent && (
                     <UpdatePinModal
                         isOpen={showUpdatePinModal}
                         onClose={() => setShowUpdatePinModal(false)}

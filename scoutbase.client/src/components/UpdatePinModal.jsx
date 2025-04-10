@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Dialog } from '@headlessui/react';
+import { useState } from 'react';
+import styled from 'styled-components';
 import { updateParentPin } from '@/helpers/authHelper';
 
 export default function UpdatePinModal({ isOpen, onClose, parentId }) {
@@ -8,6 +8,8 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
     const [confirmPin, setConfirmPin] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
+
+    if (!isOpen) return null;
 
     const handleUpdate = async () => {
         setError('');
@@ -32,49 +34,118 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
     };
 
     return (
-        <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen bg-black bg-opacity-30 p-4">
-                <Dialog.Panel className="bg-white rounded-2xl p-6 shadow-xl max-w-md w-full">
-                    <Dialog.Title className="text-xl font-semibold mb-4">Update PIN</Dialog.Title>
-                    <form
-                        className="space-y-4"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleUpdate();
-                        }}
-                    >
-                        <input
-                            type="password"
-                            placeholder="Current PIN"
-                            className="w-full border rounded p-2"
-                            value={currentPin}
-                            onChange={(e) => setCurrentPin(e.target.value)}
-                        />
-                        <input
-                            type="password"
-                            placeholder="New PIN"
-                            className="w-full border rounded p-2"
-                            value={newPin}
-                            onChange={(e) => setNewPin(e.target.value)}
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirm New PIN"
-                            className="w-full border rounded p-2"
-                            value={confirmPin}
-                            onChange={(e) => setConfirmPin(e.target.value)}
-                        />
-
-                        {error && <p className="text-red-600">{error}</p>}
-                        {success && <p className="text-green-600">PIN updated successfully!</p>}
-
-                        <div className="flex justify-end space-x-2 pt-2">
-                            <button type="button" className="px-4 py-2 rounded bg-gray-200" onClick={onClose}>Cancel</button>
-                            <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white">Update</button>
-                        </div>
-                    </form>
-                </Dialog.Panel>
-            </div>
-        </Dialog>
+        <ModalOverlay>
+            <ModalBox>
+                <h3>Update Your PIN</h3>
+                <p>Please enter your current PIN and your new one below:</p>
+                <form
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        handleUpdate();
+                    }}
+                >
+                    <input
+                        type="password"
+                        placeholder="Current PIN"
+                        value={currentPin}
+                        maxLength={4}
+                        onChange={(e) => setCurrentPin(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="New PIN"
+                        value={newPin}
+                        maxLength={4}
+                        onChange={(e) => setNewPin(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Confirm New PIN"
+                        value={confirmPin}
+                        maxLength={4}
+                        onChange={(e) => setConfirmPin(e.target.value)}
+                    />
+                    {error && <p style={{ color: 'red' }}>{error}</p>}
+                    {success && <p style={{ color: 'green' }}>PIN updated successfully!</p>}
+                    <ButtonRow>
+                        <button type="submit">Update</button>
+                        <button type="button" onClick={onClose}>Cancel</button>
+                    </ButtonRow>
+                </form>
+            </ModalBox>
+        </ModalOverlay>
     );
 }
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+`;
+
+const ModalBox = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  font-family: sans-serif; 
+
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #111827;
+  }
+
+  p {
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+    color: #333;
+  }
+
+  input {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    margin: 0.5rem 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    background: #0F5BA4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+
+    &:hover {
+      background: #0c4784;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+`;
+
+const ButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+`;
