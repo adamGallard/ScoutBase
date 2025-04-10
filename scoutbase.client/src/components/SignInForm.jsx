@@ -1,51 +1,71 @@
+// SignInForm.jsx
+// Updated for mobile responsiveness and consistent styling
+
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { getTodayDate } from '../utils/dateUtils';
+import { useIsMobile } from '../hooks/useIsMobile';
 
-export default function SignInForm({ member, onSign, parentName, latestStatus, groupId }) {
+export default function SignInForm({ member, parentName, onSign, latestStatus, groupId }) {
     const [comment, setComment] = useState('');
-    const lastAction = latestStatus?.action;
+    const [submitting, setSubmitting] = useState(false);
+    const isMobile = useIsMobile();
 
-    const handleSubmit = async (action) => {
-        const timestamp = new Date();
-        const data = {
-            action,
-            signed_by: parentName,
-            event_date: getTodayDate(),
-            timestamp: timestamp.toISOString(),
-            youth_id: member.id,
-            comment,
-            group_id: groupId,
-        };
-
-        const { error } = await supabase.from('attendance').insert([data]);
-
-        if (error) {
-            alert('Error saving attendance');
-            console.error(error);
-        } else {
-            onSign(member.id, {
-                action,
-                time: timestamp.toLocaleTimeString(),
-                by: parentName,
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            await onSign(member.id, {
                 comment,
+                timestamp: new Date().toISOString(),
+                action: latestStatus?.action === 'signed in' ? 'signed out' : 'signed in',
+                group_id: groupId
             });
+            setComment('');
+        } finally {
+            setSubmitting(false);
         }
     };
 
-
     return (
-        <div className="space-y-4">
-            <h2>Signing for: {member.name} ({member.section})</h2>
+        <form onSubmit={handleSubmit} style={{ textAlign: 'left', marginTop: '1rem' }}>
+            <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
+                Signing {latestStatus?.action === 'signed in' ? 'out' : 'in'} for: <strong>{member.name}</strong>
+            </p>
+            <label htmlFor="comment" style={{ display: 'block', fontWeight: 500, marginBottom: '0.25rem' }}>Comment (optional):</label>
             <textarea
-                placeholder="Comment (optional)"
+                id="comment"
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
+                rows={isMobile ? 3 : 4}
+                placeholder="e.g. Arrived late, leaving early..."
+                style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    fontSize: isMobile ? '1rem' : '0.875rem',
+                    borderRadius: '6px',
+                    border: '1px solid #ccc',
+                    resize: 'vertical',
+                    marginBottom: '1rem',
+                }}
             />
-            <div style={{ display: 'flex', gap: '8px' }}>
-                {lastAction !== 'signed in' && <button onClick={() => handleSubmit('signed in')}>Sign In</button>}
-                {lastAction === 'signed in' && <button onClick={() => handleSubmit('signed out')}>Sign Out</button>}
+
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                <button
+                    type="submit"
+                    disabled={submitting}
+                    style={{
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        padding: isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem',
+                        backgroundColor: '#ccc',
+                        borderRadius: '6px',
+                        border: 'none',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        opacity: submitting ? 0.6 : 1,
+                    }}
+                >
+                    {latestStatus?.action === 'signed in' ? 'Sign Out' : 'Sign In'}
+                </button>
             </div>
-        </div>
+        </form>
     );
 }

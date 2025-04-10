@@ -80,8 +80,8 @@ export const Main = styled.main`
 `;
 
 export const LogoWrapper = styled.div`
-  width: 16rem;
-  height: 16rem;
+  width: 12rem;
+  height: 12rem;
   border-radius: 9999px;
   background-color: #0f5ba4;
   display: flex;
