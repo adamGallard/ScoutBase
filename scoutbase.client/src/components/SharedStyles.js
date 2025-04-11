@@ -102,7 +102,7 @@ export const Content = styled.div`
     font-size: 3rem;
     font-weight: bold;
     margin-bottom: 1rem;
-    color: #1d4ed8;
+    color: #0F5BA4;
   }
 
   h2 {
@@ -163,5 +163,29 @@ export const AdminTable = styled.table`
 
   td {
     color: #111827;
+  }
+`;
+import isPropValid from '@emotion/is-prop-valid';
+
+export const PrimaryButton = styled.button.withConfig({
+    shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isMobile',
+})`
+  font-size: ${({ isMobile }) => (isMobile ? '1rem' : '0.875rem')};
+  padding: ${({ isMobile }) => (isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem')};
+  background-color: #0F5BA4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s;
+
+  &:hover {
+    background-color: #0c4a87;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
   }
 `;

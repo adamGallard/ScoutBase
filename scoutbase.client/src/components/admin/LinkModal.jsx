@@ -5,14 +5,27 @@ import styled from 'styled-components';
 export default function LinkModal({ parentId, onClose, groupId }) {
     const [linkedYouth, setLinkedYouth] = useState([]);
     const [availableYouth, setAvailableYouth] = useState([]);
-    const [selectedYouthId, setSelectedYouthId] = useState('');
+    const [search, setSearch] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [parentName, setParentName] = useState('');
+    const itemsPerPage = 10;
 
     useEffect(() => {
         if (parentId) {
+            loadParentName();
             loadLinkedYouth();
             loadAllYouth();
         }
     }, [parentId]);
+
+    const loadParentName = async () => {
+        const { data, error } = await supabase
+            .from('parent')
+            .select('name')
+            .eq('id', parentId)
+            .single();
+        if (data) setParentName(data.name);
+    };
 
     const loadLinkedYouth = async () => {
         const { data } = await supabase
@@ -34,13 +47,12 @@ export default function LinkModal({ parentId, onClose, groupId }) {
         }
     };
 
-    const addLink = async () => {
-        if (!selectedYouthId) return;
+    const addLink = async (youthId) => {
         await supabase.from('parent_youth').insert([
-            { parent_id: parentId, youth_id: selectedYouthId, group_id: groupId }
+            { parent_id: parentId, youth_id: youthId, group_id: groupId }
         ]);
-        setSelectedYouthId('');
         loadLinkedYouth();
+        setCurrentPage(1);
     };
 
     const removeLink = async (youthId) => {
@@ -52,12 +64,26 @@ export default function LinkModal({ parentId, onClose, groupId }) {
         loadLinkedYouth();
     };
 
+    const unlinkedYouth = availableYouth
+        .filter(y => !linkedYouth.some(l => l.id === y.id))
+        .filter(y => y.name.toLowerCase().includes(search.toLowerCase()));
+
+    const paginatedYouth = unlinkedYouth.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    const totalPages = Math.ceil(unlinkedYouth.length / itemsPerPage);
+
     return (
         <ModalOverlay>
             <ModalBox>
-                <h3>Linked Youth</h3>
+                <h3>Linked Youth{parentName && ` for ${parentName}`}</h3>
+
                 <ul>
-                    {linkedYouth.map((youth) => (
+                    {[...linkedYouth]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((youth) => (
                         <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span>{youth.name} ({youth.section})</span>
                             <button onClick={() => removeLink(youth.id)}>Remove</button>
@@ -66,26 +92,39 @@ export default function LinkModal({ parentId, onClose, groupId }) {
                 </ul>
 
                 <h4>Add Youth</h4>
-                <select
-                    value={selectedYouthId}
-                    onChange={(e) => setSelectedYouthId(e.target.value)}
-                >
-                    <option value="">Select a youth...</option>
-                    {availableYouth
-                        .filter(y => !linkedYouth.find(l => l.id === y.id))
-                        .map(y => (
-                            <option key={y.id} value={y.id}>
-                                {y.name} ({y.section})
-                            </option>
-                        ))}
-                </select>
-                <button
-                    onClick={addLink}
-                    disabled={!selectedYouthId}
-                    style={{ marginTop: '1rem' }}
-                >
-                    Add
-                </button>
+
+                <input
+                    type="text"
+                    placeholder="Search youth..."
+                    value={search}
+                    onChange={(e) => {
+                        setSearch(e.target.value);
+                        setCurrentPage(1);
+                    }}
+                />
+
+                <ul style={{ textAlign: 'left', marginBottom: '1rem' }}>
+                    {[...paginatedYouth]
+                        .sort((a, b) => a.name.localeCompare(b.name))
+                        .map((youth) => (
+                        <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span>{youth.name} ({youth.section})</span>
+                            <button onClick={() => addLink(youth.id)}>Add</button>
+                        </li>
+                    ))}
+                </ul>
+
+                {totalPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                            Previous
+                        </button>
+                        <span>Page {currentPage} of {totalPages}</span>
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                            Next
+                        </button>
+                    </div>
+                )}
 
                 <ButtonRow>
                     <button onClick={onClose}>Close</button>
@@ -94,6 +133,7 @@ export default function LinkModal({ parentId, onClose, groupId }) {
         </ModalOverlay>
     );
 }
+
 // Styled components
 const ModalOverlay = styled.div`
   position: fixed;
@@ -117,10 +157,16 @@ const ModalBox = styled.div`
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   text-align: center;
   font-family: sans-serif; 
+
   h3 {
     font-size: 1.25rem;
     margin-bottom: 0.5rem;
     color: #111827;
+  }
+
+  h4 {
+    margin-top: 2rem;
+    font-size: 1.1rem;
   }
 
   input {
@@ -155,9 +201,9 @@ const ModalBox = styled.div`
   }
 `;
 
-
 const ButtonRow = styled.div`
   display: flex;
   justify-content: center;
   gap: 1rem;
+  margin-top: 2rem;
 `;

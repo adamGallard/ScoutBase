@@ -62,3 +62,23 @@ export function useTerrainUser() {
 
     return { userInfo, loading, error };
 }
+
+export async function getTerrainProfiles(token) {
+    const response = await fetch('/api/terrain/profiles', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token })
+    });
+
+    if (!response.ok) {
+        throw new Error('Failed to fetch Terrain profiles');
+    }
+
+    const data = await response.json();
+
+    return data.profiles.map(profile => ({
+        unitId: profile.unit.id,
+        unitName: profile.unit.name,
+        section: profile.unit.section
+    }));
+}
