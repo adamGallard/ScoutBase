@@ -26,17 +26,15 @@ export async function getYouthFromTerrain(token, units) {
     const allYouth = [];
 
     for (const unit of units) {
-        const response = await fetch('/api/terrain/members', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                unitId: unit.unitId,
-                token,
-            }),
+        const response = await fetch(`https://members.terrain.scouts.com.au/units/${unit.unitId}/members`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
         });
 
         if (!response.ok) {
-            console.error(`❌ Failed to fetch members for unit ${unit.unitId}:`, await response.text());
+            console.error(`Failed to fetch members for unit ${unit.unitId}`, await response.text());
             continue;
         }
 
@@ -44,14 +42,14 @@ export async function getYouthFromTerrain(token, units) {
         const members = Array.isArray(body.results) ? body.results : [];
 
         const youthInUnit = members
-            .filter((m) => m.unit?.duty === 'member')
-            .map((m) => ({
+            .filter(m => m.unit?.duty === 'member')
+            .map(m => ({
                 terrain_id: m.id,
                 name: `${m.first_name} ${m.last_name}`,
                 dob: m.date_of_birth,
                 section: mapTerrainSection(m.unit?.section),
-                member_number: m.member_number?.trim(),
-                status: m.status
+                member_number: m.member_number,
+                status: m.status,
             }));
 
         allYouth.push(...youthInUnit);
@@ -222,10 +220,11 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
  * Fetch units the user has access to via Terrain profile
  */
 export async function getTerrainProfiles(token) {
-    const response = await fetch('/api/terrain/profiles', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token })
+    const response = await fetch('https://members.terrain.scouts.com.au/profiles', {
+        method: 'GET',
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
     });
 
     if (!response.ok) {

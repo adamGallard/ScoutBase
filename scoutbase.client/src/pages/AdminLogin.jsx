@@ -36,14 +36,11 @@ export default function AdminLogin() {
 
     const loginToTerrain = async (region, memberId, password) => {
         const fullUsername = `${region}-${memberId}`;
-
         let successfulTokenPair = null;
         let workingClientId = null;
 
-        // Step 1: Authenticate with one of the clientIds
         for (const clientId of clientIds) {
             try {
-
                 const response = await fetch('https://cognito-idp.ap-southeast-2.amazonaws.com/', {
                     method: 'POST',
                     headers: {
@@ -61,7 +58,6 @@ export default function AdminLogin() {
                 });
 
                 const data = await response.json();
-
                 const accessToken = data.AuthenticationResult?.AccessToken;
                 const idToken = data.AuthenticationResult?.IdToken;
 
@@ -77,45 +73,48 @@ export default function AdminLogin() {
             }
         }
 
-        // Step 2: If none worked, fail
         if (!successfulTokenPair) {
             throw new Error('Login failed: Invalid credentials or no valid client ID');
         }
 
         const { accessToken, idToken } = successfulTokenPair;
 
-        // Step 3: Save tokens
+        // Save tokens
         localStorage.setItem('scoutbase-client-id', workingClientId);
         localStorage.setItem('scoutbase-terrain-idtoken', idToken);
         localStorage.setItem('scoutbase-terrain-token', accessToken);
         localStorage.setItem('scoutbase-terrain-userid', fullUsername);
 
-        // Step 4: Now fetch profile (only once, outside the loop)
-        const profileResponse = await fetch('/api/terrain/profiles', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ token: idToken })
-        });
+        // Attempt to fetch units
+        try {
+            const profileResponse = await fetch('https://members.terrain.scouts.com.au/profiles', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`
+                }
+            });
 
-        if (!profileResponse.ok) {
-            throw new Error('Failed to fetch profile data from Terrain');
+            if (!profileResponse.ok) {
+                console.warn('⚠️ Failed to fetch profile data:', await profileResponse.text());
+                localStorage.setItem('scoutbase-terrain-units', JSON.stringify([]));
+                localStorage.setItem('scoutbase-terrain-units-available', 'false'); // 👈 SET HERE
+            } else {
+                const profileData = await profileResponse.json();
+                const flatUnits = profileData.profiles.map(p => ({
+                    unitId: p.unit.id,
+                    unitName: p.unit.name,
+                    section: p.unit.section
+                }));
+                localStorage.setItem('scoutbase-terrain-units', JSON.stringify(flatUnits));
+                localStorage.setItem('scoutbase-terrain-units-available', 'true'); // 👈 SET HERE
+            }
+        } catch (err) {
+            console.warn('⚠️ Exception during profile fetch:', err);
+            localStorage.setItem('scoutbase-terrain-units', JSON.stringify([]));
+            localStorage.setItem('scoutbase-terrain-units-available', 'false'); // 👈 SET HERE
         }
+    }
 
-        const profileData = await profileResponse.json();
-
-
-        localStorage.setItem('scoutbase-terrain-units', JSON.stringify(profileData));
-
-        const flatUnits = profileData.profiles.map(p => ({
-            unitId: p.unit.id,
-            unitName: p.unit.name,
-            section: p.unit.section
-        }));
-        localStorage.setItem('scoutbase-terrain-units', JSON.stringify(flatUnits));
-
-    };
 
 
 
