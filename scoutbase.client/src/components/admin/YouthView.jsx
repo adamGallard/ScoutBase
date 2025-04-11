@@ -30,7 +30,7 @@ export default function YouthView({ groupId }) {
     const [showUnitModal, setShowUnitModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
-
+    const profileAvailable = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
 
     const handleTerrainSync = async () => {
         const token = localStorage.getItem('scoutbase-terrain-idtoken');
@@ -148,7 +148,7 @@ export default function YouthView({ groupId }) {
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
-
+    const canSync = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
 
     return (
         <div className="content-box">
@@ -160,7 +160,14 @@ export default function YouthView({ groupId }) {
                 flexWrap: 'wrap'
             }}>
                 <h2 style={{ margin: 0 }}>Youth</h2>
-                <PrimaryButton onClick={handleTerrainSync}>
+
+
+                
+                <PrimaryButton
+                    disabled={!canSync}
+                    onClick={handleTerrainSync}
+                    title={!canSync ? "Sync unavailable – no Terrain units" : "Sync Youth from Terrain"}
+                >
                     Sync Youth from Terrain
                 </PrimaryButton>
             </div>
