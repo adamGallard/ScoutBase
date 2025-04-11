@@ -12,8 +12,15 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-      server: {
-        host: true,       // allows binding to 0.0.0.0
-        port: 5173
+    server: {
+        host: true,
+        port: 5173,
+        proxy: {
+            '/api': {
+                target: 'http://localhost:5067', // Adjust this to match your .NET server's port
+                changeOrigin: true,
+                secure: false, // Accept self-signed certificates if running localhost over HTTPS
+            }
+        }
     }
-}); 
+});

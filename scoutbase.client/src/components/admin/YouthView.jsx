@@ -1,9 +1,20 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, BookUser } from 'lucide-react';
 import { AdminTable } from '../SharedStyles';
 import TransitionModal from './TransitionModal';
 import { formatDate } from '../../utils/dateUtils';
+import { getTerrainSyncPreview, syncYouthFromTerrain } from '../../helpers/terrainSyncHelper';
+import TerrainSyncModal from './TerrainSyncModal';
+import {
+    PageWrapper,
+    Main,
+    Content,
+    LogoWrapper,
+    PrimaryButton
+} from '../../components/SharedStyles';
+import UnitSelectModal from './UnitSelectModal';
+
 
 export default function YouthView({ groupId }) {
     const [youthList, setYouthList] = useState([]);
@@ -14,8 +25,68 @@ export default function YouthView({ groupId }) {
     const [selectedYouth, setSelectedYouth] = useState(null);
     const [justAddedYouth, setJustAddedYouth] = useState(null);
     const [stageFilter, setStageFilter] = useState('');
+    const [preview, setPreview] = useState(null); // { toAdd: [], toUpdate: [] }
+    const [unitOptions, setUnitOptions] = useState([]);
+    const [showUnitModal, setShowUnitModal] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 15;
 
-    const fetchYouth = useCallback(async () => {
+
+    const handleTerrainSync = async () => {
+        const token = localStorage.getItem('scoutbase-terrain-idtoken');
+        if (!token) return alert('Please log in.');
+
+        try {
+            const cached = localStorage.getItem('scoutbase-terrain-units');
+            const parsedUnits = cached ? JSON.parse(cached) : [];
+
+            if (!Array.isArray(parsedUnits) || parsedUnits.length === 0) {
+                throw new Error('No units available.');
+            }
+
+            // Optional: infer section to suggest relevant units
+            const inferredSection = sectionFilter || 'Cubs';
+            const autoSelected = parsedUnits.filter(u =>
+                u.section?.toLowerCase().includes(inferredSection.toLowerCase())
+            );
+
+            setUnitOptions(parsedUnits); // ✅ This is where the modal reads from
+            setShowUnitModal(true);
+        } catch (err) {
+            console.error('Failed to load Terrain units:', err);
+            alert('Unable to fetch your units from Terrain.');
+        }
+    };
+
+
+    const handleUnitsConfirmed = async (unitIds) => {
+        setShowUnitModal(false);
+
+        const token = localStorage.getItem('scoutbase-terrain-idtoken');
+        const selectedUnits = unitOptions.filter(u => unitIds.includes(u.unitId));
+
+        try {
+            const preview = await getTerrainSyncPreview(token, groupId, selectedUnits);
+            setPreview(preview);
+        } catch (err) {
+            console.error('Failed to preview sync:', err);
+            alert('Unable to prepare sync preview.');
+        }
+    };
+
+    const confirmSync = async () => {
+        if (!preview) return;
+        const result = await syncYouthFromTerrain(groupId, preview.toAdd, preview.toUpdate);
+        alert(`Sync complete: ${result.added} added, ${result.updated} updated.`);
+        setPreview(null);
+        fetchYouth();
+    };
+
+    const cancelSync = () => {
+        setPreview(null);
+    };
+
+        const fetchYouth = useCallback(async () => {
         const { data } = await supabase
             .from('youth')
             .select('id, name, dob, section, membership_stage')
@@ -28,8 +99,13 @@ export default function YouthView({ groupId }) {
         if (groupId) fetchYouth();
     }, [groupId, fetchYouth]);
 
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter, sectionFilter, stageFilter]);
+
     const addYouth = async () => {
         if (!youthForm.name || !youthForm.dob) return;
+
         const { data, error } = await supabase
             .from('youth')
             .insert([{ ...youthForm, group_id: groupId }])
@@ -38,7 +114,7 @@ export default function YouthView({ groupId }) {
 
         if (data) {
             setYouthForm({ name: '', dob: '', membership_stage: '' });
-            setJustAddedYouth(data);
+            setSelectedYouth(data); // 🔄 replaces justAddedYouth
         }
     };
 
@@ -68,9 +144,26 @@ export default function YouthView({ groupId }) {
         )
         .sort((a, b) => a.name.localeCompare(b.name));
 
+    const paginatedList = filteredList.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+
     return (
         <div className="content-box">
-            <h2>Youth</h2>
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5rem',
+                marginBottom: '1rem',
+                flexWrap: 'wrap'
+            }}>
+                <h2 style={{ margin: 0 }}>Youth</h2>
+                <PrimaryButton onClick={handleTerrainSync}>
+                    Sync Youth from Terrain
+                </PrimaryButton>
+            </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <input
@@ -135,7 +228,7 @@ export default function YouthView({ groupId }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {filteredList.map((y) => (
+                    {paginatedList.map((y) => (
                         <tr key={y.id}>
                             <td>
                                 {editingYouthId === y.id ? (
@@ -210,6 +303,9 @@ export default function YouthView({ groupId }) {
                             }}
                         />
                     )}
+                    
+
+                   
 
                     {editingYouthId === null && (
                         <tr>
@@ -239,6 +335,36 @@ export default function YouthView({ groupId }) {
                     )}
                 </tbody>
             </AdminTable>
+            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
+                <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>
+                    Previous
+                </button>
+                <span>Page {currentPage} of {Math.ceil(filteredList.length / itemsPerPage)}</span>
+                <button
+                    onClick={() =>
+                        setCurrentPage(p => Math.min(p + 1, Math.ceil(filteredList.length / itemsPerPage)))
+                    }
+                    disabled={currentPage === Math.ceil(filteredList.length / itemsPerPage)}
+                >
+                    Next
+                </button>
+            </div>
+
+            {preview && (
+                <TerrainSyncModal
+                    toAdd={preview.toAdd}
+                    toUpdate={preview.toUpdate}
+                    onConfirm={confirmSync}
+                    onCancel={cancelSync}
+                />
+            )}
+            {showUnitModal && (
+                <UnitSelectModal
+                    units={unitOptions}
+                    onConfirm={handleUnitsConfirmed}
+                    onCancel={() => setShowUnitModal(false)}
+                />
+            )}
         </div>
 
     );

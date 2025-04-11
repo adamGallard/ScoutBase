@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     PageWrapper,
@@ -37,35 +37,87 @@ export default function AdminLogin() {
     const loginToTerrain = async (region, memberId, password) => {
         const fullUsername = `${region}-${memberId}`;
 
-        for (const clientId of clientIds) {
-            const response = await fetch('https://cognito-idp.ap-southeast-2.amazonaws.com/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-amz-json-1.1',
-                    'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
-                },
-                body: JSON.stringify({
-                    AuthFlow: 'USER_PASSWORD_AUTH',
-                    ClientId: clientId,
-                    AuthParameters: {
-                        USERNAME: fullUsername,
-                        PASSWORD: password
-                    }
-                })
-            });
+        let successfulTokenPair = null;
+        let workingClientId = null;
 
-            const data = await response.json();
-            if (response.ok && data.AuthenticationResult) {
-                localStorage.setItem('scoutbase-client-id', clientId);
-                localStorage.setItem('scoutbase-terrain-idtoken', data.AuthenticationResult.IdToken);
-                localStorage.setItem('scoutbase-terrain-token', data.AuthenticationResult.AccessToken);
-                localStorage.setItem('scoutbase-terrain-userid', `${region}-${memberId}`);
-                return;
+        // Step 1: Authenticate with one of the clientIds
+        for (const clientId of clientIds) {
+            try {
+
+                const response = await fetch('https://cognito-idp.ap-southeast-2.amazonaws.com/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-amz-json-1.1',
+                        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
+                    },
+                    body: JSON.stringify({
+                        AuthFlow: 'USER_PASSWORD_AUTH',
+                        ClientId: clientId,
+                        AuthParameters: {
+                            USERNAME: fullUsername,
+                            PASSWORD: password
+                        }
+                    })
+                });
+
+                const data = await response.json();
+
+                const accessToken = data.AuthenticationResult?.AccessToken;
+                const idToken = data.AuthenticationResult?.IdToken;
+
+                if (accessToken && idToken) {
+                    successfulTokenPair = { accessToken, idToken };
+                    workingClientId = clientId;
+                    break;
+                }
+
+                console.warn(`⚠️ Login failed for client ID ${clientId}`);
+            } catch (err) {
+                console.warn(`❌ Error with client ID ${clientId}:`, err);
             }
         }
 
-        throw new Error('Login failed: Invalid credentials or no valid client ID');
+        // Step 2: If none worked, fail
+        if (!successfulTokenPair) {
+            throw new Error('Login failed: Invalid credentials or no valid client ID');
+        }
+
+        const { accessToken, idToken } = successfulTokenPair;
+
+        // Step 3: Save tokens
+        localStorage.setItem('scoutbase-client-id', workingClientId);
+        localStorage.setItem('scoutbase-terrain-idtoken', idToken);
+        localStorage.setItem('scoutbase-terrain-token', accessToken);
+        localStorage.setItem('scoutbase-terrain-userid', fullUsername);
+
+        // Step 4: Now fetch profile (only once, outside the loop)
+        const profileResponse = await fetch('/api/terrain/profiles', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token: idToken })
+        });
+
+        if (!profileResponse.ok) {
+            throw new Error('Failed to fetch profile data from Terrain');
+        }
+
+        const profileData = await profileResponse.json();
+
+
+        localStorage.setItem('scoutbase-terrain-units', JSON.stringify(profileData));
+
+        const flatUnits = profileData.profiles.map(p => ({
+            unitId: p.unit.id,
+            unitName: p.unit.name,
+            section: p.unit.section
+        }));
+        localStorage.setItem('scoutbase-terrain-units', JSON.stringify(flatUnits));
+
     };
+
+
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -86,7 +138,7 @@ export default function AdminLogin() {
     return (
         <PageWrapper>
             <Header />
-               
+
             <Main style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
                 <Content style={{ maxWidth: '400px', width: '100%' }}>
                     <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
