@@ -104,20 +104,20 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                             <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingParentId === p.id ? (
                                     <>
-                                        <button onClick={() => updateParent(p.id)}><Check size={16} /></button>
+                                        <button onClick={() => updateParent(p.id)} title="Confirm"><Check size={16} /></button>
                                         <button onClick={() => {
                                             setEditingParentId(null);
                                             setFormData({ name: '', email: '', phone: '' });
-                                        }}>
+                                        }} title="Cancel">
                                             <X size={16} />
                                         </button>
                                     </>
                                 ) : (
                                     <>
-                                        <button onClick={() => { setEditingParentId(p.id); setFormData(p); }}><Pencil size={16} /></button>
-                                        <button onClick={() => deleteParent(p.id)}><Trash size={16} /></button>
-                                        <button onClick={() => onOpenLinkModal(p.id)}><Link2 size={16} /></button>
-                                        <button onClick={() => onOpenPinModal(p.id)}><Key size={16} /></button>
+                                            <button onClick={() => { setEditingParentId(p.id); setFormData(p); }} title="Edit parent"><Pencil size={16} /></button>
+                                            <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link2 size={16} /></button>
+                                            <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
+                                            <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
                                     </>
                                 )}
                             </td>
@@ -146,7 +146,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                                 />
                             </td>
                             <td>
-                                <button onClick={addParent}><Plus size={16} /></button>
+                                <button onClick={addParent} title="Add parent"><Plus size={16} /></button>
                             </td>
                         </tr>
                     )}

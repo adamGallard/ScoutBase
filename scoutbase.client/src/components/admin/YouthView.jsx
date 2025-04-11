@@ -1,14 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
+import { Pencil, Trash, Plus, Check, X, BookUser } from 'lucide-react';
 import { AdminTable } from '../SharedStyles';
+import TransitionModal from './TransitionModal';
+import { formatDate } from '../../utils/dateUtils';
 
 export default function YouthView({ groupId }) {
     const [youthList, setYouthList] = useState([]);
-    const [youthForm, setYouthForm] = useState({ name: '', dob: '', section: '', membership_stage: '' });
+    const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
     const [filter, setFilter] = useState('');
     const [sectionFilter, setSectionFilter] = useState('');
+    const [selectedYouth, setSelectedYouth] = useState(null);
+    const [justAddedYouth, setJustAddedYouth] = useState(null);
+    const [stageFilter, setStageFilter] = useState('');
 
     const fetchYouth = useCallback(async () => {
         const { data } = await supabase
@@ -24,10 +29,17 @@ export default function YouthView({ groupId }) {
     }, [groupId, fetchYouth]);
 
     const addYouth = async () => {
-        if (!youthForm.name || !youthForm.dob || !youthForm.section) return;
-        await supabase.from('youth').insert([{ ...youthForm, group_id: groupId }]);
-        setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
-        fetchYouth();
+        if (!youthForm.name || !youthForm.dob) return;
+        const { data, error } = await supabase
+            .from('youth')
+            .insert([{ ...youthForm, group_id: groupId }])
+            .select()
+            .single();
+
+        if (data) {
+            setYouthForm({ name: '', dob: '', membership_stage: '' });
+            setJustAddedYouth(data);
+        }
     };
 
     const updateYouth = async (id) => {
@@ -45,9 +57,14 @@ export default function YouthView({ groupId }) {
     };
 
     const filteredList = [...youthList]
-        .filter(y =>
+        .filter((y) =>
             (!sectionFilter || y.section === sectionFilter) &&
-            y.name.toLowerCase().includes(filter)
+            (!filter || y.name.toLowerCase().includes(filter)) &&
+            (
+                !stageFilter
+                    ? y.membership_stage !== 'Retired' // default view excludes Retired
+                    : y.membership_stage === stageFilter // user-selected stage filter
+            )
         )
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -55,7 +72,7 @@ export default function YouthView({ groupId }) {
         <div className="content-box">
             <h2>Youth</h2>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
                 <input
                     type="text"
                     placeholder="Search"
@@ -63,6 +80,7 @@ export default function YouthView({ groupId }) {
                     onChange={(e) => setFilter(e.target.value.toLowerCase())}
                     style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                 />
+
                 <select
                     value={sectionFilter}
                     onChange={(e) => setSectionFilter(e.target.value)}
@@ -74,6 +92,36 @@ export default function YouthView({ groupId }) {
                     <option value="Scouts">Scouts</option>
                     <option value="Venturers">Venturers</option>
                 </select>
+
+                <select
+                    value={stageFilter}
+                    onChange={(e) => setStageFilter(e.target.value)}
+                    style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
+                >
+                    <option value="">All Stages</option>
+                    <option value="Have a Go">Have a Go</option>
+                    <option value="Linking">Linking</option>
+                    <option value="Invested">Invested</option>
+                    <option value="Retired">Retired</option>
+                </select>
+                <button
+                    onClick={() => {
+                        setFilter('');
+                        setSectionFilter('');
+                        setStageFilter('');
+                    }}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#e5e7eb',
+                        border: '1px solid #ccc',
+                        borderRadius: '6px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        marginLeft: 'auto'
+                    }}
+                >
+                    Clear Filters
+                </button>
             </div>
 
             <AdminTable>
@@ -104,53 +152,64 @@ export default function YouthView({ groupId }) {
                                         value={youthForm.dob}
                                         onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))}
                                     />
-                                ) : y.dob}
+                                ) :  formatDate(y.dob)}
                             </td>
                             <td>
                                 {editingYouthId === y.id ? (
-                                    <select
-                                        value={youthForm.section}
-                                        onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="Joeys">Joeys</option>
-                                        <option value="Cubs">Cubs</option>
-                                        <option value="Scouts">Scouts</option>
-                                        <option value="Venturers">Venturers</option>
-                                    </select>
+                                    <span>{youthForm.section}</span>
                                 ) : y.section}
                             </td>
                             <td>
                                 {editingYouthId === y.id ? (
-                                    <select
-                                        value={youthForm.membership_stage || ''}
-                                        onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}
-                                    >
-                                        <option value="">Select</option>
-                                        <option value="Have a Go">Have a Go</option>
-                                        <option value="Linking">Linking</option>
-                                        <option value="Invested">Invested</option>
-                                    </select>
-                                ) : (y.membership_stage || '-')}
+                                    <span>{youthForm.membership_stage}</span>
+                                ) : (y.membership_stage )}
                             </td>
                             <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingYouthId === y.id ? (
                                     <>
-                                        <button onClick={() => updateYouth(y.id)}><Check size={16} /></button>
+                                        <button onClick={() => updateYouth(y.id)} title="Confirm"><Check size={16} /></button>
                                         <button onClick={() => {
                                             setEditingYouthId(null);
                                             setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
-                                        }}><X size={16} /></button>
+                                        }} title="Cancel"><X size={16} /></button>
                                     </>
                                 ) : (
-                                    <>
-                                        <button onClick={() => { setEditingYouthId(y.id); setYouthForm(y); }}><Pencil size={16} /></button>
-                                        <button onClick={() => deleteYouth(y.id)}><Trash size={16} /></button>
+                                        <>
+                                            <button onClick={() => setSelectedYouth(y)} title="View/Edit Transitions"><BookUser size={16}  /></button>
+                                            <button onClick={() => { setEditingYouthId(y.id); setYouthForm(y); }} title="Edit youth"><Pencil size={16} /></button>
+                                            {y.membership_stage === 'Retired' ? (
+                                                <button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth">
+                                                    <Trash size={16} />
+                                                </button>
+                                            ) : (
+                                                <div title="Only retired youth can be deleted" style={{ opacity: 0.3 }}>
+                                                    <Trash size={16} />
+                                                </div>
+                                            )}
+
                                     </>
                                 )}
                             </td>
                         </tr>
                     ))}
+                    {selectedYouth && (
+                        <TransitionModal
+                            youth={selectedYouth}
+                            onClose={() => {
+                                setSelectedYouth(null);
+                                fetchYouth(); // Refresh the youth list after closing
+                            }}
+                        />
+                    )}
+                    {justAddedYouth && (
+                        <TransitionModal
+                            youth={justAddedYouth}
+                            onClose={() => {
+                                setJustAddedYouth(null);
+                                fetchYouth();
+                            }}
+                        />
+                    )}
 
                     {editingYouthId === null && (
                         <tr>
@@ -168,35 +227,20 @@ export default function YouthView({ groupId }) {
                                 />
                             </td>
                             <td>
-                                <select
-                                    value={youthForm.section}
-                                    onChange={(e) => setYouthForm(f => ({ ...f, section: e.target.value }))}
-                                >
-                                    <option value="">Select</option>
-                                    <option value="Joeys">Joeys</option>
-                                    <option value="Cubs">Cubs</option>
-                                    <option value="Scouts">Scouts</option>
-                                    <option value="Venturers">Venturers</option>
-                                </select>
+                                
                             </td>
                             <td>
-                                <select
-                                    value={youthForm.membership_stage}
-                                    onChange={(e) => setYouthForm(f => ({ ...f, membership_stage: e.target.value }))}
-                                >
-                                    <option value="">Select</option>
-                                    <option value="Have a Go">Have a Go</option>
-                                    <option value="Linking">Linking</option>
-                                    <option value="Invested">Invested</option>
-                                </select>
+                                
                             </td>
                             <td>
-                                <button onClick={addYouth}><Plus size={16} /></button>
+                                <button onClick={addYouth} title="Add youth"><Plus size={16}  /></button>
                             </td>
                         </tr>
                     )}
                 </tbody>
             </AdminTable>
         </div>
+
     );
+
 }

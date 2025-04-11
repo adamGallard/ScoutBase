@@ -34,7 +34,6 @@ export default function Sidebar({ onNavigate, userInfo }) {
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
         { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
         { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-        { key: 'link', label: 'Link Parent/Youth', icon: <Link2 size={16} /> },
         { key: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
     ];
 

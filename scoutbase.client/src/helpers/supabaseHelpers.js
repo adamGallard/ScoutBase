@@ -32,3 +32,39 @@ export async function insertAttendance(record) {
     const { error } = await supabase.from('attendance').insert([record]);
     if (error) throw error;
 }
+
+export async function fetchTransitionsForYouth(youthId) {
+    const { data, error } = await supabase
+        .from('youth_transitions')
+        .select('*')
+        .eq('youth_id', youthId)
+        .order('transition_date', { ascending: true });
+
+    return { data, error };
+}
+
+export async function addYouthTransition(transition) {
+    const stage = transition.transition_type; // now identical
+
+    const { data, error } = await supabase
+        .from('youth_transitions')
+        .insert([{ ...transition}])
+        .single();
+
+    if (data?.youth_id && transition.transition_type) {
+        await supabase
+            .from('youth')
+            .update({ membership_stage: transition.transition_type })
+            .eq('id', data.youth_id);
+    }
+
+    return { data, error };
+}
+export async function deleteYouthTransition(id) {
+    const { error } = await supabase
+        .from('youth_transitions')
+        .delete()
+        .eq('id', id);
+
+    return { error };
+}
