@@ -3,6 +3,13 @@
 
 import { useState } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
+import {
+    PageWrapper,
+    Main,
+    Content,
+    LogoWrapper,
+PrimaryButton
+} from '../components/SharedStyles';
 
 export default function SignInForm({ member, parentName, onSign, latestStatus, groupId }) {
     const [comment, setComment] = useState('');
@@ -49,22 +56,13 @@ export default function SignInForm({ member, parentName, onSign, latestStatus, g
             />
 
             <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                <button
+                <PrimaryButton isMobile={isMobile}
                     type="submit"
                     disabled={submitting}
-                    style={{
-                        fontSize: isMobile ? '1rem' : '0.875rem',
-                        padding: isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem',
-                        backgroundColor: '#ccc',
-                        borderRadius: '6px',
-                        border: 'none',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        opacity: submitting ? 0.6 : 1,
-                    }}
+
                 >
                     {latestStatus?.action === 'signed in' ? 'Sign Out' : 'Sign In'}
-                </button>
+                </PrimaryButton>
             </div>
         </form>
     );

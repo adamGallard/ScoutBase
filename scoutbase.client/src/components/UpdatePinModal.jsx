@@ -13,6 +13,19 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
 
     const handleUpdate = async () => {
         setError('');
+
+
+        if (!/^\d{4}$/.test(newPin)) {
+            setError('PIN must be exactly 4 numeric digits');
+            return;
+        }
+
+        const weakPins = ['0000', '1234', '1111', '2222', '4321'];
+        if (weakPins.includes(newPin)) {
+            setError('Please choose a less predictable PIN');
+            return;
+        }
+
         if (newPin !== confirmPin) {
             setError('New PINs do not match.');
             return;
@@ -46,6 +59,8 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
                 >
                     <input
                         type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="Current PIN"
                         value={currentPin}
                         maxLength={4}
@@ -53,6 +68,8 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
                     />
                     <input
                         type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="New PIN"
                         value={newPin}
                         maxLength={4}
@@ -60,6 +77,8 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
                     />
                     <input
                         type="password"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         placeholder="Confirm New PIN"
                         value={confirmPin}
                         maxLength={4}

@@ -17,7 +17,8 @@ import {
     PageWrapper,
     Main,
     Content,
-    LogoWrapper
+    LogoWrapper,
+    PrimaryButton
 } from '../components/SharedStyles';
 import Header from '../components/Header';
 import UpdatePinModal from '../components/UpdatePinModal';
@@ -52,6 +53,8 @@ export default function SignInOutPage() {
     const filteredYouthList = youthList.filter(
         (m) => sectionFilter === '' || m.section === sectionFilter
     );
+    const [forgottenPinName, setForgottenPinName] = useState('');
+
 
     useEffect(() => {
         const loadGroup = async () => {
@@ -162,19 +165,11 @@ export default function SignInOutPage() {
                     <span style={{ fontSize: '0.875rem', color: '#0F5BA4', fontWeight: 600 }}>
                         Logged in as: {matchingParent.name}
                     </span>
-                    <button
-                        style={{
-                            fontSize: isMobile ? '0.875rem' : '0.75rem',
-                            backgroundColor: '#0F5BA4',
-                            color: '#fff',
-                            borderRadius: '4px',
-                            padding: isMobile ? '8px 12px' : '4px 8px',
-                            fontWeight: 500
-                        }}
+                    <PrimaryButton isMobile={isMobile}
                         onClick={() => setShowUpdatePinModal(true)}
                     >
                         Update PIN
-                    </button>
+                    </PrimaryButton>
                 </div>
             )}
 
@@ -231,21 +226,12 @@ export default function SignInOutPage() {
                             />
 
                             <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                                <button
+                                <PrimaryButton
                                     type="submit"
-                                    style={{
-                                        padding: isMobile ? '0.75rem' : '0.5rem',
-                                        fontSize: isMobile ? '1rem' : '0.875rem',
-                                        backgroundColor: '#0F5BA4',
-                                        color: '#fff',
-                                        borderRadius: '6px',
-                                        fontWeight: 600,
-                                        border: 'none',
-                                        width: isMobile ? '100%' : 'auto',
-                                    }}
+                                    isMobile={isMobile}
                                 >
                                     Continue
-                                </button>
+                                </PrimaryButton>
                             </div>
                             {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>{error}</p>}
 
@@ -362,16 +348,7 @@ export default function SignInOutPage() {
                                             );
                                         })}
 
-                                        <button
-                                            style={{
-                                                marginTop: '1rem',
-                                                fontSize: isMobile ? '1rem' : '0.875rem',
-                                                padding: isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem',
-                                                backgroundColor: '#0F5BA4',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                            }}
+                                        <PrimaryButton isMobile={isMobile}
                                             onClick={() => {
                                                 setSubmitted(false);
                                                 setParentName('');
@@ -383,7 +360,7 @@ export default function SignInOutPage() {
                                             }}
                                         >
                                             Logout
-                                        </button>
+                                        </PrimaryButton>
                                     </div>
                                 ) : (
                                     <div style={{ width: '100%', maxWidth: '500px', margin: '0 auto' }}>
@@ -450,28 +427,53 @@ export default function SignInOutPage() {
                         }}
                     >
                         <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Need Help with Your PIN?</h3>
-                        <p style={{ marginBottom: '1.5rem' }}>
-                            If you’ve forgotten your PIN, please contact your Scout Leader for assistance.
+                        <p style={{ marginBottom: '1rem' }}>
+                            If you’ve forgotten your PIN, 
+                            enter your name and click <strong>Email Leader</strong> to request a PIN reset.
                         </p>
+                        <input
+                            type="text"
+                            placeholder="Your name"
+                            value={forgottenPinName}
+                            onChange={(e) => setForgottenPinName(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                fontSize: '1rem',
+                                marginBottom: '1rem',
+                                border: '1px solid #ccc',
+                                borderRadius: '6px',
+                            }}
+                        />
+
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                             <a
                                 href={
-                                    primaryLeaderEmail
-                                        ? `mailto:${primaryLeaderEmail}?subject=Forgotten PIN Help&body=Hi leader,%0D%0A%0D%0AI've forgotten my PIN. Could you help me reset it?%0D%0A%0D%0AThanks!`
+                                    primaryLeaderEmail && forgottenPinName
+                                        ? `mailto:${primaryLeaderEmail}?subject=Forgotten PIN - ${encodeURIComponent(forgottenPinName)}&body=Hi leader,%0D%0A%0D%0AI've forgotten my PIN. Could you help me reset it?%0D%0A%0D%0AThanks!`
                                         : undefined
                                 }
+                                onClick={() => {
+                                    if (forgottenPinName) {
+                                        setTimeout(() => {
+                                            setShowForgottenPinModal(false);
+                                        }, 500); // slight delay ensures mail client triggers
+                                    }
+                                }}
                                 style={{
-                                    backgroundColor: '#0F5BA4',
+                                    backgroundColor: forgottenPinName ? '#0F5BA4' : '#999',
                                     color: '#fff',
                                     padding: '0.5rem 1rem',
                                     borderRadius: '6px',
                                     fontWeight: 600,
-                                    textDecoration: 'none'
+                                    textDecoration: 'none',
+                                    pointerEvents: forgottenPinName ? 'auto' : 'none',
+                                    opacity: forgottenPinName ? 1 : 0.6,
                                 }}
-                                disabled={!primaryLeaderEmail}
                             >
                                 Email Leader
                             </a>
+
                             <button
                                 onClick={() => setShowForgottenPinModal(false)}
                                 style={{
@@ -483,7 +485,7 @@ export default function SignInOutPage() {
                                     cursor: 'pointer'
                                 }}
                             >
-                                Close
+                                Cancel
                             </button>
                         </div>
                     </div>

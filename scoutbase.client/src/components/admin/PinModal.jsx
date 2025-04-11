@@ -9,10 +9,13 @@ export default function PinModal({ parentId, onClose, groupId }) {
     const [loading] = useState(false);
 
     const handleSave = async () => {
-        if (!newPin || newPin.length !== 4) {
-            alert('Please enter a 4-digit PIN');
+
+        const weakPins = ['0000', '1234', '1111', '2222', '4321'];
+        if (weakPins.includes(newPin)) {
+            alert('Please choose a less predictable PIN');
             return;
         }
+
 
         try {
             const salt = await bcrypt.genSalt(10);
