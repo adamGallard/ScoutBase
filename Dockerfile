@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy only the backend project and solution
 COPY ScoutBase.sln ./
-COPY scoutbase.server/ ./scoutbase.server/
+COPY ScoutBase.Server/ ./ScoutBase.Server/
 WORKDIR /app/scoutbase.server
 RUN dotnet restore
 RUN dotnet publish -c Release -o /app/out
