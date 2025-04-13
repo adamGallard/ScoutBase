@@ -93,3 +93,19 @@ export const resetParentPin = async (parentId, newPin) => {
 
     return { success: true };
 };
+
+export function checkTokenValidity() {
+    const token = localStorage.getItem('scoutbase-terrain-idtoken');
+    if (!token) return false;
+
+    const [, payload] = token.split('.');
+    if (!payload) return false;
+
+    try {
+        const decoded = JSON.parse(atob(payload));
+        const now = Math.floor(Date.now() / 1000);
+        return decoded.exp > now;
+    } catch {
+        return false;
+    }
+}

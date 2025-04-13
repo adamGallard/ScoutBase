@@ -30,10 +30,10 @@ export default function LinkModal({ parentId, onClose, groupId }) {
     const loadLinkedYouth = async () => {
         const { data } = await supabase
             .from('parent_youth')
-            .select('youth (id, name, section)')
+            .select('youth (id, name, section), is_primary')
             .eq('parent_id', parentId);
         if (data) {
-            setLinkedYouth(data.map(l => l.youth));
+            setLinkedYouth(data.map(l => ({ ...l.youth, is_primary: l.is_primary })));
         }
     };
 
@@ -75,6 +75,15 @@ export default function LinkModal({ parentId, onClose, groupId }) {
 
     const totalPages = Math.ceil(unlinkedYouth.length / itemsPerPage);
 
+    const togglePrimary = async (youthId, newValue) => {
+        await supabase
+            .from('parent_youth')
+            .update({ is_primary: newValue })
+            .eq('parent_id', parentId)
+            .eq('youth_id', youthId);
+        loadLinkedYouth();
+    };
+
     return (
         <ModalOverlay>
             <ModalBox>
@@ -84,10 +93,22 @@ export default function LinkModal({ parentId, onClose, groupId }) {
                     {[...linkedYouth]
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((youth) => (
-                        <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span>{youth.name} ({youth.section})</span>
-                            <button onClick={() => removeLink(youth.id)}>Remove</button>
-                        </li>
+                            <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                <div>
+                                    <span>{youth.name} ({youth.section})</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                    <label style={{ fontSize: '0.85rem' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={youth.is_primary || false}
+                                            onChange={() => togglePrimary(youth.id, !youth.is_primary)}
+                                        />
+                                        {' '}Primary
+                                    </label>
+                                    <button onClick={() => removeLink(youth.id)}>Remove</button>
+                                </div>
+                            </li>
                     ))}
                 </ul>
 
