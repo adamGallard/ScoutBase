@@ -15,7 +15,8 @@ import {
     MapPin,
     Menu,
     ArrowLeft,
-    LogOut
+    LogOut,
+    Home
 } from 'lucide-react';
 
 const btnStyle = {
@@ -38,6 +39,8 @@ export default function Sidebar({ onNavigate, userInfo }) {
     const [reportsExpanded, setReportsExpanded] = useState(false);
 
     const navItems = [
+        {
+            key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
         { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
         { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
