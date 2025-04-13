@@ -1,15 +1,21 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import {
     FileText,
     UserPlus,
     Users,
-    Link2,
     BarChart2,
-    Menu,
-    ArrowLeft,
-    LogOut,
+    ChevronRight,
+    ChevronDown,
+    Mail,
+    FolderKanban,
+    Cake,
+    Repeat,
+    Download,
     User,
     MapPin,
+    Menu,
+    ArrowLeft,
+    LogOut
 } from 'lucide-react';
 
 const btnStyle = {
@@ -29,12 +35,26 @@ const btnStyle = {
 
 export default function Sidebar({ onNavigate, userInfo }) {
     const [collapsed, setCollapsed] = useState(false);
+    const [reportsExpanded, setReportsExpanded] = useState(false);
 
     const navItems = [
         { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
         { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
         { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-        { key: 'reports', label: 'Reports', icon: <BarChart2 size={16} /> },
+        {
+            key: 'reports',
+            label: 'Reports',
+            icon: <BarChart2 size={16} />,
+            expandable: true,
+            children: [
+                { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
+                { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
+                { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
+                { key: 'report-transitions', label: 'Transition History', icon: <Repeat size={16} /> },
+                { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
+                { key: 'report-full-export', label: 'Full Youth Export', icon: <Download size={16} /> }
+            ]
+        }
     ];
 
     if (userInfo?.role === 'superadmin') {
@@ -43,12 +63,7 @@ export default function Sidebar({ onNavigate, userInfo }) {
     }
 
     const handleLogout = () => {
-        localStorage.removeItem('scoutbase-admin-authed');
-        localStorage.removeItem('scoutbase-terrain-idtoken');
-        localStorage.removeItem('scoutbase-terrain-token');
-        localStorage.removeItem('scoutbase-role');
-        localStorage.removeItem('scoutbase-group-id');
-        localStorage.removeItem('scoutbase-client-id');
+        localStorage.clear();
         window.location.href = '/admin-login';
     };
 
@@ -73,24 +88,39 @@ export default function Sidebar({ onNavigate, userInfo }) {
             <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
                 {navItems.map((item) => (
                     <li key={item.key} style={{ width: '100%' }}>
-                        <button onClick={() => onNavigate(item.key)} style={btnStyle}>
+                        <button
+                            onClick={() => {
+                                if (item.expandable) {
+                                    setReportsExpanded(!reportsExpanded);
+                                    onNavigate(item.key); // also go to /reports
+                                } else {
+                                    onNavigate(item.key);
+                                }
+                            }}
+                            style={btnStyle}
+                        >
                             <span>{item.icon}</span>
                             {!collapsed && <span>{item.label}</span>}
+                            {!collapsed && item.expandable && (
+                                reportsExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                            )}
                         </button>
+
+                        {/* Render children if expandable and expanded */}
+                        {!collapsed && item.expandable && reportsExpanded && (
+                            <ul style={{ listStyle: 'none', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+                                {item.children.map(child => (
+                                    <li key={child.key}>
+                                        <button onClick={() => onNavigate(child.key)} style={btnStyle}>
+                                            <span>{child.icon}</span>
+                                            {!collapsed && <span>{child.label}</span>}
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </li>
                 ))}
-
-                <li style={{ marginTop: 'auto', width: '100%' }}>
-                    <button onClick={handleLogout} style={{ ...btnStyle, color: '#b00' }}>
-                        {!collapsed ? (
-                            <>
-                                <LogOut size={16} style={{ marginRight: '8px' }} /> Logout
-                            </>
-                        ) : (
-                            <LogOut size={16} />
-                        )}
-                    </button>
-                </li>
             </ul>
         </div>
     );

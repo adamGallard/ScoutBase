@@ -1,22 +1,35 @@
+﻿// ✅ React & React Router
 import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+// ✅ Supabase & Custom Hooks
 import { supabase } from '../lib/supabaseClient';
 import { useTerrainUser } from '../hooks/useTerrainUser';
+import { checkTokenValidity } from '../helpers/authHelper';
 
-import RequireAuth from '../components/RequireAuth';
+// ✅ Layout Components
+import Header from '../components/Header';
+import Footer from '../components/Footer';
 import Sidebar from '../components/admin/Sidebar';
+import RequireAuth from '../components/RequireAuth';
+
+// ✅ Shared UI Styles
+import { PageWrapper, Content } from '../components/SharedStyles';
+
+// ✅ Admin Functionality
+import PinModal from '../components/admin/PinModal';
+import LinkModal from '../components/admin/LinkModal';
 import AttendanceView from '../components/admin/AttendanceView';
 import ParentView from '../components/admin/ParentView';
 import YouthView from '../components/admin/YouthView';
 import UserManagementView from '../components/admin/UserManagementView';
 import GroupManagementView from '../components/admin/GroupManagementView';
-import PinModal from '../components/admin/PinModal';
-import LinkModal from '../components/admin/LinkModal';
-import Footer from '../components/Footer';
-import Header from '../components/Header';
-import {
-    PageWrapper,
-    Content
-} from '../components/SharedStyles';
+import Reports from '../components/admin/Reports';
+
+// ✅ Report Views
+import ReportParentEmails from '../components/admin/reports/ReportParentEmails';
+import ReportYouthBySection from '../components/admin/reports/ReportYouthBySection';
+import ReportAge from '../components/admin/reports/ReportAge';
 
 export default function AdminPage() {
     const [view, setView] = useState('attendance');
@@ -29,6 +42,16 @@ export default function AdminPage() {
     const { userInfo, loading: userLoading } = useTerrainUser();
     const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
     const [sectionFilter, setSectionFilter] = useState('');
+    const navigate = useNavigate();
+    const location = useLocation();
+    const subPath = location.pathname.split('/admin/')[1];
+
+    useEffect(() => {
+        if (!checkTokenValidity()) {
+            localStorage.clear();
+            window.location.href = '/admin-login';
+        }
+    }, []);
 
     useEffect(() => {
         if (!userLoading && userInfo) {
@@ -54,7 +77,7 @@ export default function AdminPage() {
         if (userLoading || !userInfo) return <p>Loading user info...</p>;
         if (!activeGroupId) return <p>Loading group data...</p>;
 
-        switch (view) {
+        switch (subPath) {
             case 'attendance':
                 return (
                     <AttendanceView
@@ -85,6 +108,14 @@ export default function AdminPage() {
                 return <UserManagementView activeGroupId={activeGroupId} />;
             case 'group-management':
                 return <GroupManagementView />;
+            case 'reports':
+                return <Reports />;
+            case 'report-parent-emails':
+                return <ReportParentEmails groupId={userInfo.group_id} />;
+            case 'report-youth-by-section':
+                return <ReportYouthBySection groupId={userInfo.group_id} />;
+            case 'report-age':
+				return <ReportAge groupId={userInfo.group_id} />;
             default:
                 return <p>Coming soon...</p>;
         }
@@ -116,7 +147,7 @@ export default function AdminPage() {
                     
 
                 <div style={{ display: 'flex', flex: 1 }}>
-                    <Sidebar onNavigate={setView} userInfo={userInfo} />
+                    <Sidebar onNavigate={(path) => navigate(`/admin/${path}`)} userInfo={userInfo} />
                     <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
                         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
                             {groups.length > 0 && (
