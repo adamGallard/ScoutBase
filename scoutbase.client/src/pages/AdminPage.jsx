@@ -25,6 +25,7 @@ import YouthView from '../components/admin/YouthView';
 import UserManagementView from '../components/admin/UserManagementView';
 import GroupManagementView from '../components/admin/GroupManagementView';
 import Reports from '../components/admin/Reports';
+import AdminDashboard from '../components/admin/AdminDashboard';
 
 // ✅ Report Views
 import ReportParentEmails from '../components/admin/reports/ReportParentEmails';
@@ -117,7 +118,7 @@ export default function AdminPage() {
             case 'report-age':
 				return <ReportAge groupId={userInfo.group_id} />;
             default:
-                return <p>Coming soon...</p>;
+                return <AdminDashboard />;
         }
     };
 
