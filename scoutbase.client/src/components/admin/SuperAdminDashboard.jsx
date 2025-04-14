@@ -8,7 +8,7 @@ import { Users, MapPin, FileText, Settings, ShieldCheck } from "lucide-react";
 const SuperAdminDashboard = () => {
     const [groupCount, setGroupCount] = useState(0);
     const [userStats, setUserStats] = useState({});
-    const { actingAsGroupId, actingAsAdmin } = useActingGroup();
+    const { actingAsGroupId, actingAsAdmin, actingGroupName } = useActingGroup();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -40,7 +40,7 @@ const SuperAdminDashboard = () => {
             {actingAsAdmin && actingAsGroupId && (
                 <HighlightNote>
                     ⚠️ You are currently <strong>acting as admin</strong> for group ID:{" "}
-                    <strong>{actingAsGroupId}</strong>
+                    <strong>{actingGroupName}</strong>
                 </HighlightNote>
             )}
 

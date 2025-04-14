@@ -16,7 +16,9 @@ import {
     Menu,
     ArrowLeft,
     LogOut,
-    Home
+    Home,
+    CalendarCheck,
+    QrCode
 } from 'lucide-react';
 
 const btnStyle = {
@@ -37,12 +39,9 @@ const btnStyle = {
 import {
     can
 } from "@/utils/roleUtils";
-import { signout } from '@/helpers/supabaseHelpers';
-import { useActingGroup } from "@/hooks/useActingGroup";
 
 
 export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
-    const {  setActingAsGroupId, setActingAsAdmin } = useActingGroup();
 
     const [collapsed, setCollapsed] = useState(false);
     const [reportsExpanded, setReportsExpanded] = useState(false);
@@ -52,7 +51,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
 
     if (can(userInfo?.role, 'viewYouthParentTabs', { actingAsGroupId, actingAsAdmin })) {
         navItems.push(
-            { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
+            { key: 'attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
             { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
             { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> }
         );
@@ -72,7 +71,9 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-full-export', label: 'Full Youth Export', icon: <Download size={16} /> }
             ]
-        });
+        },
+        { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> } // Add QR Code item}
+        );
     }
 
     if (can(userInfo?.role, 'manageGroupsAndUsers')) {
@@ -82,22 +83,9 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> }
         );
     };
-    navItems.push({
-        key: 'logout',
-        label: 'Logout',
-        icon: <LogOut size={16} />,
-        onClick: async () => {
-            handleLogout;
-        }
-    });
+    navItems.push({ key: "logout", label: "Logout", icon: <LogOut size={16} /> });
 
-    const handleLogout = () => {
-    signout 
-    localStorage.clear();
-    window.location.href = '/admin-login';
-};
-
-    return (
+       return (
         <div
             style={{
                 width: collapsed ? '60px' : '200px',

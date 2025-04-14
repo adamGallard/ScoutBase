@@ -5,6 +5,7 @@ import AdminLogin from './pages/AdminLogin';
 import SignInRouteWrapper from './components/SignInRouteWrapper';
 import Privacy from './pages/Privacy';
 import Features from './pages/Features';
+import Logout from './pages/Logout';
 
 export default function App() {
     return (
@@ -16,6 +17,7 @@ export default function App() {
                 <Route path="/admin/*" element={<AdminPage />} />
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/features" element={<Features />} />
+                <Route path="/Logout" element={<Logout />} />
             </Routes>
         </Router>
     );

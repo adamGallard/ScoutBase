@@ -21,7 +21,7 @@ import {
     AdminDropdownToggle, Label, StyledSelect, AdminHeaderRow,
     AdminWarningLabel
 } from '@/components/SharedStyles';
-import { Settings, LogOut, MapPin } from 'lucide-react';
+import { Settings, LogOut, MapPin,User } from 'lucide-react';
 
 // ✅ Admin Functionality
 import PinModal from '@/components/admin/PinModal';
@@ -43,6 +43,11 @@ import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySectio
 import ReportAge from '@/components/admin/reports/ReportAge';
 import { useActingGroup } from "@/hooks/useActingGroup";
 
+import GroupQRCode from '@/components/admin/GroupQRCode';
+
+
+
+
 export default function AdminPage() {
     const [groups, setGroups] = useState([]);
     const [activeGroupId, setActiveGroupId] = useState(null);
@@ -58,15 +63,11 @@ export default function AdminPage() {
     const subPath = location.pathname.split('/admin/')[1];
     const { actingAsGroupId, setActingAsGroupId, actingAsAdmin, setActingAsAdmin } = useActingGroup();
     const [showDropdown, setShowDropdown] = useState(false);
-    const handleLogout = () => {
-        localStorage.clear();
-        window.location.href = '/admin-login';
-    };
+
 
     useEffect(() => {
         if (!checkTokenValidity()) {
-            localStorage.clear();
-            window.location.href = '/admin-login';
+			navigate('/Logout');
         }
     }, []);
 
@@ -85,14 +86,14 @@ export default function AdminPage() {
     useEffect(() => {
         if (!userLoading && userInfo) {
             if (userInfo?.role === 'superadmin') {
-                supabase.from('groups').select('id, name').then(({ data }) => {
+                supabase.from('groups').select('id, name,slug').then(({ data }) => {
                     setGroups(data || []);
                     if (data?.length) setActiveGroupId(String(data[0].id));
                 });
             } else if (userInfo.group_id) {
                 supabase
                     .from('groups')
-                    .select('id, name')
+                    .select('id, name, slug')
                     .eq('id', userInfo.group_id)
                     .then(({ data }) => {
                         setGroups(data || []);
@@ -101,6 +102,9 @@ export default function AdminPage() {
             }
         }
     }, [userInfo, userLoading]);
+
+
+    const group = groups.find((g) => g.id === userInfo?.group_id);
 
     const renderContent = () => {
         if (userLoading || !userInfo) return <p>Loading user info...</p>;
@@ -147,13 +151,22 @@ export default function AdminPage() {
                 return <ReportAge groupId={userInfo.group_id} />;
             case 'audit-log':
                 return <AuditLogViewer activeGroupId={activeGroupId} />;
+            case 'qr-code':
+                return <GroupQRCode groupStub={group?.slug} />;
             default:
                 if (userInfo?.role === 'superadmin') return <SuperAdminDashboard />;
                 if (userInfo?.role === 'admin') return <AdminDashboard userInfo={userInfo} />;
                 if (userInfo?.role === 'user') return <UserDashboard userInfo={userInfo} />;
                 return <p>Access denied</p>;
         }
+
     };
+
+    const handleLogout = () => {
+        // Add logout logic here if needed
+        navigate('/Logout');
+    };
+
 
     return (
         <RequireAuth>
@@ -202,7 +215,7 @@ export default function AdminPage() {
                                         {showDropdown && (
                                             <AdminDropdownMenu>
                                                 <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                                                    👤 {userInfo?.name} ({userInfo?.role})
+                                                    <User size={16}/> {userInfo?.name} ({userInfo?.role})
                                                 </div>
                                                     <Label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                         <MapPin size={16} />

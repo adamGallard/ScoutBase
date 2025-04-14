@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { RefreshCcw, Download } from 'lucide-react';
-import { AdminTable } from '../SharedStyles';
+import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
+import { AdminTable, PageTitle } from '../SharedStyles';
 
 export default function AttendanceView({ activeGroupId, selectedDate, sectionFilter, onDateChange, onSectionChange }) {
     const [filteredAttendance, setFilteredAttendance] = useState([]);
@@ -75,7 +75,10 @@ export default function AttendanceView({ activeGroupId, selectedDate, sectionFil
 
     return (
         <div className="content-box">
-            <h2>Attendance Records</h2>
+            <PageTitle>
+                <CalendarCheck size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Attendance Records
+            </PageTitle>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
                 <label>
