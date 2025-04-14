@@ -304,3 +304,10 @@ export const AdminWarningLabel = styled.div`
   padding: 0.25rem 0.75rem;
   border-radius: 9999px;
 `;
+export const PageTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #0F5BA4;
+  line-height: 1.2;
+`;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { AdminTable } from '@/components/SharedStyles';
+import { AdminTable, PageTitle } from '@/components/SharedStyles';
+import { FileText } from "lucide-react";
+
 
 const AuditLogViewer = ({ activeGroupId }) => {
     const [logs, setLogs] = useState([]);
@@ -34,7 +36,10 @@ const AuditLogViewer = ({ activeGroupId }) => {
 
     return (
         <div>
-            <h2 className="text-2xl font-bold mb-4">Audit Log</h2>
+            <PageTitle>
+                <FileText size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Audit Log
+            </PageTitle>
 
             {loading ? (
                 <p>Loading logs...</p>
