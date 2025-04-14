@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 
 export const useActingGroup = () => {
-    const [actingAsGroupId, setActingAsGroupIdState] = useState(
-        () => localStorage.getItem("actingAsGroupId") || null
-    );
+    const [actingAsGroupId, setActingAsGroupIdState] = useState(() => localStorage.getItem("actingAsGroupId") || null);
+    const [actingAsAdmin, setActingAsAdminState] = useState(() => localStorage.getItem("actingAsAdmin") === 'true');
 
     const setActingAsGroupId = (id) => {
         if (id) {
@@ -14,5 +13,15 @@ export const useActingGroup = () => {
         setActingAsGroupIdState(id);
     };
 
-    return { actingAsGroupId, setActingAsGroupId };
+    const setActingAsAdmin = (flag) => {
+        localStorage.setItem("actingAsAdmin", flag);
+        setActingAsAdminState(flag);
+    };
+
+    return {
+        actingAsGroupId,
+        setActingAsGroupId,
+        actingAsAdmin,
+        setActingAsAdmin,
+    };
 };

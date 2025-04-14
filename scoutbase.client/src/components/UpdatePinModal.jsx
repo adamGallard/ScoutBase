@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { updateParentPin } from '@/helpers/authHelper';
+import { logAuditEvent } from "@/helpers/auditHelper";
 
-export default function UpdatePinModal({ isOpen, onClose, parentId }) {
+export default function UpdatePinModal({ isOpen, onClose, parentId, groupId }) {
     const [currentPin, setCurrentPin] = useState('');
     const [newPin, setNewPin] = useState('');
     const [confirmPin, setConfirmPin] = useState('');
@@ -43,6 +44,15 @@ export default function UpdatePinModal({ isOpen, onClose, parentId }) {
                 setNewPin('');
                 setConfirmPin('');
             }, 1500);
+            await logAuditEvent({
+                userId: parentId,             // the parent changing their own PIN
+                groupId: groupId,             // passed down or grabbed from SignInOutPage
+                role: 'parent',
+                action: 'update_pin',
+                targetType: 'parent',
+                targetId: parentId,
+                metadata: { source: 'self-service' }
+            });
         }
     };
 

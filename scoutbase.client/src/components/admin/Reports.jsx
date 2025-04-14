@@ -49,8 +49,8 @@ const reports = [
 
 export default function Reports() {
     return (
-        <div style={{ padding: '2rem', maxWidth: '700px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Reports</h2>
+        <div >
+            <h2 style={{ margin: 0 }}>Reports</h2>
             <div style={{
                 marginTop: '2rem',
                 padding: '1rem',

@@ -52,7 +52,7 @@ export default function ReportAge({ groupId }) {
     }, [rows, sectionFilter, statusFilter]);
 
     return (
-        <div style={{ padding: '2rem' }}>
+        <div style={{ padding: '0rem' }}>
             <h2>Youth Age Report</h2>
             <p>This report highlights youth approaching or past their expected linking age.</p>
 

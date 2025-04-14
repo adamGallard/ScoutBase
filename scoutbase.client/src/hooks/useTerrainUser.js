@@ -1,26 +1,18 @@
-import { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { useEffect, useState, useRef } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { logAuditEvent } from "@/helpers/auditHelper";
+
 
 export function useTerrainUser() {
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const hasLoggedLogin = useRef(false);
 
     useEffect(() => {
         const idToken = localStorage.getItem('scoutbase-terrain-idtoken');
-        const terrainUserId = localStorage.getItem('scoutbase-terrain-userid'); // QLD-281595 etc
-
-        if (!idToken || !terrainUserId) {
-            if (import.meta.env.DEV) {
-                setUserInfo({
-                    name: 'Dev Superadmin',
-                    role: 'superadmin',
-                    group_id: 1
-                });
-            }
-            setLoading(false);
-            return;
-        }
+        const terrainUserId = localStorage.getItem('scoutbase-terrain-userid'); 
+ 
 
         fetch('https://members.terrain.scouts.com.au/profiles', {
             headers: { Authorization: idToken }
@@ -33,7 +25,7 @@ export function useTerrainUser() {
 
                     const { data: userRecord, error: userError } = await supabase
                         .from('users')
-                        .select('group_id, role')
+                        .select('id, group_id, role')
                         .eq('terrain_user_id', terrainUserId)
                         .single();
 
@@ -46,6 +38,18 @@ export function useTerrainUser() {
                             role: userRecord.role,
                             group_id: userRecord.group_id
                         });
+                        if (!hasLoggedLogin.current) {
+                            hasLoggedLogin.current = true;
+                            await logAuditEvent({
+                                userId: userRecord.id,
+                                groupId: userRecord.group_id,
+                                role: userRecord.role,
+                                action: 'Admin login',
+                                targetType: 'System'
+                            });
+                        }
+
+
                     }
                 } else {
                     setError('No profile info found');
@@ -62,6 +66,7 @@ export function useTerrainUser() {
 
     return { userInfo, loading, error };
 }
+
 
 export async function getTerrainProfiles(token) {
     const response = await fetch('/api/terrain/profiles', {

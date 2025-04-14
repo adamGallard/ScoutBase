@@ -1,22 +1,24 @@
 // src/utils/roleUtils.js
 
-// Define roles and their allowed features
 const rolePermissions = {
-    admin: [
-        'viewYouthParentTabs',
-        'viewReports',
-        'accessAttendance',
-    ],
-    reports_user: [
-        'viewReports',
-    ],
-    superadmin: [
-        'manageGroupsAndUsers',
-        'setupSystem',
-    ]
+    admin: ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
+    user: ['viewReports'],
+    superadmin: ['manageGroupsAndUsers', 'setupSystem'],
 };
 
-// Generic checker
-export const can = (role, permission) => {
-    return rolePermissions[role]?.includes(permission) ?? false;
+export const can = (role, permission, options) => {
+    const { actingAsGroupId, actingAsAdmin } = options ?? {};
+
+    if (rolePermissions[role]?.includes(permission)) return true;
+
+    if (
+        role === 'superadmin' &&
+        actingAsGroupId &&
+        actingAsAdmin &&
+        ['viewYouthParentTabs', 'accessAttendance','viewReports'].includes(permission)
+    ) {
+        return true;
+    }
+
+    return false;
 };

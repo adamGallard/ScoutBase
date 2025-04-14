@@ -100,7 +100,7 @@ export default function ReportParentEmails({ groupId }) {
     }, [sectionFilter, rawData, allYouth]);
 
     return (
-        <div style={{ padding: '2rem' }}>
+        <div style={{ padding: '0rem' }}>
             <h2>Parent Email Distribution List</h2>
             <p>This report includes two downloadable CSVs: one for primary parent emails and one for youth without a primary parent.</p>
 

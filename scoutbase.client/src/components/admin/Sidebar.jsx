@@ -37,16 +37,20 @@ const btnStyle = {
 import {
     can
 } from "@/utils/roleUtils";
-import { signout } from '../../helpers/supabaseHelpers';
+import { signout } from '@/helpers/supabaseHelpers';
+import { useActingGroup } from "@/hooks/useActingGroup";
 
-export default function Sidebar({ onNavigate, userInfo }) {
+
+export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
+    const {  setActingAsGroupId, setActingAsAdmin } = useActingGroup();
+
     const [collapsed, setCollapsed] = useState(false);
     const [reportsExpanded, setReportsExpanded] = useState(false);
     const navItems = [
         { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
     ];
 
-    if (can(userInfo?.role, 'viewYouthParentTabs')) {
+    if (can(userInfo?.role, 'viewYouthParentTabs', { actingAsGroupId, actingAsAdmin })) {
         navItems.push(
             { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
             { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
@@ -54,7 +58,7 @@ export default function Sidebar({ onNavigate, userInfo }) {
         );
     }
 
-    if (can(userInfo?.role, 'viewReports')) {
+    if (can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin })) {
         navItems.push({
             key: 'reports',
             label: 'Reports',
@@ -74,7 +78,8 @@ export default function Sidebar({ onNavigate, userInfo }) {
     if (can(userInfo?.role, 'manageGroupsAndUsers')) {
         navItems.push(
             { key: 'user-management', label: 'Users', icon: <User size={16} /> },
-            { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> }
+            { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
+            { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> }
         );
     };
     navItems.push({

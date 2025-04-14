@@ -33,7 +33,7 @@ export default function ReportYouthBySection({ groupId }) {
     };
 
     return (
-        <div style={{ padding: '1rem' }}>
+        <div style={{ padding: '0rem' }}>
             <h2>Youth by Section Report</h2>
 
             <div style={{ margin: '1rem 0' }}>
