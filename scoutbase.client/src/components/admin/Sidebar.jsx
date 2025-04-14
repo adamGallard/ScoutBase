@@ -16,7 +16,9 @@ import {
     Menu,
     ArrowLeft,
     LogOut,
-    Home
+    Home,
+    CalendarCheck,
+    QrCode
 } from 'lucide-react';
 
 const btnStyle = {
@@ -34,17 +36,29 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
-export default function Sidebar({ onNavigate, userInfo }) {
+import {
+    can
+} from "@/utils/roleUtils";
+
+
+export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
+
     const [collapsed, setCollapsed] = useState(false);
     const [reportsExpanded, setReportsExpanded] = useState(false);
-
     const navItems = [
-        {
-            key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
-        { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
-        { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
-        { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-        {
+        { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
+    ];
+
+    if (can(userInfo?.role, 'viewYouthParentTabs', { actingAsGroupId, actingAsAdmin })) {
+        navItems.push(
+            { key: 'attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
+            { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
+            { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> }
+        );
+    }
+
+    if (can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin })) {
+        navItems.push({
             key: 'reports',
             label: 'Reports',
             icon: <BarChart2 size={16} />,
@@ -57,20 +71,21 @@ export default function Sidebar({ onNavigate, userInfo }) {
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-full-export', label: 'Full Youth Export', icon: <Download size={16} /> }
             ]
-        }
-    ];
-
-    if (userInfo?.role === 'superadmin') {
-        navItems.push({ key: 'user-management', label: 'Users', icon: <User size={16} /> });
-        navItems.push({ key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> });
+        },
+        { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> } // Add QR Code item}
+        );
     }
 
-    const handleLogout = () => {
-        localStorage.clear();
-        window.location.href = '/admin-login';
+    if (can(userInfo?.role, 'manageGroupsAndUsers')) {
+        navItems.push(
+            { key: 'user-management', label: 'Users', icon: <User size={16} /> },
+            { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
+            { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> }
+        );
     };
+    navItems.push({ key: "logout", label: "Logout", icon: <LogOut size={16} /> });
 
-    return (
+       return (
         <div
             style={{
                 width: collapsed ? '60px' : '200px',

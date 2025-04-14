@@ -5,8 +5,10 @@ import {
     Cake,
     Repeat,
     Users,
-    Download
+    Download,
+    BarChart2
 } from 'lucide-react';
+import { PageTitle } from '../SharedStyles';
 
 const reports = [
     {
@@ -49,8 +51,9 @@ const reports = [
 
 export default function Reports() {
     return (
-        <div style={{ padding: '2rem', maxWidth: '700px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem' }}>Reports</h2>
+        <div className="content-box">
+            <PageTitle>
+                <BarChart2 size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Reports</PageTitle>
             <div style={{
                 marginTop: '2rem',
                 padding: '1rem',

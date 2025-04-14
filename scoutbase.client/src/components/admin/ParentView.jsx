@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Link2, Key, Check, X } from 'lucide-react';
-import { AdminTable } from '../SharedStyles';
+import { Pencil, Trash, Plus, Link2, Key, Check, X,UserPlus } from 'lucide-react';
+import { AdminTable, PageTitle } from '../SharedStyles';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal }) {
     const [parents, setParents] = useState([]);
@@ -49,7 +49,9 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
 
     return (
         <div className="content-box">
-            <h2>Parents</h2>
+            <PageTitle>
+                <UserPlus size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Parent Management</PageTitle>
 
             <input
                 type="text"

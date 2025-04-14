@@ -189,3 +189,125 @@ export const PrimaryButton = styled.button.withConfig({
     cursor: not-allowed;
   }
 `;
+
+export const ToggleSwitchWrapper = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  .toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+  }
+
+  .toggle-switch input {
+    display: none;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    border-radius: 24px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: background-color 0.2s ease;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+  }
+
+  input:checked + .toggle-slider {
+    background-color: #0F5BA4;
+  }
+
+  input:checked + .toggle-slider::before {
+    transform: translateX(26px);
+  }
+`;
+
+export const AdminDropdownContainer = styled.div`
+  position: relative;
+`;
+
+export const AdminDropdownMenu = styled.div`
+  position: absolute;
+  right: 0;
+  top: 2.5rem;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  width: 280px;
+  z-index: 50;
+`;
+
+export const AdminDropdownToggle = styled.button`
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 9999px;
+  padding: 0.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+
+  &:hover {
+    background-color: #f3f4f6;
+  }
+`;
+
+export const Label = styled.label`
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+`;
+
+export const StyledSelect = styled.select`
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+  background-color: white;
+`;
+export const AdminHeaderRow = styled('div').withConfig({
+    shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isWarning'
+})`
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 0rem 0rem;
+  gap: 1rem;
+  background-color: ${({ isWarning }) => (isWarning ? '#fef3c7' : 'transparent')};
+  border-bottom: 0px solid #e5e7eb;
+`;
+export const AdminWarningLabel = styled.div`
+  background-color: #facc15;
+  color: #92400e;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+`;
+export const PageTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #0F5BA4;
+  line-height: 1.2;
+`;

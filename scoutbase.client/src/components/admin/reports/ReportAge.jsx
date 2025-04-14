@@ -1,9 +1,9 @@
 ﻿import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
-import { downloadCSV } from '../../../utils/exportUtils';
-import { PrimaryButton } from '../../SharedStyles';
-import { getAgeWithMonths, getLinkingStatus, getLinkingThreshold } from '../../../utils/dateUtils';
-
+import { supabase } from '@/lib/supabaseClient';
+import { downloadCSV } from '@/utils/exportUtils';
+import { PrimaryButton,PageTitle } from '@/components/SharedStyles';
+import { getAgeWithMonths, getLinkingStatus, getLinkingThreshold } from '@/utils/dateUtils';
+import { Cake } from 'lucide-react';
 export default function ReportAge({ groupId }) {
     const [rows, setRows] = useState([]);
     const [filtered, setFiltered] = useState([]);
@@ -52,8 +52,9 @@ export default function ReportAge({ groupId }) {
     }, [rows, sectionFilter, statusFilter]);
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <h2>Youth Age Report</h2>
+        <div className="content-box">
+            <PageTitle>
+                <Cake size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Youth Age Report</PageTitle>
             <p>This report highlights youth approaching or past their expected linking age.</p>
 
             <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>

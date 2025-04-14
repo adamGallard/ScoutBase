@@ -1,7 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
-import { downloadCSV } from '../../../utils/exportUtils';
-import { PrimaryButton } from '../../SharedStyles';
+import { supabase } from '@/lib/supabaseClient';
+import { downloadCSV } from '@/utils/exportUtils';
+import { PrimaryButton,PageTitle } from '@/components/SharedStyles';
+import { Mail } from 'lucide-react';  
 
 export default function ReportParentEmails({ groupId }) {
     const [rows, setRows] = useState([]);
@@ -100,8 +101,9 @@ export default function ReportParentEmails({ groupId }) {
     }, [sectionFilter, rawData, allYouth]);
 
     return (
-        <div style={{ padding: '2rem' }}>
-            <h2>Parent Email Distribution List</h2>
+        <div className="content-box">
+            <PageTitle>
+                <Mail size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Parent Email Distribution List</PageTitle>
             <p>This report includes two downloadable CSVs: one for primary parent emails and one for youth without a primary parent.</p>
 
             <div style={{ margin: '1rem 0' }}>

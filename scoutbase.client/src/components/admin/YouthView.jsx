@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Check, X, BookUser } from 'lucide-react';
+import { Pencil, Trash, Plus, Check, X, BookUser, Users } from 'lucide-react';
 import { AdminTable } from '../SharedStyles';
 import TransitionModal from './TransitionModal';
 import { formatDate } from '../../utils/dateUtils';
@@ -11,7 +11,8 @@ import {
     Main,
     Content,
     LogoWrapper,
-    PrimaryButton
+    PrimaryButton,
+    PageTitle
 } from '../../components/SharedStyles';
 import UnitSelectModal from './UnitSelectModal';
 
@@ -159,7 +160,9 @@ export default function YouthView({ groupId }) {
                 marginBottom: '1rem',
                 flexWrap: 'wrap'
             }}>
-                <h2 style={{ margin: 0 }}>Youth</h2>
+                <PageTitle>
+                    <Users size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Youth Management
+                    </PageTitle>
 
 
                 

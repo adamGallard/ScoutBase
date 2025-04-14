@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
-import { AdminTable } from '../SharedStyles';
+import { Pencil, Trash, Plus, Check, X, User } from 'lucide-react';
+import { AdminTable ,PageTitle} from '../SharedStyles';
 
 export default function UserManagementView({ activeGroupId }) {
     const [users, setUsers] = useState([]);
@@ -44,7 +44,10 @@ export default function UserManagementView({ activeGroupId }) {
 
     return (
         <div className="content-box">
-            <h2>Manage Users</h2>
+            <PageTitle>
+                <User size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Manage Users
+            </PageTitle>
 
             <AdminTable>
                 <thead>
@@ -81,6 +84,7 @@ export default function UserManagementView({ activeGroupId }) {
                                         value={formData.role}
                                         onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}
                                     >
+                                        <option value="user">user</option>
                                         <option value="admin">admin</option>
                                         <option value="superadmin">superadmin</option>
                                     </select>

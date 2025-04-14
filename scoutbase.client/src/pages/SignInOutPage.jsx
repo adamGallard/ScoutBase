@@ -9,7 +9,7 @@ import {
 } from '../helpers/attendanceHelper';
 import { verifyParentByIdentifierAndPin } from '../helpers/authHelper';
 
-import { supabase } from '../lib/supabaseClient';
+import { supabase} from '../lib/supabaseClient';
 
 import SignInForm from '../components/SignInForm';
 import Footer from '../components/Footer';
@@ -23,6 +23,7 @@ import {
 import Header from '../components/Header';
 import UpdatePinModal from '../components/UpdatePinModal';
 import { useIsMobile } from '../hooks/useIsMobile';
+import { logAuditEvent } from '../helpers/auditHelper';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
 
@@ -115,8 +116,17 @@ export default function SignInOutPage() {
         }
 
         setMatchingParent(parent);
+        await logAuditEvent({
+            userId: parent.id,
+            groupId: groupId,
+            role: 'parent',
+            action: 'login',
+            targetType: 'system',
+        });
+
         setParentName(parent.name);
 
+ 
         const { youthList, error: youthError } = await fetchYouthByParentId(parent.id);
         if (youthError) {
             setError(youthError);
@@ -127,6 +137,7 @@ export default function SignInOutPage() {
         const statusMap = await fetchLatestAttendanceForYouthList(supabase, youthList, groupId);
         setLatestStatusMap(statusMap);
         setSubmitted(true);
+
     };
 
     if (groupNotFound) {
@@ -144,6 +155,8 @@ export default function SignInOutPage() {
             </PageWrapper>
         );
     }
+
+
 
     return (
         <PageWrapper>
@@ -398,6 +411,7 @@ export default function SignInOutPage() {
                     isOpen={true}
                     onClose={() => setShowUpdatePinModal(false)}
                     parentId={matchingParent.id}
+                    groupId={groupId} 
                 />
             )}
             {showForgottenPinModal && (

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Check, X } from 'lucide-react';
-import { AdminTable } from '../SharedStyles';
+import { Pencil, Trash, Plus, Check, X, MapPin } from 'lucide-react';
+import { AdminTable, PageTitle } from '../SharedStyles';
 
 export default function GroupManagementView() {
     const [groups, setGroups] = useState([]);
@@ -54,7 +54,10 @@ export default function GroupManagementView() {
 
     return (
         <div className="content-box">
-            <h2>Manage Groups</h2>
+            <PageTitle>
+                <MapPin size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Manage Groups
+            </PageTitle>
 
             <AdminTable>
                 <thead>

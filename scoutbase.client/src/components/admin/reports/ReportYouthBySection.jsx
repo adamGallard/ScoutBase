@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import { downloadCSV } from '../../../utils/exportUtils';
-import { PrimaryButton } from '../../SharedStyles';
+import { PrimaryButton,PageTitle } from '../../SharedStyles';
+import { FolderKanban } from 'lucide-react';
 
 const SECTIONS = ['All Sections', 'Joeys', 'Cubs', 'Scouts', 'Venturers'];
 
@@ -33,8 +34,9 @@ export default function ReportYouthBySection({ groupId }) {
     };
 
     return (
-        <div style={{ padding: '1rem' }}>
-            <h2>Youth by Section Report</h2>
+        <div className="content-box">
+            <PageTitle>
+                <FolderKanban size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Youth by Section Report</PageTitle>
 
             <div style={{ margin: '1rem 0' }}>
                 <label style={{ marginRight: '0.5rem' }}>Select Section:</label>
