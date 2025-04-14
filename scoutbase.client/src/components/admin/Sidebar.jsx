@@ -34,17 +34,28 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
+import {
+    can
+} from "@/utils/roleUtils";
+import { signout } from '../../helpers/supabaseHelpers';
+
 export default function Sidebar({ onNavigate, userInfo }) {
     const [collapsed, setCollapsed] = useState(false);
     const [reportsExpanded, setReportsExpanded] = useState(false);
-
     const navItems = [
-        {
-            key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
-        { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
-        { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
-        { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-        {
+        { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
+    ];
+
+    if (can(userInfo?.role, 'viewYouthParentTabs')) {
+        navItems.push(
+            { key: 'attendance', label: 'Attendance', icon: <FileText size={16} /> },
+            { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
+            { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> }
+        );
+    }
+
+    if (can(userInfo?.role, 'viewReports')) {
+        navItems.push({
             key: 'reports',
             label: 'Reports',
             icon: <BarChart2 size={16} />,
@@ -57,18 +68,29 @@ export default function Sidebar({ onNavigate, userInfo }) {
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-full-export', label: 'Full Youth Export', icon: <Download size={16} /> }
             ]
-        }
-    ];
-
-    if (userInfo?.role === 'superadmin') {
-        navItems.push({ key: 'user-management', label: 'Users', icon: <User size={16} /> });
-        navItems.push({ key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> });
+        });
     }
 
-    const handleLogout = () => {
-        localStorage.clear();
-        window.location.href = '/admin-login';
+    if (can(userInfo?.role, 'manageGroupsAndUsers')) {
+        navItems.push(
+            { key: 'user-management', label: 'Users', icon: <User size={16} /> },
+            { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> }
+        );
     };
+    navItems.push({
+        key: 'logout',
+        label: 'Logout',
+        icon: <LogOut size={16} />,
+        onClick: async () => {
+            handleLogout;
+        }
+    });
+
+    const handleLogout = () => {
+    signout 
+    localStorage.clear();
+    window.location.href = '/admin-login';
+};
 
     return (
         <div

@@ -26,6 +26,7 @@ import UserManagementView from '../components/admin/UserManagementView';
 import GroupManagementView from '../components/admin/GroupManagementView';
 import Reports from '../components/admin/Reports';
 import AdminDashboard from '../components/admin/AdminDashboard';
+import SuperAdminDashboard from '../components/admin/SuperAdminDashboard';
 
 // ✅ Report Views
 import ReportParentEmails from '../components/admin/reports/ReportParentEmails';
@@ -33,7 +34,6 @@ import ReportYouthBySection from '../components/admin/reports/ReportYouthBySecti
 import ReportAge from '../components/admin/reports/ReportAge';
 
 export default function AdminPage() {
-    const [view, setView] = useState('attendance');
     const [groups, setGroups] = useState([]);
     const [activeGroupId, setActiveGroupId] = useState(null);
     const [showPinModal, setShowPinModal] = useState(false);
@@ -118,7 +118,9 @@ export default function AdminPage() {
             case 'report-age':
 				return <ReportAge groupId={userInfo.group_id} />;
             default:
-                return <AdminDashboard />;
+                return  userInfo.role === 'superadmin'
+                    ? <SuperAdminDashboard />
+                    : <AdminDashboard />;
         }
     };
 

@@ -68,3 +68,8 @@ export async function deleteYouthTransition(id) {
 
     return { error };
 }
+
+export async function signout() {
+	const { error } = await supabase.auth.signOut();
+	if (error) throw error;
+}
