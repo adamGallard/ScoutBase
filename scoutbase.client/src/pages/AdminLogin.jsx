@@ -140,9 +140,12 @@ export default function AdminLogin() {
 
             <Main style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
                 <Content style={{ maxWidth: '400px', width: '100%' }}>
-                    <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', textAlign: 'center' }}>
+                    <h2 style={{ fontSize: '1.5rem', marginBottom: '0.5rem', textAlign: 'center' }}>
                         Admin Login (Terrain)
                     </h2>
+                    <p style={{ fontSize: '0.95rem', marginBottom: '1rem', textAlign: 'center', color: '#555' }}>
+                        Login using your <strong>Terrain Member Number and Password</strong>. You must be listed as a leader in <strong>Terrain</strong> and also be registered as an <strong>admin or user in ScoutBase</strong> to access the admin area.
+                    </p>
 
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         <select

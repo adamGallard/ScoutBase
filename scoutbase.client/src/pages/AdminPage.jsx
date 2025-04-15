@@ -26,7 +26,6 @@ import { Settings, LogOut, MapPin,User } from 'lucide-react';
 // ✅ Admin Functionality
 import PinModal from '@/components/admin/PinModal';
 import LinkModal from '@/components/admin/LinkModal';
-import AttendanceView from '@/components/admin/AttendanceView';
 import ParentView from '@/components/admin/ParentView';
 import YouthView from '@/components/admin/YouthView';
 import UserManagementView from '@/components/admin/UserManagementView';
@@ -43,6 +42,7 @@ import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
 import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySection';
 import ReportAge from '@/components/admin/reports/ReportAge';
 import { useActingGroup } from "@/hooks/useActingGroup";
+import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
 
 import GroupQRCode from '@/components/admin/GroupQRCode';
 
@@ -65,7 +65,6 @@ export default function AdminPage() {
     const { actingAsGroupId, setActingAsGroupId, actingAsAdmin, setActingAsAdmin } = useActingGroup();
     const [showDropdown, setShowDropdown] = useState(false);
 
-
     useEffect(() => {
         if (!checkTokenValidity()) {
 			navigate('/Logout');
@@ -76,7 +75,7 @@ export default function AdminPage() {
         const restrictedPaths = ['attendance', 'add-parent', 'add-youth'];
 
         if (
-            userInfo?.role === 'superadmin' &&
+            userInfo?.role === 'Super Admin' &&
             !actingAsAdmin &&
             restrictedPaths.includes(subPath)
         ) {
@@ -86,7 +85,7 @@ export default function AdminPage() {
 
     useEffect(() => {
         if (!userLoading && userInfo) {
-            if (userInfo?.role === 'superadmin') {
+            if (userInfo?.role === 'Super Admin') {
                 supabase.from('groups').select('id, name,slug').then(({ data }) => {
                     setGroups(data || []);
                     if (data?.length) setActiveGroupId(String(data[0].id));
@@ -108,18 +107,20 @@ export default function AdminPage() {
     const group = groups.find((g) => g.id === userInfo?.group_id);
 
     const renderContent = () => {
+
         if (userLoading || !userInfo) return <p>Loading user info...</p>;
         if (!activeGroupId) return <p>Loading group data...</p>;
 
         switch (subPath) {
-            case 'attendance':
+            case 'report-attendance':
                 return (
-                    <AttendanceView
+                    <ReportAttendanceView
                         activeGroupId={activeGroupId}
                         selectedDate={selectedDate}
                         sectionFilter={sectionFilter}
                         onDateChange={setSelectedDate}
                         onSectionChange={setSectionFilter}
+                        userInfo={userInfo}
                     />
                 );
             case 'add-parent':
@@ -137,7 +138,7 @@ export default function AdminPage() {
                     />
                 );
             case 'add-youth':
-                return <YouthView groupId={activeGroupId} />;
+                return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':
                 return <UserManagementView activeGroupId={activeGroupId} />;
             case 'group-management':
@@ -155,11 +156,14 @@ export default function AdminPage() {
             case 'qr-code':
                 return <GroupQRCode groupStub={group?.slug} />;
             case 'patrol-management':
-                return <PatrolManagementView groupId={activeGroupId} />;
+                return <PatrolManagementView groupId={activeGroupId} userInfo={userInfo} />;
             default:
-                if (userInfo?.role === 'superadmin') return <SuperAdminDashboard />;
-                if (userInfo?.role === 'admin') return <AdminDashboard userInfo={userInfo} />;
-                if (userInfo?.role === 'user') return <UserDashboard userInfo={userInfo} />;
+                if (userInfo?.role === 'Super Admin') {
+                    return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
+                }
+                if (userInfo?.role === 'Group Leader') return <AdminDashboard userInfo={userInfo} />;
+				if (userInfo?.role === 'Section Leader') return <AdminDashboard userInfo={userInfo} />;
+                if (userInfo?.role === 'Section User') return <UserDashboard userInfo={userInfo} />;
                 return <p>Access denied</p>;
         }
 
@@ -170,8 +174,8 @@ export default function AdminPage() {
         navigate('/Logout');
     };
 
-
     return (
+        
         <RequireAuth>
             {showPinModal && (
                 <PinModal
@@ -207,9 +211,9 @@ export default function AdminPage() {
 
                             {groups.length > 0 && (
                                 <>
-                                    <AdminHeaderRow isWarning={userInfo?.role === 'superadmin' && actingAsAdmin}>
-                                        {userInfo?.role === 'superadmin' && actingAsAdmin && (
-                                            <AdminWarningLabel>⚠️ Acting as Admin</AdminWarningLabel>
+                                    <AdminHeaderRow isWarning={userInfo?.role === 'Super Admin' && actingAsAdmin}>
+                                        {userInfo?.role === 'Super Admin' && actingAsAdmin && (
+                                            <AdminWarningLabel>⚠️ Acting as Group Leader</AdminWarningLabel>
                                         )}
                                     <AdminDropdownContainer>
                                         <AdminDropdownToggle onClick={() => setShowDropdown((prev) => !prev)}>
@@ -227,7 +231,7 @@ export default function AdminPage() {
                                                     </Label>
                                                 
 
-                                                {userInfo?.role === 'superadmin' && (
+                                                {userInfo?.role === 'Super Admin' && (
                                                     <>
                                                         <Label>Group:</Label>
                                                         <StyledSelect
@@ -240,7 +244,7 @@ export default function AdminPage() {
                                                         </StyledSelect>
 
                                                         <ToggleSwitchWrapper>
-                                                            <span className="text-sm">Act as Admin</span>
+                                                            <span className="text-sm">Act as Group Leader</span>
                                                             <label className="toggle-switch">
                                                                 <input
                                                                     type="checkbox"
@@ -253,7 +257,7 @@ export default function AdminPage() {
                                                                         await logAuditEvent({
                                                                             userId: userInfo.id,
                                                                             groupId: activeGroupId,
-                                                                            role: 'superadmin',
+                                                                            role: 'Super Admin',
                                                                             action: 'toggle_acting_as_admin',
                                                                             targetType: 'group',
                                                                             targetId: activeGroupId,

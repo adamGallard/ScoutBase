@@ -1,10 +1,16 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
-import { AdminTable, PageTitle } from '../SharedStyles';
+import { AdminTable, PageTitle } from '@/components/SharedStyles';
 
-export default function AttendanceView({ activeGroupId, selectedDate, sectionFilter, onDateChange, onSectionChange }) {
+
+
+export default function AttendanceView({ activeGroupId, selectedDate, sectionFilter, onDateChange, onSectionChange, userInfo }) {
     const [filteredAttendance, setFilteredAttendance] = useState([]);
+
+    const effectiveSectionFilter = userInfo?.role === 'section_leader'
+        ? userInfo.section // enforce their assigned section
+        : sectionFilter;
 
     const fetchAttendance = useCallback(async () => {
         if (!activeGroupId) return;
@@ -36,12 +42,12 @@ export default function AttendanceView({ activeGroupId, selectedDate, sectionFil
         });
 
         const grouped = Object.values(byYouth);
-        const filtered = sectionFilter
-            ? grouped.filter((r) => r.youth.section === sectionFilter)
+        const filtered = effectiveSectionFilter
+            ? grouped.filter((r) => r.youth.section === effectiveSectionFilter)
             : grouped;
 
         setFilteredAttendance(filtered);
-    }, [activeGroupId, selectedDate, sectionFilter]);
+    }, [activeGroupId, selectedDate, effectiveSectionFilter]);
 
     useEffect(() => {
         fetchAttendance();
@@ -81,16 +87,18 @@ export default function AttendanceView({ activeGroupId, selectedDate, sectionFil
             </PageTitle>
 
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem' }}>
-                <label>
-                    Section:{' '}
-                    <select value={sectionFilter} onChange={(e) => onSectionChange(e.target.value)}>
-                        <option value="">All</option>
-                        <option value="Joeys">Joeys</option>
-                        <option value="Cubs">Cubs</option>
-                        <option value="Scouts">Scouts</option>
-                        <option value="Venturers">Venturers</option>
-                    </select>
-                </label>
+                {userInfo?.role !== 'section_leader' && (
+                    <label>
+                        Section:{' '}
+                        <select value={sectionFilter} onChange={(e) => onSectionChange(e.target.value)}>
+                            <option value="">All</option>
+                            <option value="Joeys">Joeys</option>
+                            <option value="Cubs">Cubs</option>
+                            <option value="Scouts">Scouts</option>
+                            <option value="Venturers">Venturers</option>
+                        </select>
+                    </label>
+                )}
 
                 <label>
                     Date:{' '}

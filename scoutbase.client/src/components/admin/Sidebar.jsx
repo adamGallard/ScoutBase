@@ -1,26 +1,11 @@
 ﻿import { useState } from 'react';
 import {
-    FileText,
-    UserPlus,
-    Users,
-    BarChart2,
-    ChevronRight,
-    ChevronDown,
-    Mail,
-    FolderKanban,
-    Cake,
-    Repeat,
-    Download,
-    User,
-    MapPin,
-    Menu,
-    ArrowLeft,
-    LogOut,
-    Home,
-    CalendarCheck,
-    QrCode,
-    Flag
+    FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
+    FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
+    LogOut, Home, CalendarCheck, QrCode, Flag
 } from 'lucide-react';
+
+import { can } from "@/utils/roleUtils";
 
 const btnStyle = {
     background: 'none',
@@ -37,25 +22,19 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
-import {
-    can
-} from "@/utils/roleUtils";
-
-
 export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
-
     const [collapsed, setCollapsed] = useState(false);
     const [reportsExpanded, setReportsExpanded] = useState(false);
+
     const navItems = [
-        { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
+        { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> }
     ];
 
     if (can(userInfo?.role, 'viewYouthParentTabs', { actingAsGroupId, actingAsAdmin })) {
         navItems.push(
-            { key: 'attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
             { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
             { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-            { key: 'patrol-management', label: 'Patrol', icon: <Flag size={16} /> }, // Add Patrol Management item'}
+            { key: 'patrol-management', label: 'Patrol', icon: <Flag size={16} /> }
         );
     }
 
@@ -66,6 +45,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             icon: <BarChart2 size={16} />,
             expandable: true,
             children: [
+                { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
                 { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
                 { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
@@ -73,21 +53,22 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-full-export', label: 'Full Youth Export', icon: <Download size={16} /> }
             ]
-        },
-        { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> } // Add QR Code item}
-        );
+        });
+
+        navItems.push({ key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> });
     }
 
-    if (can(userInfo?.role, 'manageGroupsAndUsers')) {
+    if (can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin })) {
         navItems.push(
             { key: 'user-management', label: 'Users', icon: <User size={16} /> },
             { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
             { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> }
         );
-    };
-    navItems.push({ key: "logout", label: "Logout", icon: <LogOut size={16} /> });
+    }
 
-       return (
+    navItems.push({ key: 'logout', label: 'Logout', icon: <LogOut size={16} /> });
+
+    return (
         <div
             style={{
                 width: collapsed ? '60px' : '200px',
@@ -112,7 +93,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                             onClick={() => {
                                 if (item.expandable) {
                                     setReportsExpanded(!reportsExpanded);
-                                    onNavigate(item.key); // also go to /reports
+                                    onNavigate(item.key);
                                 } else {
                                     onNavigate(item.key);
                                 }
@@ -126,7 +107,6 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                             )}
                         </button>
 
-                        {/* Render children if expandable and expanded */}
                         {!collapsed && item.expandable && reportsExpanded && (
                             <ul style={{ listStyle: 'none', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                                 {item.children.map(child => (
@@ -145,3 +125,4 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
         </div>
     );
 }
+

@@ -34,12 +34,12 @@ const SuperAdminDashboard = () => {
         <div>
             <PageTitle>
                 <ShieldCheck size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
-                Superadmin Dashboard
+                Super Admin Dashboard
             </PageTitle>
 
             {actingAsAdmin && actingAsGroupId && (
                 <HighlightNote>
-                    ⚠️ You are currently <strong>acting as admin</strong> for group ID:{" "}
+                    ⚠️ You are currently <strong>acting as Group Leader</strong> for group ID:{" "}
                     <strong>{actingGroupName}</strong>
                 </HighlightNote>
             )}

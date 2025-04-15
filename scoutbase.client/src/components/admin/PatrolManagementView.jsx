@@ -11,12 +11,14 @@ import {
 } from '@/components/SharedStyles';
 import PatrolLinkModal from './PatrolLinkModal';
 
-export default function PatrolManagementView({ groupId }) {
-    const [section, setSection] = useState('Cubs');
+export default function PatrolManagementView({ groupId, userInfo }) {
+    const [section, setSection] = useState(userInfo?.role === 'Section Leader' ? userInfo.section : 'Cubs');
     const [patrols, setPatrols] = useState([]);
     const [newPatrolName, setNewPatrolName] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState('');
+    const [linkingPatrol, setLinkingPatrol] = useState(null);
+
     const fetchPatrols = async () => {
         const { data, error } = await supabase
             .from('patrols')
@@ -24,12 +26,12 @@ export default function PatrolManagementView({ groupId }) {
             .eq('group_id', groupId)
             .eq('section', section)
             .order('name');
+
         if (!error) setPatrols(data || []);
     };
-    const [linkingPatrol, setLinkingPatrol] = useState(null);
 
     useEffect(() => {
-        if (groupId) fetchPatrols();
+        if (groupId && section) fetchPatrols();
     }, [groupId, section]);
 
     const addPatrol = async () => {
@@ -57,6 +59,8 @@ export default function PatrolManagementView({ groupId }) {
         }
     };
 
+    const isSectionLeader = userInfo?.role === 'Section Leader';
+
     return (
         <PageWrapper>
             <Content>
@@ -66,19 +70,21 @@ export default function PatrolManagementView({ groupId }) {
                 </PageTitle>
 
                 <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    <label>
-                        Section:
-                        <select
-                            value={section}
-                            onChange={(e) => setSection(e.target.value)}
-                            style={{ marginLeft: '0.5rem', padding: '0.4rem' }}
-                        >
-                            <option value="Joeys">Joeys</option>
-                            <option value="Cubs">Cubs</option>
-                            <option value="Scouts">Scouts</option>
-                            <option value="Venturers">Venturers</option>
-                        </select>
-                    </label>
+                    {!isSectionLeader && (
+                        <label>
+                            Section:
+                            <select
+                                value={section}
+                                onChange={(e) => setSection(e.target.value)}
+                                style={{ marginLeft: '0.5rem', padding: '0.4rem' }}
+                            >
+                                <option value="Joeys">Joeys</option>
+                                <option value="Cubs">Cubs</option>
+                                <option value="Scouts">Scouts</option>
+                                <option value="Venturers">Venturers</option>
+                            </select>
+                        </label>
+                    )}
 
                     <input
                         placeholder="New Patrol Name"
@@ -121,8 +127,10 @@ export default function PatrolManagementView({ groupId }) {
                                             <button onClick={() => setEditingId(null)}>Cancel</button>
                                         </>
                                     ) : (
-                                            <>
-                                                <button onClick={() => setLinkingPatrol(p)} title="Link youth to patrol"><Link size={16} /> </button>
+                                        <>
+                                            <button onClick={() => setLinkingPatrol(p)} title="Link youth to patrol">
+                                                <Link size={16} />
+                                            </button>
                                             <button onClick={() => {
                                                 setEditingId(p.id);
                                                 setEditName(p.name);
@@ -139,6 +147,7 @@ export default function PatrolManagementView({ groupId }) {
                         ))}
                     </tbody>
                 </AdminTable>
+
                 {linkingPatrol && (
                     <PatrolLinkModal
                         patrolId={linkingPatrol.id}
@@ -152,3 +161,4 @@ export default function PatrolManagementView({ groupId }) {
         </PageWrapper>
     );
 }
+
