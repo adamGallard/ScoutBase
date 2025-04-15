@@ -36,6 +36,7 @@ import AdminDashboard from '@/components/admin/AdminDashboard';
 import SuperAdminDashboard from '@/components/admin/SuperAdminDashboard';
 import UserDashboard from '@/components/admin/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
+import PatrolManagementView from '@/components/admin/PatrolManagementView';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -153,6 +154,8 @@ export default function AdminPage() {
                 return <AuditLogViewer activeGroupId={activeGroupId} />;
             case 'qr-code':
                 return <GroupQRCode groupStub={group?.slug} />;
+            case 'patrol-management':
+                return <PatrolManagementView groupId={activeGroupId} />;
             default:
                 if (userInfo?.role === 'superadmin') return <SuperAdminDashboard />;
                 if (userInfo?.role === 'admin') return <AdminDashboard userInfo={userInfo} />;
@@ -174,6 +177,7 @@ export default function AdminPage() {
                 <PinModal
                     parentId={pinParentId}
                     groupId={activeGroupId}
+                    userInfo={userInfo}
                     onClose={() => {
                         setShowPinModal(false);
                         setPinParentId(null);

@@ -311,3 +311,91 @@ export const PageTitle = styled.h2`
   color: #0F5BA4;
   line-height: 1.2;
 `;
+
+export const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+`;
+
+export const ModalBox = styled.div`
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  font-family: sans-serif;
+
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: #111827;
+    text-align: center;
+  }
+
+  h4 {
+    font-size: 1.1rem;
+    margin: 1rem 0 0.5rem;
+    text-align: left;
+  }
+
+  p {
+    margin: 0.25rem 0;
+  }
+
+  ul {
+    padding-left: 1rem;
+    margin: 0.5rem 0;
+  }
+
+  li {
+    margin-bottom: 0.75rem;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="email"],
+  input[type="number"] {
+    width: 100%;
+    padding: 0.75rem;
+    font-size: 1rem;
+    margin: 1rem 0;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+  }
+
+  button {
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    background: #0F5BA4;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+
+    &:hover {
+      background: #0c4784;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+`;
+
+export const ButtonRow = styled.div`
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+`;

@@ -61,7 +61,7 @@ const Footer = () => (
             </Section>
 
             <SmallText>
-                <span>&copy; {new Date().getFullYear()}</span> ScoutBase &middot; v{appVersion} &middot; Powered by Supabase + React
+                <span>&copy; {new Date().getFullYear()}</span> ScoutBase &middot; v{appVersion}
             </SmallText>
         </FooterContainer>
     </FooterWrapper>

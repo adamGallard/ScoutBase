@@ -1,66 +1,53 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
 
-export default function LinkModal({ parentId, onClose, groupId }) {
+export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName, section }) {
     const [linkedYouth, setLinkedYouth] = useState([]);
     const [availableYouth, setAvailableYouth] = useState([]);
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [parentName, setParentName] = useState('');
     const itemsPerPage = 10;
 
     useEffect(() => {
-        if (parentId) {
-            loadParentName();
+        if (patrolId && groupId) {
             loadLinkedYouth();
             loadAllYouth();
         }
-    }, [parentId]);
-
-    const loadParentName = async () => {
-        const { data, error } = await supabase
-            .from('parent')
-            .select('name')
-            .eq('id', parentId)
-            .single();
-        if (data) setParentName(data.name);
-    };
+    }, [patrolId]);
 
     const loadLinkedYouth = async () => {
         const { data } = await supabase
-            .from('parent_youth')
-            .select('youth (id, name, section), is_primary')
-            .eq('parent_id', parentId);
-        if (data) {
-            setLinkedYouth(data.map(l => ({ ...l.youth, is_primary: l.is_primary })));
-        }
+            .from('youth')
+            .select('id, name, section')
+            .eq('group_id', groupId)
+            .eq('patrol_id', patrolId);
+        setLinkedYouth(data || []);
     };
 
     const loadAllYouth = async () => {
         const { data } = await supabase
             .from('youth')
             .select('id, name, section')
-            .eq('group_id', groupId);
-        if (data) {
-            setAvailableYouth(data);
-        }
+            .eq('group_id', groupId)
+            .eq('section', section); // filter by section for simplicity
+        setAvailableYouth(data || []);
     };
 
     const addLink = async (youthId) => {
-        await supabase.from('parent_youth').insert([
-            { parent_id: parentId, youth_id: youthId, group_id: groupId }
-        ]);
+        await supabase
+            .from('youth')
+            .update({ patrol_id: patrolId })
+            .eq('id', youthId);
         loadLinkedYouth();
         setCurrentPage(1);
     };
 
     const removeLink = async (youthId) => {
         await supabase
-            .from('parent_youth')
-            .delete()
-            .eq('parent_id', parentId)
-            .eq('youth_id', youthId);
+            .from('youth')
+            .update({ patrol_id: null })
+            .eq('id', youthId);
         loadLinkedYouth();
     };
 
@@ -75,40 +62,17 @@ export default function LinkModal({ parentId, onClose, groupId }) {
 
     const totalPages = Math.ceil(unlinkedYouth.length / itemsPerPage);
 
-    const togglePrimary = async (youthId, newValue) => {
-        await supabase
-            .from('parent_youth')
-            .update({ is_primary: newValue })
-            .eq('parent_id', parentId)
-            .eq('youth_id', youthId);
-        loadLinkedYouth();
-    };
-
     return (
         <ModalOverlay>
             <ModalBox>
-                <h3>Linked Youth{parentName && ` for ${parentName}`}</h3>
+                <h3>Youth in {patrolName}</h3>
 
                 <ul>
-                    {[...linkedYouth]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((youth) => (
-                            <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <div>
-                                    <span>{youth.name} ({youth.section})</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <label style={{ fontSize: '0.85rem' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={youth.is_primary || false}
-                                            onChange={() => togglePrimary(youth.id, !youth.is_primary)}
-                                        />
-                                        {' '}Primary
-                                    </label>
-                                    <button onClick={() => removeLink(youth.id)}>Remove</button>
-                                </div>
-                            </li>
+                    {[...linkedYouth].sort((a, b) => a.name.localeCompare(b.name)).map((youth) => (
+                        <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span>{youth.name} ({youth.section})</span>
+                            <button onClick={() => removeLink(youth.id)}>Remove</button>
+                        </li>
                     ))}
                 </ul>
 
@@ -125,9 +89,7 @@ export default function LinkModal({ parentId, onClose, groupId }) {
                 />
 
                 <ul style={{ textAlign: 'left', marginBottom: '1rem' }}>
-                    {[...paginatedYouth]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((youth) => (
+                    {paginatedYouth.map((youth) => (
                         <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                             <span>{youth.name} ({youth.section})</span>
                             <button onClick={() => addLink(youth.id)}>Add</button>
@@ -154,3 +116,4 @@ export default function LinkModal({ parentId, onClose, groupId }) {
         </ModalOverlay>
     );
 }
+

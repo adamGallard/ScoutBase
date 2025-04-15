@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Check, X, BookUser, Users } from 'lucide-react';
+import { Pencil, Trash, Plus, Check, X, BookUser, Users ,Link} from 'lucide-react';
 import { AdminTable } from '../SharedStyles';
 import TransitionModal from './TransitionModal';
 import { formatDate } from '../../utils/dateUtils';
@@ -15,7 +15,9 @@ import {
     PageTitle
 } from '../../components/SharedStyles';
 import UnitSelectModal from './UnitSelectModal';
-
+import YouthDetailsModal from './YouthDetailsModal';
+import ImportYouthModal from './ImportYouthModal';
+import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 
 export default function YouthView({ groupId }) {
     const [youthList, setYouthList] = useState([]);
@@ -31,7 +33,11 @@ export default function YouthView({ groupId }) {
     const [showUnitModal, setShowUnitModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
-    const profileAvailable = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
+    const [selectedYouthDetails, setSelectedYouthDetails] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const handleYouthImport = async (data, filename) => {
+        await handleYouthImportLogic(data, groupId, filename); // this is the real function logic
+    };
 
     const handleTerrainSync = async () => {
         const token = localStorage.getItem('scoutbase-terrain-idtoken');
@@ -173,6 +179,13 @@ export default function YouthView({ groupId }) {
                 >
                     Sync Youth from Terrain
                 </PrimaryButton>
+                <PrimaryButton onClick={() => setShowImportModal(true)}>Import Youth</PrimaryButton>
+                {showImportModal && (
+                    <ImportYouthModal
+                        onClose={() => setShowImportModal(false)}
+                        onImport={(data) => handleYouthImport(data)}
+                    />
+                )}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
@@ -278,7 +291,8 @@ export default function YouthView({ groupId }) {
                                     </>
                                 ) : (
                                         <>
-                                            <button onClick={() => setSelectedYouth(y)} title="View/Edit Transitions"><BookUser size={16}  /></button>
+                                            <button onClick={() => setSelectedYouthDetails(y)}><BookUser size={16}  /></button>
+                                            <button onClick={() => setSelectedYouth(y)} title="View/Edit Transitions"><Link size={16}  /></button>
                                             <button onClick={() => { setEditingYouthId(y.id); setYouthForm(y); }} title="Edit youth"><Pencil size={16} /></button>
                                             {y.membership_stage === 'Retired' ? (
                                                 <button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth">
@@ -373,6 +387,18 @@ export default function YouthView({ groupId }) {
                     units={unitOptions}
                     onConfirm={handleUnitsConfirmed}
                     onCancel={() => setShowUnitModal(false)}
+                />
+            )}
+            {selectedYouthDetails && (
+                <YouthDetailsModal
+                    youth={selectedYouthDetails}
+                    onClose={() => setSelectedYouthDetails(null)}
+                />
+            )}
+            {showImportModal && (
+                <ImportYouthModal
+                    onClose={() => setShowImportModal(false)}
+                    onImport={handleYouthImport}
                 />
             )}
         </div>
