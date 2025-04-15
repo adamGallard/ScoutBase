@@ -18,7 +18,8 @@ import {
     LogOut,
     Home,
     CalendarCheck,
-    QrCode
+    QrCode,
+    Flag
 } from 'lucide-react';
 
 const btnStyle = {
@@ -53,7 +54,8 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
         navItems.push(
             { key: 'attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
             { key: 'add-parent', label: 'Parent', icon: <UserPlus size={16} /> },
-            { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> }
+            { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
+            { key: 'patrol-management', label: 'Patrol', icon: <Flag size={16} /> }, // Add Patrol Management item'}
         );
     }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import { Pencil, Trash, Plus, Link2, Key, Check, X,UserPlus } from 'lucide-react';
+import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
 import { AdminTable, PageTitle } from '../SharedStyles';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal }) {
@@ -117,7 +117,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                                 ) : (
                                     <>
                                             <button onClick={() => { setEditingParentId(p.id); setFormData(p); }} title="Edit parent"><Pencil size={16} /></button>
-                                            <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link2 size={16} /></button>
+                                            <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link size={16} /></button>
                                             <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
                                             <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
                                     </>
