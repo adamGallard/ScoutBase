@@ -38,8 +38,6 @@ export default function YouthView({ groupId, userInfo }) {
     const handleYouthImport = async (data, filename) => {
         await handleYouthImportLogic(data, groupId, filename); // this is the real function logic
     };
-    console.log('🧩 groupId passed to YouthView:', groupId);
-    console.log('🔍 typeof groupId:', typeof groupId);
 
     const handleTerrainSync = async () => {
         const token = localStorage.getItem('scoutbase-terrain-idtoken');
@@ -98,14 +96,15 @@ export default function YouthView({ groupId, userInfo }) {
     const fetchYouth = useCallback(async () => {
         let query = supabase
             .from('youth')
-            .select('id, name, dob, section, membership_stage')
+            .select('id, name, dob, section,linking_section, membership_stage')
             .eq('group_id', groupId)
             .order('name');
 
-        // 👇 Filter by section if the user is a Section Leader
+        //  Filter by section if the user is a Section Leader
         if (userInfo?.role === 'Section Leader' && userInfo?.section) {
-            query = query.eq('section', userInfo.section);
+            query = query.or(`section.eq.${userInfo.section},linking_section.eq.${userInfo.section}`);
         }
+
 
         const { data } = await query;
         setYouthList(data || []);
@@ -149,21 +148,25 @@ export default function YouthView({ groupId, userInfo }) {
     };
 
     const filteredList = [...youthList]
-        .filter((y) =>
-            (userInfo?.role !== 'Section Leader' ? (!sectionFilter || y.section === sectionFilter) : true) &&
-            (!filter || y.name.toLowerCase().includes(filter)) &&
-            (
-                !stageFilter
-                    ? y.membership_stage !== 'Retired'
-                    : y.membership_stage === stageFilter
-            )
-        )
+        .filter((y) => {
+            const matchesSection = userInfo?.role === 'Section Leader'
+                ? y.section === userInfo.section || y.linking_section === userInfo.section
+                : (!sectionFilter || y.section === sectionFilter || y.linking_section === sectionFilter);
+
+            const matchesSearch = !filter || y.name.toLowerCase().includes(filter);
+            const matchesStage = !stageFilter
+                ? y.membership_stage !== 'Retired'
+                : y.membership_stage === stageFilter;
+
+            return matchesSection && matchesSearch && matchesStage;
+        })
         .sort((a, b) => a.name.localeCompare(b.name));
 
     const paginatedList = filteredList.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
     const canSync = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
 
     return (

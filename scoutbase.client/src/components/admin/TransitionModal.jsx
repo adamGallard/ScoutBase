@@ -2,7 +2,7 @@
 import { fetchTransitionsForYouth, addYouthTransition, deleteYouthTransition } from '../../helpers/supabaseHelpers';
 import { PrimaryButton } from '../SharedStyles';
 import { formatDate } from '../../utils/dateUtils';
-
+import { supabase } from '@/lib/supabaseClient';
 export default function TransitionModal({ youth, onClose, isMobile, refreshYouth }) {
     const [transitions, setTransitions] = useState([]);
     const [form, setForm] = useState({
@@ -24,7 +24,20 @@ export default function TransitionModal({ youth, onClose, isMobile, refreshYouth
     };
 
     const handleSubmit = async () => {
-        const { data, error } = await addYouthTransition({ ...form, youth_id: youth.id });
+        const { transition_type, section, transition_date, notes } = form;
+
+        if ((transition_type === 'Linking' || transition_type === 'Invested') && !section) {
+            alert('Please select a section for this transition.');
+            return;
+        }
+
+        const { data, error } = await addYouthTransition({
+            youth_id: youth.id,
+            transition_type,
+            section,
+            transition_date,
+            notes
+        });
 
         if (error) {
             console.error('Failed to add transition:', error);
@@ -38,8 +51,10 @@ export default function TransitionModal({ youth, onClose, isMobile, refreshYouth
             notes: ''
         });
 
-        await loadTransitions(); // Ensure this happens AFTER the transition is saved
+        await loadTransitions();
+        if (refreshYouth) refreshYouth(); // to re-pull updated youth info
     };
+
 
     const handleDelete = async (id) => {
         await deleteYouthTransition(id);

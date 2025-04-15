@@ -126,7 +126,8 @@ export default function AdminPage() {
             case 'add-parent':
                 return (
                     <ParentView
-                        groupId={activeGroupId}
+                        groupId={activeGroupId} 
+                        userInfo={userInfo}
                         onOpenPinModal={(id) => {
                             setPinParentId(id);
                             setShowPinModal(true);
