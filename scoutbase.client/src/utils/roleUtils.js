@@ -1,24 +1,39 @@
 // src/utils/roleUtils.js
 
 const rolePermissions = {
-    admin: ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
-    user: ['viewReports'],
-    superadmin: ['manageGroupsAndUsers', 'setupSystem'],
+    'Super Admin': ['manageGroupsAndUsers', 'setupSystem'],
+    'Group Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
+    'Section Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
+    'Section User': ['viewReports']
 };
 
-export const can = (role, permission, options) => {
-    const { actingAsGroupId, actingAsAdmin } = options ?? {};
+export const can = (role, permission, options = {}) => {
+    const { actingAsGroupId, actingAsAdmin, userSection, targetSection } = options;
 
-    if (rolePermissions[role]?.includes(permission)) return true;
+    const permissions = rolePermissions[role] || [];
+    const hasPermission = permissions.includes(permission);
 
+    // Section Leader restriction to their section
+    if (role === 'Section Leader' && hasPermission && permission !== 'viewReports') {
+        if (!targetSection || userSection === targetSection) {
+            return true;
+        }
+        return false;
+    }
+
+    // Allow SuperAdmin to act as admin if toggled
     if (
-        role === 'superadmin' &&
+        role === 'Super Admin' &&
         actingAsGroupId &&
         actingAsAdmin &&
-        ['viewYouthParentTabs', 'accessAttendance','viewReports'].includes(permission)
+        ['viewYouthParentTabs', 'accessAttendance', 'viewReports'].includes(permission)
     ) {
         return true;
     }
 
-    return false;
+    return hasPermission;
+};
+export const normalizeRole = (role) => {
+    if (!role) return '';
+    return role.toLowerCase().replace(/\s+/g, '_'); // "Super Admin" -> "super_admin"
 };

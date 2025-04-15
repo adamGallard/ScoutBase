@@ -2,29 +2,64 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
 import { AdminTable, PageTitle } from '../SharedStyles';
+import bcrypt from 'bcryptjs';
 
-export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal }) {
+export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
     const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(15); // or however many you want per page
+
+    const defaultPIN = '1258';
 
     const fetchParents = useCallback(async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('parent')
-            .select('*')
+            .select(`
+            *,
+            parent_youth (
+                youth (
+                    section,
+                    linking_section
+                )
+            )
+        `)
             .eq('group_id', groupId)
             .order('name');
-        if (data) setParents(data);
-    }, [groupId]);
+
+        if (error) {
+            console.error('Error fetching parents:', error);
+            return;
+        }
+
+        // Filter in JS if Section Leader
+        let filtered = data;
+        if (userInfo?.role === 'Section Leader' && userInfo?.section) {
+            filtered = data.filter((parent) =>
+                parent.parent_youth?.some(
+                    (py) =>
+                        py.youth?.section === userInfo.section ||
+                        py.youth?.linking_section === userInfo.section
+                )
+            );
+        }
+
+        setParents(filtered);
+    }, [groupId, userInfo]);
+
+
+
 
     useEffect(() => {
         if (groupId) fetchParents();
     }, [groupId, fetchParents]);
 
     const addParent = async () => {
+         const hashedPIN = await bcrypt.hash(defaultPIN, 10);
         if (!formData.name || !formData.email || !formData.phone) return;
-        await supabase.from('parent').insert([{ ...formData, group_id: groupId }]);
+        await supabase.from('parent').insert([{ ...formData, group_id: groupId ,pin_hash: hashedPIN}]);
         setFormData({ name: '', email: '', phone: '' });
         fetchParents();
     };
@@ -44,8 +79,20 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
     };
 
     const sortedFiltered = [...parents]
-        .filter(p => p.name.toLowerCase().includes(filter) || p.email.toLowerCase().includes(filter))
+        .filter(p =>
+            (p.name?.toLowerCase() || '').includes(filter) ||
+            (p.email?.toLowerCase() || '').includes(filter)
+        )
         .sort((a, b) => a.name.localeCompare(b.name));
+
+    const paginatedParents = sortedFiltered.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [filter]);
 
     return (
         <div className="content-box">
@@ -71,7 +118,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                     </tr>
                 </thead>
                 <tbody>
-                    {sortedFiltered.map(p => (
+                    {paginatedParents.map(p => (
                         <tr key={p.id}>
                             <td>
                                 {editingParentId === p.id ? (
@@ -124,7 +171,9 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                                 )}
                             </td>
                         </tr>
-                    ))}
+
+                    )
+                )}
 
                     {/* Add new parent row */}
                     {editingParentId === null && (
@@ -154,6 +203,28 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal })
                     )}
                 </tbody>
             </AdminTable>
+
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', gap: '1rem' }}>
+                <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                >
+                    Previous
+                </button>
+                <span>
+                    Page {currentPage} of {Math.ceil(sortedFiltered.length / itemsPerPage)}
+                </span>
+                <button
+                    onClick={() =>
+                        setCurrentPage((p) =>
+                            Math.min(Math.ceil(sortedFiltered.length / itemsPerPage), p + 1)
+                        )
+                    }
+                    disabled={currentPage === Math.ceil(sortedFiltered.length / itemsPerPage)}
+                >
+                    Next
+                </button>
+            </div>
         </div>
     );
 }

@@ -123,7 +123,6 @@ export async function getTerrainSyncPreview(token, groupId, units) {
         }
     }
 
-    console.log(`🧾 Preview complete → To Add: ${toAdd.length}, To Update: ${toUpdate.length}`);
     return { toAdd, toUpdate };
 }
 

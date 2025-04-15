@@ -19,7 +19,7 @@ import YouthDetailsModal from './YouthDetailsModal';
 import ImportYouthModal from './ImportYouthModal';
 import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 
-export default function YouthView({ groupId }) {
+export default function YouthView({ groupId, userInfo }) {
     const [youthList, setYouthList] = useState([]);
     const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
@@ -93,14 +93,22 @@ export default function YouthView({ groupId }) {
         setPreview(null);
     };
 
-        const fetchYouth = useCallback(async () => {
-        const { data } = await supabase
+    const fetchYouth = useCallback(async () => {
+        let query = supabase
             .from('youth')
-            .select('id, name, dob, section, membership_stage')
+            .select('id, name, dob, section,linking_section, membership_stage')
             .eq('group_id', groupId)
             .order('name');
+
+        //  Filter by section if the user is a Section Leader
+        if (userInfo?.role === 'Section Leader' && userInfo?.section) {
+            query = query.or(`section.eq.${userInfo.section},linking_section.eq.${userInfo.section}`);
+        }
+
+
+        const { data } = await query;
         setYouthList(data || []);
-    }, [groupId]);
+    }, [groupId, userInfo]);
 
     useEffect(() => {
         if (groupId) fetchYouth();
@@ -140,21 +148,25 @@ export default function YouthView({ groupId }) {
     };
 
     const filteredList = [...youthList]
-        .filter((y) =>
-            (!sectionFilter || y.section === sectionFilter) &&
-            (!filter || y.name.toLowerCase().includes(filter)) &&
-            (
-                !stageFilter
-                    ? y.membership_stage !== 'Retired' // default view excludes Retired
-                    : y.membership_stage === stageFilter // user-selected stage filter
-            )
-        )
+        .filter((y) => {
+            const matchesSection = userInfo?.role === 'Section Leader'
+                ? y.section === userInfo.section || y.linking_section === userInfo.section
+                : (!sectionFilter || y.section === sectionFilter || y.linking_section === sectionFilter);
+
+            const matchesSearch = !filter || y.name.toLowerCase().includes(filter);
+            const matchesStage = !stageFilter
+                ? y.membership_stage !== 'Retired'
+                : y.membership_stage === stageFilter;
+
+            return matchesSection && matchesSearch && matchesStage;
+        })
         .sort((a, b) => a.name.localeCompare(b.name));
 
     const paginatedList = filteredList.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
     const canSync = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
 
     return (
@@ -197,17 +209,19 @@ export default function YouthView({ groupId }) {
                     style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                 />
 
-                <select
-                    value={sectionFilter}
-                    onChange={(e) => setSectionFilter(e.target.value)}
-                    style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
-                >
-                    <option value="">All Sections</option>
-                    <option value="Joeys">Joeys</option>
-                    <option value="Cubs">Cubs</option>
-                    <option value="Scouts">Scouts</option>
-                    <option value="Venturers">Venturers</option>
-                </select>
+                {userInfo?.role !== 'Section Leader' && (
+                    <select
+                        value={sectionFilter}
+                        onChange={(e) => setSectionFilter(e.target.value)}
+                        style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
+                    >
+                        <option value="">All Sections</option>
+                        <option value="Joeys">Joeys</option>
+                        <option value="Cubs">Cubs</option>
+                        <option value="Scouts">Scouts</option>
+                        <option value="Venturers">Venturers</option>
+                    </select>
+                )}
 
                 <select
                     value={stageFilter}
