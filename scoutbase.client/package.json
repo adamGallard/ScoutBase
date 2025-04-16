@@ -1,7 +1,7 @@
 {
   "name": "scoutbase.client",
   "private": true,
-  "version": "0.7.1",
+  "version": "0.7.3",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,7 @@
     "react-qr-code": "^2.0.15",
     "react-qrcode-logo": "^3.0.0",
     "react-router-dom": "^7.4.1",
+    "recharts": "^2.15.2",
     "styled-components": "^6.1.17",
     "xlsx": "^0.18.5"
   },

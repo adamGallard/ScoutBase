@@ -81,7 +81,7 @@ export default function SignInOutPage() {
         const { comment, timestamp, action, group_id } = data;
 
         const eventDate = timestamp.split('T')[0]; // YYYY-MM-DD
-        const signedBy = matchingParent?.name || 'Unknown'; // fallback
+        const signedBy = matchingParent?.id || 'Unknown';
 
         const { error } = await supabase.from('attendance').insert([
             {

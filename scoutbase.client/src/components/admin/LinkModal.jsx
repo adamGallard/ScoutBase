@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
 
 export default function LinkModal({ parentId, onClose, groupId }) {

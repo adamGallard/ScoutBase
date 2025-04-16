@@ -1,9 +1,9 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, BookUser, Users ,Link} from 'lucide-react';
 import { AdminTable } from '../SharedStyles';
 import TransitionModal from './TransitionModal';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '@/utils/dateUtils';
 import { getTerrainSyncPreview, syncYouthFromTerrain } from '../../helpers/terrainSyncHelper';
 import TerrainSyncModal from './TerrainSyncModal';
 import {
