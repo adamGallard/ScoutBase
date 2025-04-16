@@ -6,7 +6,7 @@ import {
     PatrolCard,
     Label,
     PrimaryButton,
-    AdminInput, AdminInputLabel, AdminInputWrapper,CompactInputGroup, CompactInput,} from '@/components/sharedStyles';
+    AdminInput, AdminInputLabel, AdminInputWrapper,CompactInputGroup, CompactInput,} from '@/components/SharedStyles';
 
 import { supabase } from '@/lib/supabaseClient';
 
