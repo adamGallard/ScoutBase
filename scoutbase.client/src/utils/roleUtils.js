@@ -1,8 +1,8 @@
 // src/utils/roleUtils.js
 
 const rolePermissions = {
-    'Super Admin': ['manageGroupsAndUsers', 'setupSystem'],
-    'Group Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
+    'Super Admin': ['manageGroupsAndUsers', 'setupSystem', 'manageUsers'],
+    'Group Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance', 'manageUsers'],
     'Section Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
     'Section User': ['viewReports']
 };

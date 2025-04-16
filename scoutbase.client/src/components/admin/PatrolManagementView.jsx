@@ -7,7 +7,7 @@ import {
     Content,
     PageTitle,
     PrimaryButton,
-    AdminTable
+    AdminTable, CompactInput, CompactInputGroup, CompactSelect
 } from '@/components/SharedStyles';
 import PatrolLinkModal from './PatrolLinkModal';
 
@@ -69,33 +69,34 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     Patrol Management
                 </PageTitle>
 
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                    {!isSectionLeader && (
-                        <label>
-                            Section:
-                            <select
+
+                <CompactInputGroup>
+                    <div>
+                        {!isSectionLeader && (
+                        
+                            <CompactSelect 
                                 value={section}
                                 onChange={(e) => setSection(e.target.value)}
-                                style={{ marginLeft: '0.5rem', padding: '0.4rem' }}
                             >
                                 <option value="Joeys">Joeys</option>
                                 <option value="Cubs">Cubs</option>
                                 <option value="Scouts">Scouts</option>
                                 <option value="Venturers">Venturers</option>
-                            </select>
-                        </label>
+                            </CompactSelect>
                     )}
-
-                    <input
+                        <CompactInput
                         placeholder="New Patrol Name"
                         value={newPatrolName}
                         onChange={(e) => setNewPatrolName(e.target.value)}
-                        style={{ padding: '0.4rem', flexGrow: 1 }}
-                    />
+                       >
+                        </CompactInput>
+
+
                     <PrimaryButton onClick={addPatrol}>
                         <Plus size={16} /> Add Patrol
-                    </PrimaryButton>
-                </div>
+                        </PrimaryButton>
+                    </div>
+             </CompactInputGroup> 
 
                 <AdminTable>
                     <thead>

@@ -399,3 +399,122 @@ export const ButtonRow = styled.div`
   gap: 1rem;
   margin-top: 2rem;
 `;
+export const FormGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+export const PatrolGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+`;
+
+export const PatrolCard = styled.div`
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 1rem;
+  background-color: #ffffff;
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    color: #0f172a;
+  }
+`;
+export const AdminInputWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+`;
+
+export const AdminInputField = styled.input`
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+`;
+
+export const AdminInputLabel = styled.label`
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+`;
+export const AdminInput = styled.input`
+  width: 100%;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  background-color: white;
+  color: #111827;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+export const CompactInputGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+`;
+
+export const CompactInput = styled.input`
+  width: 200px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+`;
+export const CompactSelect = styled.select`
+  width: 200px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  color: #111827;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+export const ButtonRowRight = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+`;

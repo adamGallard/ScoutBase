@@ -1,1 +1,5 @@
-export const appVersion = "0.6.0";
+// version.js
+export const appVersion = {
+	version: '0.8.3',
+
+};

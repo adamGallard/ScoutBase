@@ -43,7 +43,7 @@ import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySectio
 import ReportAge from '@/components/admin/reports/ReportAge';
 import { useActingGroup } from "@/hooks/useActingGroup";
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
-
+import InspectionPage from '@/components/admin/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 
 
@@ -65,6 +65,10 @@ export default function AdminPage() {
     const { actingAsGroupId, setActingAsGroupId, actingAsAdmin, setActingAsAdmin } = useActingGroup();
     const [showDropdown, setShowDropdown] = useState(false);
 
+    const handleLogout = () => {
+        localStorage.clear(); // Optional: clear saved tokens/role overrides
+        navigate('/Logout');
+    };
     useEffect(() => {
         if (!checkTokenValidity()) {
 			navigate('/Logout');
@@ -158,6 +162,10 @@ export default function AdminPage() {
                 return <GroupQRCode groupStub={group?.slug} />;
             case 'patrol-management':
                 return <PatrolManagementView groupId={activeGroupId} userInfo={userInfo} />;
+            case 'inspection':
+                return <InspectionPage groupId={activeGroupId} userInfo={userInfo} />;
+            case 'logout':
+                return handleLogout();
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
@@ -170,10 +178,7 @@ export default function AdminPage() {
 
     };
 
-    const handleLogout = () => {
-        // Add logout logic here if needed
-        navigate('/Logout');
-    };
+
 
     return (
         
