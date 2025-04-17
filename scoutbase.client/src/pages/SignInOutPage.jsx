@@ -167,6 +167,11 @@ export default function SignInOutPage() {
                 <Header />
                 <Main style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
                     <Content style={{ maxWidth: '600px', margin: '0 auto' }}>
+
+                            <LogoWrapper>
+                                <img src={logo} alt="ScoutBase Logo" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+                            </LogoWrapper>
+
                         <h1>Group Not Found</h1>
                         <p>We couldn't find the Scout group you're looking for.</p>
                         <Link to="/">Return to Home</Link>
@@ -217,11 +222,7 @@ export default function SignInOutPage() {
                         boxSizing: 'border-box'
                     }}
                 >
-                    {!submitted && (
-                        <LogoWrapper>
-                            <img src={logo} alt="ScoutBase Logo" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
-                        </LogoWrapper>
-                    )}
+
 
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{groupName || 'Scout Group'}</h1>
                     <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>Sign In / Out</h2>
