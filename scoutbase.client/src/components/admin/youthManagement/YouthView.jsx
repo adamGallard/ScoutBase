@@ -1,10 +1,9 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, BookUser, Users ,Link} from 'lucide-react';
-import { AdminTable } from '../SharedStyles';
 import TransitionModal from './TransitionModal';
 import { formatDate } from '@/utils/dateUtils';
-import { getTerrainSyncPreview, syncYouthFromTerrain } from '../../helpers/terrainSyncHelper';
+import { getTerrainSyncPreview, syncYouthFromTerrain } from '@/helpers/terrainSyncHelper';
 import TerrainSyncModal from './TerrainSyncModal';
 import {
     PageWrapper,
@@ -12,8 +11,8 @@ import {
     Content,
     LogoWrapper,
     PrimaryButton,
-    PageTitle
-} from '../../components/SharedStyles';
+    PageTitle, AdminTable
+} from '@/components/common/SharedStyles';
 import UnitSelectModal from './UnitSelectModal';
 import YouthDetailsModal from './YouthDetailsModal';
 import ImportYouthModal from './ImportYouthModal';

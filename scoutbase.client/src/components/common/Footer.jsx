@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { appVersion } from '../version';
+import { appVersion } from '../../version';
 
 const FooterWrapper = styled.footer`
   width: 100%;

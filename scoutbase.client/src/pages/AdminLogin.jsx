@@ -4,9 +4,9 @@ import {
     PageWrapper,
     Main,
     Content
-} from '../components/SharedStyles';
-import Footer from '../components/Footer';
-import Header from '../components/Header';
+} from '@/components/common/SharedStyles';
+import Footer from '@/components/common/Footer';
+import Header from '@/components/common/Header';
 
 const branches = [
     { label: 'QLD', value: 'qld' },

@@ -1,5 +1,5 @@
 ﻿import React from 'react';
-import logo from '../assets/scoutbase-logo.png';
+import logo from '@/assets/scoutbase-logo.png';
 import {
     HighlightNote,
     PageWrapper,
@@ -7,9 +7,9 @@ import {
     LogoWrapper,
     Content,
     StyledLogo,
-} from '../components/SharedStyles';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
+} from '@/components/common/SharedStyles';
+import Header from '@/components/common/Header';
+import Footer from '@/components/common/Footer';
 import { Helmet } from 'react-helmet';
 
 export default function LandingPage() {

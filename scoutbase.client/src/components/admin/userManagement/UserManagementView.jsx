@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, User } from 'lucide-react';
-import { AdminTable, PageTitle } from '../SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import { canEditUser, canDeleteUser, getAssignableRoles } from '@/utils/roleUtils';
 const sections = ['Joeys', 'Cubs', 'Scouts', 'Venturers', 'Rovers'];
 import { logAuditEvent } from '@/helpers/auditHelper';

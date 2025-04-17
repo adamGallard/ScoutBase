@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { PageTitle, HighlightNote } from "@/components/SharedStyles";
+import { PageTitle, HighlightNote } from "@/components/common/SharedStyles";
 import { FileText } from "lucide-react";
 import styled from "styled-components";
 

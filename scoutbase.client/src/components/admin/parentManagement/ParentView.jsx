@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
-import { AdminTable, PageTitle } from '../SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/helpers/auditHelper';
 

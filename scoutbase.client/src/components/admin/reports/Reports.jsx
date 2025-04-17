@@ -8,7 +8,7 @@ import {
     Download,
     BarChart2
 } from 'lucide-react';
-import { PageTitle } from '../SharedStyles';
+import { PageTitle } from '@/components/common/SharedStyles';
 
 const reports = [
     {

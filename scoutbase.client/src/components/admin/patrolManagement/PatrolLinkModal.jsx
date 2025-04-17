@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
+import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 
 export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName, section }) {
     const [linkedYouth, setLinkedYouth] = useState([]);

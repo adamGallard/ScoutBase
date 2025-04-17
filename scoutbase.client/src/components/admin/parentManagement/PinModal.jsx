@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
 import bcrypt from 'bcryptjs';
 import { supabase } from '@/lib/supabaseClient';
-import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
+import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
 
 export default function PinModal({ parentId, onClose, groupId , userInfo }) {

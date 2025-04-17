@@ -3,7 +3,7 @@ import {
     PageTitle,
     AdminTable,
     PrimaryButton, ButtonRowRight
-} from '@/components/SharedStyles';
+} from '@/components/common/SharedStyles';
 import {
     BarChart,
     Bar,

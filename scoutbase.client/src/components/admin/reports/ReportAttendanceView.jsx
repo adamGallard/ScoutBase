@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
-import { AdminTable, PageTitle } from '@/components/SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import {
     PieChart, Pie, Tooltip, ResponsiveContainer, Cell
 } from 'recharts';

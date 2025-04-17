@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useActingGroup } from "@/hooks/useActingGroup";
-import { PageTitle, HighlightNote, PrimaryButton } from "@/components/SharedStyles";
+import { PageTitle, HighlightNote, PrimaryButton } from "@/components/common/SharedStyles";
 import { Users, MapPin, FileText, Settings, ShieldCheck } from "lucide-react";
 
 const SuperAdminDashboard = () => {

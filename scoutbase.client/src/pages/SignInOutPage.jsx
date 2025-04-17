@@ -1,29 +1,29 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import logo from '../assets/scoutbase-logo.svg';
+import logo from '@/assets/scoutbase-logo.svg';
 
-import { fetchGroupBySlug, fetchPrimaryLeaderEmail } from '../helpers/groupHelper';
+import { fetchGroupBySlug, fetchPrimaryLeaderEmail } from '@/helpers/groupHelper';
 import {
     fetchYouthByParentId,
     fetchLatestAttendanceForYouthList
-} from '../helpers/attendanceHelper';
-import { verifyParentByIdentifierAndPin } from '../helpers/authHelper';
+} from '@/helpers/attendanceHelper';
+import { verifyParentByIdentifierAndPin } from '@/helpers/authHelper';
 
-import { supabase} from '../lib/supabaseClient';
+import { supabase} from '@/lib/supabaseClient';
 
-import SignInForm from '../components/SignInForm';
-import Footer from '../components/Footer';
+import SignInForm from '@/components/SignInForm';
+import Footer from '@/components/common/Footer';
 import {
     PageWrapper,
     Main,
     Content,
     LogoWrapper,
     PrimaryButton
-} from '../components/SharedStyles';
-import Header from '../components/Header';
-import UpdatePinModal from '../components/UpdatePinModal';
-import { useIsMobile } from '../hooks/useIsMobile';
-import { logAuditEvent } from '../helpers/auditHelper';
+} from '@/components/common/SharedStyles';
+import Header from '@/components/common/Header';
+import UpdatePinModal from '@/components/UpdatePinModal';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { logAuditEvent } from '@/helpers/auditHelper';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
 

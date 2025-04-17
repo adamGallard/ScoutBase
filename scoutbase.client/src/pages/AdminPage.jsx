@@ -9,9 +9,9 @@ import { checkTokenValidity } from '@/helpers/authHelper';
 
 
 // ✅ Layout Components
-import AdminHeader from '@/components/admin/AdminHeader';
-import Footer from '@/components/Footer';
-import Sidebar from '@/components/admin/Sidebar';
+import AdminHeader from '@/components/admin/common/AdminHeader';
+import Footer from '@/components/common/Footer';
+import Sidebar from '@/components/admin/common/Sidebar';
 import RequireAuth from '@/components/RequireAuth';
 
 // ✅ Shared UI Styles
@@ -20,22 +20,22 @@ import {
     AdminDropdownMenu,
     AdminDropdownToggle, Label, StyledSelect, AdminHeaderRow,
     AdminWarningLabel
-} from '@/components/SharedStyles';
+} from '@/components/common/SharedStyles';
 import { Settings, LogOut, MapPin,User } from 'lucide-react';
 
 // ✅ Admin Functionality
-import PinModal from '@/components/admin/PinModal';
-import LinkModal from '@/components/admin/LinkModal';
-import ParentView from '@/components/admin/ParentView';
-import YouthView from '@/components/admin/YouthView';
-import UserManagementView from '@/components/admin/UserManagementView';
+import PinModal from '@/components/admin/parentManagement/PinModal';
+import LinkModal from '@/components/admin/parentManagement/LinkModal';
+import ParentView from '@/components/admin/parentManagement/ParentView';
+import YouthView from '@/components/admin/youthManagement/YouthView';
+import UserManagementView from '@/components/admin/UserManagement/UserManagementView';
 import GroupManagementView from '@/components/admin/GroupManagementView';
-import Reports from '@/components/admin/Reports';
-import AdminDashboard from '@/components/admin/AdminDashboard';
-import SuperAdminDashboard from '@/components/admin/SuperAdminDashboard';
-import UserDashboard from '@/components/admin/UserDashboard';
+import Reports from '@/components/admin/reports/reports';
+import AdminDashboard from '@/components/admin/dashbaoards/AdminDashboard';
+import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashboard';
+import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
-import PatrolManagementView from '@/components/admin/PatrolManagementView';
+import PatrolManagementView from '@/components/admin/PatrolManagement/PatrolManagementView';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -43,7 +43,7 @@ import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySectio
 import ReportAge from '@/components/admin/reports/ReportAge';
 import { useActingGroup } from "@/hooks/useActingGroup";
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
-import InspectionPage from '@/components/admin/InspectionPage';
+import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 
 

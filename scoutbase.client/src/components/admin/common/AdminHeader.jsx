@@ -1,7 +1,7 @@
 ﻿import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Settings, LogOut, MapPin, User, UserRoundCog } from 'lucide-react';
-import { TitleGroup, AdminHeaderRow, AdminDropdownContainer, AdminDropdownToggle, AdminDropdownMenu, Label, StyledSelect, ToggleSwitchWrapper, AdminWarningLabel } from '@/components/SharedStyles';
+import { TitleGroup, AdminHeaderRow, AdminDropdownContainer, AdminDropdownToggle, AdminDropdownMenu, Label, StyledSelect, ToggleSwitchWrapper, AdminWarningLabel } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
 
 const AdminHeaderBar = styled.header`

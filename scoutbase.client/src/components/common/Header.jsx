@@ -1,6 +1,6 @@
 ﻿import React, { useState } from 'react';
 import styled from 'styled-components';
-import { TitleGroup, Nav, HeaderBar } from '../components/SharedStyles';
+import { TitleGroup, Nav, HeaderBar } from '@/components/common/SharedStyles';
 import { ShieldUser } from 'lucide-react';
 const MobileMenuButton = styled.button`
   display: flex;

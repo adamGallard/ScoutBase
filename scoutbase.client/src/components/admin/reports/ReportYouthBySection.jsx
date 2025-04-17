@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
-import { downloadCSV } from '../../../utils/exportUtils';
-import { PrimaryButton,PageTitle } from '../../SharedStyles';
+import { supabase } from '@/lib/supabaseClient';
+import { downloadCSV } from '@/utils/exportUtils';
+import { PrimaryButton,PageTitle } from '@/components/common/SharedStyles';
 import { FolderKanban } from 'lucide-react';
 
 const SECTIONS = ['All Sections', 'Joeys', 'Cubs', 'Scouts', 'Venturers'];

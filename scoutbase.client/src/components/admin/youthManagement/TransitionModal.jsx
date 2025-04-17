@@ -1,8 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
-import { fetchTransitionsForYouth, addYouthTransition, deleteYouthTransition } from '../../helpers/supabaseHelpers';
-import { PrimaryButton } from '../SharedStyles';
-import { formatDate } from '../../utils/dateUtils';
-import { supabase } from '@/lib/supabaseClient';
+import { fetchTransitionsForYouth, addYouthTransition, deleteYouthTransition } from '../../../helpers/supabaseHelpers';
+import { PrimaryButton } from '@/components/common/SharedStyles';
+import { formatDate } from '@/utils/dateUtils';
 export default function TransitionModal({ youth, onClose, isMobile, refreshYouth }) {
     const [transitions, setTransitions] = useState([]);
     const [form, setForm] = useState({
