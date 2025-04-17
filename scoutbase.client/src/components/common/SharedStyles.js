@@ -526,3 +526,29 @@ export const StyledLogo = styled.img`
   height: auto;
   object-fit: contain;
 `;
+
+export const AdminTextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  background-color: white;
+  color: #111827;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
