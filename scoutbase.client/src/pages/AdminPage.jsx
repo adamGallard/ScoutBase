@@ -30,7 +30,7 @@ import ParentView from '@/components/admin/parentManagement/ParentView';
 import YouthView from '@/components/admin/youthManagement/YouthView';
 import UserManagementView from '@/components/admin/userManagement/UserManagementView';
 import GroupManagementView from '@/components/admin/GroupManagementView';
-import Reports from '@/components/admin/reports/reports';
+import Reports from '@/components/admin/reports/Reports';
 import AdminDashboard from '@/components/admin/dashbaoards/AdminDashboard';
 import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashboard';
 import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
