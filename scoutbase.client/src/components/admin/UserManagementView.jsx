@@ -1,12 +1,11 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, User } from 'lucide-react';
 import { AdminTable, PageTitle } from '../SharedStyles';
-
+import { canEditUser, canDeleteUser, getAssignableRoles } from '@/utils/roleUtils';
 const sections = ['Joeys', 'Cubs', 'Scouts', 'Venturers', 'Rovers'];
-const roles = ['Super Admin', 'Group Leader', 'Section Leader', 'Section User'];
-
-export default function UserManagementView({ activeGroupId }) {
+import { logAuditEvent } from '@/helpers/auditHelper';
+export default function UserManagementView({ activeGroupId, userInfo }) {
     const [users, setUsers] = useState([]);
     const [formData, setFormData] = useState({
         name: '',
@@ -31,23 +30,126 @@ export default function UserManagementView({ activeGroupId }) {
     }, [activeGroupId, fetchUsers]);
 
     const addUser = async () => {
-        if (!formData.name || !formData.email || !formData.terrain_user_id) return;
-        await supabase.from('users').insert([{ ...formData, group_id: activeGroupId }]);
+        const cleanedData = {
+            ...formData,
+            group_id: activeGroupId,
+            section:
+                formData.role === 'Section Leader' || formData.role === 'Section User'
+                    ? formData.section
+                    : null,
+        };
+
+        if (!cleanedData.name || !cleanedData.email || !cleanedData.terrain_user_id) {
+            alert('Name, email, and Terrain User ID are required.');
+            return;
+        }
+
+        if (
+            (cleanedData.role === 'Section Leader' || cleanedData.role === 'Section User') &&
+            !cleanedData.section
+        ) {
+            alert('Section is required for this role.');
+            return;
+        }
+
+        const { data, error } = await supabase
+            .from('users')
+            .insert([cleanedData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Insert failed:', error.message);
+            alert('Failed to create user. Please check inputs.');
+            return;
+        }
+
+        // ✅ Audit logging
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId: userInfo.group_id,
+            role: userInfo.role,
+            action: 'Add',
+            targetType: 'User',
+            targetId: data.id,
+            metadata: `Created user ${data.name} with role ${data.role}${data.section ? ` in section ${data.section}` : ''}`
+        });
+
         resetForm();
         fetchUsers();
     };
 
     const updateUser = async (id) => {
-        await supabase.from('users').update(formData).eq('id', id);
+        const cleanedData = {
+            ...formData,
+            section:
+                formData.role === 'Section Leader' || formData.role === 'Section User'
+                    ? formData.section
+                    : null,
+        };
+
+        const { error } = await supabase
+            .from('users')
+            .update(cleanedData)
+            .eq('id', id);
+
+        if (error) {
+            console.error('❌ Update failed:', error.message);
+            alert('Failed to update user.');
+            return;
+        }
+
+        // ✅ Audit log for edit
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId: userInfo.group_id,
+            role: userInfo.role,
+            action: 'Edit',
+            targetType: 'User',
+            targetId: id,
+            metadata: `Updated user ${formData.name} — new role: ${formData.role}${formData.section ? `, section: ${formData.section}` : ''}`
+        });
+
         resetForm();
         fetchUsers();
     };
 
     const deleteUser = async (id) => {
-        if (confirm('Are you sure you want to delete this user?')) {
-            await supabase.from('users').delete().eq('id', id);
-            fetchUsers();
+        if (!confirm('Are you sure you want to delete this user?')) return;
+
+        // 🧠 Fetch user details first for audit log
+        const { data: deletedUser, error: fetchError } = await supabase
+            .from('users')
+            .select('name, role, section')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) {
+            console.error('❌ Could not fetch user to delete:', fetchError.message);
+            alert('Failed to delete user — could not find user.');
+            return;
         }
+
+        const { error } = await supabase.from('users').delete().eq('id', id);
+
+        if (error) {
+            console.error('❌ Delete failed:', error.message);
+            alert('Failed to delete user.');
+            return;
+        }
+
+        // ✅ Audit log for delete
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId: userInfo.group_id,
+            role: userInfo.role,
+            action: 'Delete',
+            targetType: 'User',
+            targetId: id,
+            metadata: `Deleted user ${deletedUser.name} (${deletedUser.role}${deletedUser.section ? ` — ${deletedUser.section}` : ''})`
+        });
+
+        fetchUsers();
     };
 
     const resetForm = () => {
@@ -95,7 +197,7 @@ export default function UserManagementView({ activeGroupId }) {
                             <td>
                                 {editingUserId === u.id ? (
                                     <select value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}>
-                                        {roles.map((role) => (
+                                        {getAssignableRoles(userInfo).map((role) => (
                                             <option key={role} value={role}>{role}</option>
                                         ))}
                                     </select>
@@ -113,7 +215,7 @@ export default function UserManagementView({ activeGroupId }) {
                                             ))}
                                         </select>
                                     ) : (
-                                        <span style={{ fontStyle: 'italic', color: '#888' }}>�</span>
+                                        <span style={{ fontStyle: 'italic', color: '#888' }}>—</span>
                                     )
                                 ) : (
                                         u.section || 'Group'
@@ -133,8 +235,14 @@ export default function UserManagementView({ activeGroupId }) {
                                     </>
                                 ) : (
                                     <>
-                                        <button onClick={() => { setEditingUserId(u.id); setFormData(u); }}><Pencil size={16} /></button>
-                                        <button onClick={() => deleteUser(u.id)}><Trash size={16} /></button>
+                                            <>
+                                                {canEditUser(userInfo, u) && (
+                                                    <button onClick={() => { setEditingUserId(u.id); setFormData(u); }}><Pencil size={16} /></button>
+                                                )}
+                                                {canDeleteUser(userInfo, u) && (
+                                                    <button onClick={() => deleteUser(u.id)}><Trash size={16} /></button>
+                                                )}
+                                            </>
                                     </>
                                 )}
                             </td>
@@ -151,7 +259,7 @@ export default function UserManagementView({ activeGroupId }) {
                             </td>
                             <td>
                                 <select value={formData.role} onChange={(e) => setFormData(f => ({ ...f, role: e.target.value }))}>
-                                    {roles.map((role) => (
+                                    {getAssignableRoles(userInfo).map((role) => (
                                         <option key={role} value={role}>{role}</option>
                                     ))}
                                 </select>

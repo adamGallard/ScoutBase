@@ -18,8 +18,10 @@ import UnitSelectModal from './UnitSelectModal';
 import YouthDetailsModal from './YouthDetailsModal';
 import ImportYouthModal from './ImportYouthModal';
 import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
-
+import { logAuditEvent } from '@/helpers/auditHelper';
 export default function YouthView({ groupId, userInfo }) {
+
+
     const [youthList, setYouthList] = useState([]);
     const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
@@ -32,7 +34,7 @@ export default function YouthView({ groupId, userInfo }) {
     const [unitOptions, setUnitOptions] = useState([]);
     const [showUnitModal, setShowUnitModal] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 15;
+    const itemsPerPage = 12;
     const [selectedYouthDetails, setSelectedYouthDetails] = useState(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const handleYouthImport = async (data, filename) => {
@@ -127,23 +129,73 @@ export default function YouthView({ groupId, userInfo }) {
             .select()
             .single();
 
+        if (!error && data) {
+            await logAuditEvent({
+                userId: userInfo.id,
+                groupId: userInfo.group_id,
+                role: userInfo.role,
+                action: 'Add',
+                targetType: 'Youth',
+                targetId: data.id,
+                metadata: `Added youth: ${data.name} (${data.section})`
+            });
+        }
         if (data) {
             setYouthForm({ name: '', dob: '', membership_stage: '' });
             setSelectedYouth(data); // 🔄 replaces justAddedYouth
         }
     };
 
-    const updateYouth = async (id) => {
-        await supabase.from('youth').update(youthForm).eq('id', id);
-        setEditingYouthId(null);
-        setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
-        fetchYouth();
+    const updateYouth = async (youthId) => {
+        const { error } = await supabase
+            .from('youth')
+            .update(youthForm)
+            .eq('id', youthId);
+
+        if (!error) {
+            await logAuditEvent({
+                userId: userInfo.id,
+                groupId: userInfo.group_id,
+                role: userInfo.role,
+                action: 'Edit',
+                targetType: 'Youth',
+                targetId: youthId,
+                metadata: `Updated youth: ${youthForm.name} (${youthForm.membership_stage || 'N/A'})`
+            });
+            setEditingYouthId(null);
+            setYouthForm({ name: '', dob: '', section: '', membership_stage: '' });
+            fetchYouth();
+        } else {
+            console.error('Update youth failed:', error.message);
+        }
     };
 
     const deleteYouth = async (id) => {
         if (confirm('Are you sure you want to delete this youth?')) {
-            await supabase.from('youth').delete().eq('id', id);
-            fetchYouth();
+            // 🧠 Fetch name for better metadata
+            const { data: oldYouth } = await supabase
+                .from('youth')
+                .select('name')
+                .eq('id', id)
+                .single();
+
+            const { error } = await supabase.from('youth').delete().eq('id', id);
+
+            if (!error) {
+                await logAuditEvent({
+                    userId: userInfo.id,
+                    groupId: userInfo.group_id,
+                    role: userInfo.role,
+                    action: 'Delete',
+                    targetType: 'Youth',
+                    targetId: id,
+                    metadata: `Deleted youth: ${oldYouth?.name || id}`
+                });
+
+                fetchYouth();
+            } else {
+                console.error('Delete youth failed:', error.message);
+            }
         }
     };
 

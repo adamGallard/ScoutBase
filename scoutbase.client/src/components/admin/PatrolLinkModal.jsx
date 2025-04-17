@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
 
@@ -28,10 +28,13 @@ export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName
     const loadAllYouth = async () => {
         const { data } = await supabase
             .from('youth')
-            .select('id, name, section')
+            .select('id, name, section, patrol_id, membership_stage') // 👈 add membership_stage
             .eq('group_id', groupId)
-            .eq('section', section); // filter by section for simplicity
-        setAvailableYouth(data || []);
+            .eq('section', section);
+
+        if (data) {
+            setAvailableYouth(data);
+        }
     };
 
     const addLink = async (youthId) => {
@@ -39,7 +42,9 @@ export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName
             .from('youth')
             .update({ patrol_id: patrolId })
             .eq('id', youthId);
-        loadLinkedYouth();
+
+        await loadLinkedYouth();
+        await loadAllYouth(); // ✅ Refresh available list too
         setCurrentPage(1);
     };
 
@@ -48,12 +53,15 @@ export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName
             .from('youth')
             .update({ patrol_id: null })
             .eq('id', youthId);
-        loadLinkedYouth();
+
+        await loadLinkedYouth();
+        await loadAllYouth(); // ✅ Refresh available list too
     };
 
     const unlinkedYouth = availableYouth
-        .filter(y => !linkedYouth.some(l => l.id === y.id))
-        .filter(y => y.name.toLowerCase().includes(search.toLowerCase()));
+        .filter(y => !y.patrol_id)                         // not assigned to any patrol
+        .filter(y => y.membership_stage !== 'Retired')     // not retired
+        .filter(y => y.name.toLowerCase().includes(search.toLowerCase())); // matches search
 
     const paginatedYouth = unlinkedYouth.slice(
         (currentPage - 1) * itemsPerPage,
@@ -89,12 +97,19 @@ export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName
                 />
 
                 <ul style={{ textAlign: 'left', marginBottom: '1rem' }}>
-                    {paginatedYouth.map((youth) => (
-                        <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span>{youth.name} ({youth.section})</span>
-                            <button onClick={() => addLink(youth.id)}>Add</button>
-                        </li>
-                    ))}
+                    {paginatedYouth.map((youth) => {
+                        const isAssigned = youth.patrol_id !== null;
+                        return (
+                            <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', opacity: isAssigned ? 0.5 : 1 }}>
+                                <span>{youth.name} ({youth.section})</span>
+                                {isAssigned ? (
+                                    <span style={{ fontStyle: 'italic' }}>Already Assigned</span>
+                                ) : (
+                                    <button onClick={() => addLink(youth.id)}>Add</button>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
 
                 {totalPages > 1 && (

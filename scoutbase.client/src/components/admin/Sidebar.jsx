@@ -112,7 +112,6 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 width: collapsed ? '60px' : '200px',
                 transition: 'width 0.3s ease',
                 backgroundColor: '#f5f5f5',
-                height: '100vh',
                 padding: '1rem 0',
                 display: 'flex',
                 flexDirection: 'column',

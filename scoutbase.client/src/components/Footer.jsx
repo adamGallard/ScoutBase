@@ -8,7 +8,7 @@ const FooterWrapper = styled.footer`
   border-top: 1px solid #e5e7eb;
   font-size: 0.875rem;
   color: #6b7280;
-  margin-top: 2rem;
+  margin-top: 0rem;
 `;
 
 const FooterContainer = styled.div`

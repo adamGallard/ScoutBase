@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
+import { logAuditEvent } from '@/helpers/auditHelper';
 
-export default function LinkModal({ parentId, onClose, groupId }) {
+export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const [linkedYouth, setLinkedYouth] = useState([]);
     const [availableYouth, setAvailableYouth] = useState([]);
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [parentName, setParentName] = useState('');
     const itemsPerPage = 10;
-
     useEffect(() => {
         if (parentId) {
             loadParentName();
@@ -51,6 +51,15 @@ export default function LinkModal({ parentId, onClose, groupId }) {
         await supabase.from('parent_youth').insert([
             { parent_id: parentId, youth_id: youthId, group_id: groupId }
         ]);
+        await logAuditEvent({
+            userId: userInfo?.id,
+            groupId: userInfo.group_id,
+            role: userInfo?.role,
+            action: 'Link',
+            targetType: 'Parent-Youth',
+            targetId: `${parentId}`,
+            metadata: `Linked youth ID ${youthId} to parent ID ${parentId}`
+        });
         loadLinkedYouth();
         setCurrentPage(1);
     };
@@ -61,6 +70,18 @@ export default function LinkModal({ parentId, onClose, groupId }) {
             .delete()
             .eq('parent_id', parentId)
             .eq('youth_id', youthId);
+    
+
+        await logAuditEvent({
+                userId: userInfo?.id,
+                groupId: userInfo.group_id,
+                role: userInfo?.role,
+                action: 'Unlink',
+                targetType: 'Parent-Youth',
+                targetId: `${parentId}`,
+                metadata: `Unlinked youth ID ${youthId} from parent ID ${parentId}`
+            });
+    
         loadLinkedYouth();
     };
 

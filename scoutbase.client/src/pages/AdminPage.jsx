@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useTerrainUser } from '@/hooks/useTerrainUser';
 import { checkTokenValidity } from '@/helpers/authHelper';
-import { logAuditEvent } from '@/helpers/auditHelper';
+
 
 // ✅ Layout Components
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -145,7 +145,7 @@ export default function AdminPage() {
             case 'add-youth':
                 return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':
-                return <UserManagementView activeGroupId={activeGroupId} />;
+                return <UserManagementView activeGroupId={activeGroupId} userInfo={userInfo} />;
             case 'group-management':
                 return <GroupManagementView />;
             case 'reports':
@@ -200,6 +200,7 @@ export default function AdminPage() {
                     parentId={selectedParentId}
                     onClose={() => setLinkModalOpen(false)}
                     groupId={activeGroupId}
+					userInfo={userInfo}
                 />
             )}
 
@@ -222,7 +223,7 @@ export default function AdminPage() {
                         actingAsGroupId={actingAsGroupId}
                         actingAsAdmin={actingAsAdmin} />
 
-                    <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
+                    <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minHeight: 0 }}>
 
                         {renderContent()}
                     </Content>

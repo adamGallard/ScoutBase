@@ -1,7 +1,8 @@
 ﻿import React, { useState } from 'react';
 import styled from 'styled-components';
-import { Settings, LogOut, MapPin, User } from 'lucide-react';
+import { Settings, LogOut, MapPin, User, UserRoundCog } from 'lucide-react';
 import { TitleGroup, AdminHeaderRow, AdminDropdownContainer, AdminDropdownToggle, AdminDropdownMenu, Label, StyledSelect, ToggleSwitchWrapper, AdminWarningLabel } from '@/components/SharedStyles';
+import { logAuditEvent } from '@/helpers/auditHelper';
 
 const AdminHeaderBar = styled.header`
   display: flex;
@@ -9,7 +10,7 @@ const AdminHeaderBar = styled.header`
   align-items: center;
   background-color: #f9fafb;
   color: Black;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1.5rem;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 `;
 
@@ -43,7 +44,7 @@ const AdminHeader = ({
 
                 <AdminDropdownContainer>
                     <AdminDropdownToggle onClick={() => setShowDropdown((prev) => !prev)}>
-                        <Settings size={18} />
+                        <UserRoundCog size={20} color="#0F5BA4" />
                     </AdminDropdownToggle>
 
                     {showDropdown && (

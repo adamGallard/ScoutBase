@@ -289,9 +289,10 @@ export const AdminHeaderRow = styled('div').withConfig({
     shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isWarning'
 })`
   display: flex;
+   border-radius: 50px;
   justify-content: flex-end;
   align-items: center;
-  padding: 0rem 0rem 0rem 1rem;
+  padding: 0.25rem 0.25rem 0.25rem 1rem;
   gap: 1rem;
   background-color: ${({ isWarning }) => (isWarning ? '#fef3c7' : 'transparent')};
   border-bottom: 0px solid #e5e7eb;

@@ -1,4 +1,5 @@
 // src/utils/roleUtils.js
+export const roles = ['Super Admin', 'Group Leader', 'Section Leader', 'Section User'];
 
 const rolePermissions = {
     'Super Admin': ['manageGroupsAndUsers', 'setupSystem', 'manageUsers'],
@@ -36,4 +37,27 @@ export const can = (role, permission, options = {}) => {
 export const normalizeRole = (role) => {
     if (!role) return '';
     return role.toLowerCase().replace(/\s+/g, '_'); // "Super Admin" -> "super_admin"
+};
+
+export const canEditUser = (currentUser, targetUser) => {
+    if (currentUser.role === 'Super Admin') return true;
+    if (currentUser.role === 'Group Leader') return targetUser.role !== 'Super Admin';
+    if (currentUser.role === 'Section Leader') {
+        return targetUser.role === 'Section Leader' && targetUser.section === currentUser.section;
+    }
+    return false;
+};
+
+export const canDeleteUser = (currentUser, targetUser) => {
+    if (targetUser.role === 'Super Admin') return false;
+    if (currentUser.role === 'Super Admin') return true;
+    if (currentUser.role === 'Group Leader') return targetUser.role !== 'Group Leader' && targetUser.role !== 'Super Admin';
+    return false;
+};
+
+export const getAssignableRoles = (currentUser) => {
+    if (currentUser.role === 'Super Admin') return roles;
+    if (currentUser.role === 'Group Leader') return roles.filter(r => r !== 'Super Admin');
+    if (currentUser.role === 'Section Leader') return ['Section Leader', 'Section User'];
+    return [];
 };
