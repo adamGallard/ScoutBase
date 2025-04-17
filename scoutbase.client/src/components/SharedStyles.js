@@ -80,8 +80,8 @@ export const Main = styled.main`
 `;
 
 export const LogoWrapper = styled.div`
-  width: 17rem;
-  height: 17em;
+  width: 18rem;
+  height: 18rem;
   border-radius: 9999px;
   background-color: #0f5ba4;
   display: flex;
@@ -291,7 +291,7 @@ export const AdminHeaderRow = styled('div').withConfig({
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  padding: 0rem 0rem;
+  padding: 0rem 0rem 0rem 1rem;
   gap: 1rem;
   background-color: ${({ isWarning }) => (isWarning ? '#fef3c7' : 'transparent')};
   border-bottom: 0px solid #e5e7eb;
@@ -301,7 +301,7 @@ export const AdminWarningLabel = styled.div`
   color: #92400e;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 9999px;
 `;
 export const PageTitle = styled.h2`
