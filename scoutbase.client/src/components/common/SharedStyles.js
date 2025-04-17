@@ -80,8 +80,8 @@ export const Main = styled.main`
 `;
 
 export const LogoWrapper = styled.div`
-  width: 12rem;
-  height: 12rem;
+  width: 18rem;
+  height: 18rem;
   border-radius: 9999px;
   background-color: #0f5ba4;
   display: flex;
@@ -114,7 +114,7 @@ export const Content = styled.div`
   p {
     font-size: 0.95rem;
     max-width: 32rem;
-    margin: 0 auto 2rem;
+    margin: 0 0 2rem;
     line-height: 1.6;
   }
 `;
@@ -289,9 +289,10 @@ export const AdminHeaderRow = styled('div').withConfig({
     shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isWarning'
 })`
   display: flex;
+   border-radius: 50px;
   justify-content: flex-end;
   align-items: center;
-  padding: 0rem 0rem;
+  padding: 0.25rem 0.25rem 0.25rem 1rem;
   gap: 1rem;
   background-color: ${({ isWarning }) => (isWarning ? '#fef3c7' : 'transparent')};
   border-bottom: 0px solid #e5e7eb;
@@ -301,7 +302,7 @@ export const AdminWarningLabel = styled.div`
   color: #92400e;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.25rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   border-radius: 9999px;
 `;
 export const PageTitle = styled.h2`
@@ -517,4 +518,37 @@ export const ButtonRowRight = styled.div`
   justify-content: flex-end;
   margin-top: 1rem;
   margin-bottom: 2rem;
+`;
+
+export const StyledLogo = styled.img`
+  width: 90%;
+  max-width: 300px;
+  height: auto;
+  object-fit: contain;
+`;
+
+export const AdminTextArea = styled.textarea`
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  line-height: 1.5;
+  margin-bottom: 1rem;
+  background-color: white;
+  color: #111827;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
 `;

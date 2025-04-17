@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
-import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
+import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 
 export default function ImportYouthModal({ onClose, onImport }) {
     const [previewData, setPreviewData] = useState([]);

@@ -2,7 +2,7 @@
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
 import { useTerrainUser } from "@/hooks/useTerrainUser";
-import { PageTitle, HighlightNote, PrimaryButton } from "@/components/SharedStyles";
+import { PageTitle, HighlightNote, PrimaryButton } from "@/components/common/SharedStyles";
 import { ShieldCheck, Users, FileText, ClipboardCheck, UserPlus } from "lucide-react";
 
 const AdminDashboard = () => {

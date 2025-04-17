@@ -3,9 +3,9 @@ import {
     PageWrapper,
     Main,
     Content,
-} from '../components/SharedStyles';
-import Footer from '../components/Footer'; // from separate file
-import Header from '../components/Header';
+} from '@/components/common/SharedStyles';
+import Footer from '@/components/common/Footer'; // from separate file
+import Header from '@/components/common/Header';
 
 const Privacy = () => (
     <PageWrapper>

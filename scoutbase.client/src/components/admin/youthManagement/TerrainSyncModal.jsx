@@ -1,6 +1,6 @@
 import React from 'react';
-import { PrimaryButton } from '../SharedStyles';
-import { formatDate } from '../../utils/dateUtils';
+import { PrimaryButton } from '@/components/common/SharedStyles';
+import { formatDate } from '@/utils/dateUtils';
 
 export default function TerrainSyncModal({ toAdd, toUpdate, onConfirm, onCancel }) {
     return (

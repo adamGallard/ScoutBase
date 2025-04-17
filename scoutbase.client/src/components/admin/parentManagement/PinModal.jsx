@@ -1,7 +1,7 @@
 ﻿import { useState } from 'react';
 import bcrypt from 'bcryptjs';
 import { supabase } from '@/lib/supabaseClient';
-import { ModalOverlay, ModalBox, ButtonRow } from '@/components/SharedStyles';
+import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
 
 export default function PinModal({ parentId, onClose, groupId , userInfo }) {
@@ -35,13 +35,13 @@ export default function PinModal({ parentId, onClose, groupId , userInfo }) {
             } else {
 
                 await logAuditEvent({
-                    user_admin_id: userInfo?.id || null,
-                    group_id: groupId,
+                    userId: userInfo?.id || null,
+                    groupId: groupId,
                     role: userInfo?.role,
                     action: 'pin_update',
-                    target_type: 'parent',
-                    target_id: parentId,
-                    metadata: { maskedPin: `***${newPin.slice(-2)}` }
+                    targetType: 'parent',
+                    targetId: parentId,
+                    metadata: `Reset PIN for parent ID: ${parentId}`
                 });
 
                 onClose();

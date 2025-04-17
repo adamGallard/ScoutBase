@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
-import { PrimaryButton,PageTitle } from '@/components/SharedStyles';
+import { PrimaryButton,PageTitle } from '@/components/common/SharedStyles';
 import { getAgeWithMonths, getLinkingStatus, getLinkingThreshold } from '@/utils/dateUtils';
 import { Cake } from 'lucide-react';
 export default function ReportAge({ groupId }) {

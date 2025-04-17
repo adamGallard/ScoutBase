@@ -4,9 +4,9 @@ import {
     PageWrapper,
     Main,
     Content
-} from '../components/SharedStyles';
-import Footer from '../components/Footer';
-import Header from '../components/Header';
+} from '@/components/common/SharedStyles';
+import Footer from '@/components/common/Footer';
+import Header from '@/components/common/Header';
 
 const branches = [
     { label: 'QLD', value: 'qld' },
@@ -144,7 +144,7 @@ export default function AdminLogin() {
                         Admin Login (Terrain)
                     </h2>
                     <p style={{ fontSize: '0.95rem', marginBottom: '1rem', textAlign: 'center', color: '#555' }}>
-                        Login using your <strong>Terrain Member Number and Password</strong>. You must be listed as a leader in <strong>Terrain</strong> and also be registered as an <strong>admin or user in ScoutBase</strong> to access the admin area.
+                        Login using your <strong>Terrain Member Number and Password</strong>. You must be listed as a leader in <strong>Terrain</strong> and also be registered as an <strong>Leader in ScoutBase</strong> to access the admin area.
                     </p>
 
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>

@@ -6,12 +6,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import { useTerrainUser } from '@/hooks/useTerrainUser';
 import { checkTokenValidity } from '@/helpers/authHelper';
-import { logAuditEvent } from '@/helpers/auditHelper';
+
 
 // ✅ Layout Components
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import Sidebar from '@/components/admin/Sidebar';
+import AdminHeader from '@/components/admin/common/AdminHeader';
+import Footer from '@/components/common/Footer';
+import Sidebar from '@/components/admin/common/Sidebar';
 import RequireAuth from '@/components/RequireAuth';
 
 // ✅ Shared UI Styles
@@ -20,22 +20,23 @@ import {
     AdminDropdownMenu,
     AdminDropdownToggle, Label, StyledSelect, AdminHeaderRow,
     AdminWarningLabel
-} from '@/components/SharedStyles';
+} from '@/components/common/SharedStyles';
 import { Settings, LogOut, MapPin,User } from 'lucide-react';
 
 // ✅ Admin Functionality
-import PinModal from '@/components/admin/PinModal';
-import LinkModal from '@/components/admin/LinkModal';
-import ParentView from '@/components/admin/ParentView';
-import YouthView from '@/components/admin/YouthView';
-import UserManagementView from '@/components/admin/UserManagementView';
+import PinModal from '@/components/admin/parentManagement/PinModal';
+import LinkModal from '@/components/admin/parentManagement/LinkModal';
+import ParentView from '@/components/admin/parentManagement/ParentView';
+import YouthView from '@/components/admin/youthManagement/YouthView';
+import UserManagementView from '@/components/admin/userManagement/UserManagementView';
 import GroupManagementView from '@/components/admin/GroupManagementView';
-import Reports from '@/components/admin/Reports';
-import AdminDashboard from '@/components/admin/AdminDashboard';
-import SuperAdminDashboard from '@/components/admin/SuperAdminDashboard';
-import UserDashboard from '@/components/admin/UserDashboard';
+import Reports from '@/components/admin/reports/Reports';
+import AdminDashboard from '@/components/admin/dashbaoards/AdminDashboard';
+import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashboard';
+import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
-import PatrolManagementView from '@/components/admin/PatrolManagementView';
+import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
+import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; // or your actual path
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -43,7 +44,7 @@ import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySectio
 import ReportAge from '@/components/admin/reports/ReportAge';
 import { useActingGroup } from "@/hooks/useActingGroup";
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
-import InspectionPage from '@/components/admin/InspectionPage';
+import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 
 
@@ -145,7 +146,7 @@ export default function AdminPage() {
             case 'add-youth':
                 return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':
-                return <UserManagementView activeGroupId={activeGroupId} />;
+                return <UserManagementView activeGroupId={activeGroupId} userInfo={userInfo} />;
             case 'group-management':
                 return <GroupManagementView />;
             case 'reports':
@@ -166,6 +167,8 @@ export default function AdminPage() {
                 return <InspectionPage groupId={activeGroupId} userInfo={userInfo} />;
             case 'logout':
                 return handleLogout();
+            case 'notices':
+                return <AdminNoticeForm groupId={activeGroupId} userInfo={userInfo} />;
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
@@ -200,11 +203,21 @@ export default function AdminPage() {
                     parentId={selectedParentId}
                     onClose={() => setLinkModalOpen(false)}
                     groupId={activeGroupId}
+					userInfo={userInfo}
                 />
             )}
 
             <PageWrapper style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header />
+                <AdminHeader
+                    userInfo={userInfo}
+                    groups={groups || []}
+                    activeGroupId={activeGroupId}
+                    setActiveGroupId={setActiveGroupId}
+                    actingAsAdmin={actingAsAdmin}
+                    setActingAsAdmin={setActingAsAdmin}
+                    setActingAsGroupId={setActingAsGroupId}
+                    handleLogout={handleLogout}
+                />
                     
 
                 <div style={{ display: 'flex', flex: 1 }}>
@@ -213,94 +226,7 @@ export default function AdminPage() {
                         actingAsGroupId={actingAsGroupId}
                         actingAsAdmin={actingAsAdmin} />
 
-                    <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-
-                            {groups.length > 0 && (
-                                <>
-                                    <AdminHeaderRow isWarning={userInfo?.role === 'Super Admin' && actingAsAdmin}>
-                                        {userInfo?.role === 'Super Admin' && actingAsAdmin && (
-                                            <AdminWarningLabel>⚠️ Acting as Group Leader</AdminWarningLabel>
-                                        )}
-                                    <AdminDropdownContainer>
-                                        <AdminDropdownToggle onClick={() => setShowDropdown((prev) => !prev)}>
-                                            <Settings size={18} />
-                                        </AdminDropdownToggle>
-
-                                        {showDropdown && (
-                                            <AdminDropdownMenu>
-                                                <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                                                    <User size={16}/> {userInfo?.name} ({userInfo?.role})
-                                                </div>
-                                                    <Label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <MapPin size={16} />
-                                                        {groups.find((g) => g.id === userInfo?.group_id)?.name || 'Unknown Group'}
-                                                    </Label>
-                                                
-
-                                                {userInfo?.role === 'Super Admin' && (
-                                                    <>
-                                                        <Label>Group:</Label>
-                                                        <StyledSelect
-                                                            value={activeGroupId}
-                                                            onChange={(e) => setActiveGroupId(e.target.value)}
-                                                        >
-                                                            {groups.map((g) => (
-                                                                <option key={g.id} value={g.id}>{g.name}</option>
-                                                            ))}
-                                                        </StyledSelect>
-
-                                                        <ToggleSwitchWrapper>
-                                                            <span className="text-sm">Act as Group Leader</span>
-                                                            <label className="toggle-switch">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={actingAsAdmin}
-                                                                    onChange={async (e) => {
-                                                                        const checked = e.target.checked;
-                                                                        setActingAsAdmin(checked);
-                                                                        setActingAsGroupId(checked ? activeGroupId : null);
-
-                                                                        await logAuditEvent({
-                                                                            userId: userInfo.id,
-                                                                            groupId: activeGroupId,
-                                                                            role: 'Super Admin',
-                                                                            action: 'toggle_acting_as_admin',
-                                                                            targetType: 'group',
-                                                                            targetId: activeGroupId,
-                                                                            metadata: { enabled: checked }
-                                                                        });
-                                                                    }}
-                                                                />
-                                                                <span className="toggle-slider"></span>
-                                                            </label>
-                                                        </ToggleSwitchWrapper>
-                                                    </>
-                                                )}
-
-                                                <button
-                                                    onClick={handleLogout}
-                                                    style={{
-                                                        width: '100%',
-                                                        textAlign: 'left',
-                                                        color: '#dc2626',
-                                                        fontSize: '1rem',
-                                                        fontWeight: 300,
-                                                        border: 'none',
-                                                        background: 'none',
-                                                        cursor: 'pointer',
-                                                        marginTop: '0.5rem'
-                                                    }}
-                                                >
-                                                    <LogOut size={16} /> Logout
-                                                </button>
-                                            </AdminDropdownMenu>
-                                        )}
-                                        </AdminDropdownContainer>
-                                    </AdminHeaderRow>
-                                </>
-                            )}
-
-
+                    <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minHeight: 0 }}>
 
                         {renderContent()}
                     </Content>

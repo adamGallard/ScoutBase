@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Check, X, MapPin } from 'lucide-react';
-import { AdminTable, PageTitle } from '../SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 
 export default function GroupManagementView() {
     const [groups, setGroups] = useState([]);

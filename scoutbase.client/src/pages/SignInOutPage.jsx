@@ -1,29 +1,29 @@
 ﻿import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import logo from '../assets/scoutbase-logo.svg';
+import logo from '@/assets/scoutbase-logo.svg';
 
-import { fetchGroupBySlug, fetchPrimaryLeaderEmail } from '../helpers/groupHelper';
+import { fetchGroupBySlug, fetchPrimaryLeaderEmail } from '@/helpers/groupHelper';
 import {
     fetchYouthByParentId,
     fetchLatestAttendanceForYouthList
-} from '../helpers/attendanceHelper';
-import { verifyParentByIdentifierAndPin } from '../helpers/authHelper';
+} from '@/helpers/attendanceHelper';
+import { verifyParentByIdentifierAndPin } from '@/helpers/authHelper';
 
-import { supabase} from '../lib/supabaseClient';
+import { supabase} from '@/lib/supabaseClient';
 
-import SignInForm from '../components/SignInForm';
-import Footer from '../components/Footer';
+import SignInForm from '@/components/SignInForm';
+import Footer from '@/components/common/Footer';
 import {
     PageWrapper,
     Main,
     Content,
     LogoWrapper,
     PrimaryButton
-} from '../components/SharedStyles';
-import Header from '../components/Header';
-import UpdatePinModal from '../components/UpdatePinModal';
-import { useIsMobile } from '../hooks/useIsMobile';
-import { logAuditEvent } from '../helpers/auditHelper';
+} from '@/components/common/SharedStyles';
+import Header from '@/components/common/Header';
+import UpdatePinModal from '@/components/UpdatePinModal';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { logAuditEvent } from '@/helpers/auditHelper';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
 
@@ -51,6 +51,27 @@ export default function SignInOutPage() {
     const [showUpdatePinModal, setShowUpdatePinModal] = useState(false);
     const [showForgottenPinModal, setShowForgottenPinModal] = useState(false);
     const [primaryLeaderEmail, setPrimaryLeaderEmail] = useState(null);
+    const [notices, setNotices] = useState([]);
+    const [loadingNotices, setLoadingNotices] = useState(true);
+
+    useEffect(() => {
+        const fetchNotices = async () => {
+            if (!groupId || !matchingParent?.id) return;
+
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .eq('group_id', groupId)
+                .or(`parent_id.is.null,parent_id.eq.${matchingParent.id}`)
+                .order('created_at', { ascending: false });
+
+            if (!error) setNotices(data);
+            setLoadingNotices(false);
+        };
+
+        fetchNotices();
+    }, [groupId, matchingParent]);
+
     const filteredYouthList = youthList.filter(
         (m) => sectionFilter === '' || m.section === sectionFilter
     );
@@ -205,6 +226,31 @@ export default function SignInOutPage() {
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{groupName || 'Scout Group'}</h1>
                     <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>Sign In / Out</h2>
                     <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
+                        {submitted && notices.length > 0 && (
+                            <div style={{
+                                background: '#f0f9ff',
+                                border: '1px solid #bae6fd',
+                                borderRadius: '8px',
+                                padding: '1rem',
+                                marginBottom: '1.5rem',
+                                textAlign: 'left'
+                            }}>
+                                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: '#0F5BA4' }}>Notices</h3>
+                                <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+                                    {notices.slice(0, 5).map((notice) => (
+                                        <li key={notice.id} style={{ marginBottom: '1rem' }}>
+                                            <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{notice.title}</strong>
+                                            <span style={{ display: 'block', fontSize: '0.9rem' }}>{notice.message}</span>
+                                            <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                                                {new Date(notice.created_at).toLocaleString()}
+                                                {notice.parent_id && ' (Private)'}
+                                            </small>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
                         Enter your name to see the youth members linked to you.
                     </p>
 

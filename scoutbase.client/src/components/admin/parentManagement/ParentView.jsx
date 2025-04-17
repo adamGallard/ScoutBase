@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
-import { AdminTable, PageTitle } from '../SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import bcrypt from 'bcryptjs';
+import { logAuditEvent } from '@/helpers/auditHelper';
+
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
@@ -10,7 +12,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(15); // or however many you want per page
+    const [itemsPerPage] = useState(12); // or however many you want per page
 
     const defaultPIN = '1258';
 
@@ -59,21 +61,63 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const addParent = async () => {
          const hashedPIN = await bcrypt.hash(defaultPIN, 10);
         if (!formData.name || !formData.email || !formData.phone) return;
-        await supabase.from('parent').insert([{ ...formData, group_id: groupId ,pin_hash: hashedPIN}]);
+        await supabase.from('parent').insert([{ ...formData, group_id: groupId, pin_hash: hashedPIN }]);
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId,
+            role: userInfo.role,
+            action: 'Add',
+            targetType: 'Parent',
+            targetId: data?.[0]?.id,  // grab the new parent's ID from insert result
+            metadata: `Added parent: ${formData.name}`
+        });
         setFormData({ name: '', email: '', phone: '' });
         fetchParents();
     };
 
     const updateParent = async (id) => {
-        await supabase.from('parent').update(formData).eq('id', id);
-        setEditingParentId(null);
-        setFormData({ name: '', email: '', phone: '' });
-        fetchParents();
+        const { name, email, phone } = formData;
+
+        const { error } = await supabase
+            .from('parent')
+            .update({ name, email, phone })
+            .eq('id', id);
+
+        if (error) {
+            console.error('Update error:', error);
+        } else {
+            await logAuditEvent({
+                userId: userInfo.id,
+                groupId,
+                role: userInfo.role,
+                action: 'Edit',
+                targetType: 'Parent',
+                targetId: id,
+                metadata: `Updated parent to: ${formData.name}`
+            });
+            fetchParents();
+            setEditingParentId(null);
+            setFormData({ name: '', email: '', phone: '' });
+        }
     };
 
     const deleteParent = async (id) => {
         if (confirm('Are you sure you want to delete this parent?')) {
+            const { data: deletedParent } = await supabase
+                .from('parent')
+                .select('name')
+                .eq('id', id)
+                .single();
             await supabase.from('parent').delete().eq('id', id);
+            await logAuditEvent({
+                userId: userInfo.id,
+                groupId,
+                role: userInfo.role,
+                action: 'Delete',
+                targetType: 'Parent',
+                targetId: id,
+                metadata: `Deleted parent: ${deletedParent?.name}`
+            });
             fetchParents();
         }
     };

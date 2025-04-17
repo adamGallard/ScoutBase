@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import styled from 'styled-components';
-import { TitleGroup, Nav, HeaderBar } from '../components/SharedStyles';
+import { TitleGroup, Nav, HeaderBar } from '@/components/common/SharedStyles';
+import { ShieldUser } from 'lucide-react';
 const MobileMenuButton = styled.button`
   display: flex;
   background: none;
@@ -61,16 +62,23 @@ const Header = () => {
                 <strong>ScoutBase</strong>
                 <span className="tagline">Built for Scouts</span>
             </TitleGroup>
-
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '1rem',
+                marginLeft: 'auto'
+            }}>
             {/* Desktop Navigation */}
             <Nav>
                 <a href="/">Home</a>
                 <a href="/features">Features</a>
                 <a href="mailto:281595@scoutsqld.com.au">Contact</a>
                 <a href="/privacy">Privacy</a>
-                <a href="/admin-login">Admin Area</a>
             </Nav>
+           
+                <a href="/admin-login"> <ShieldUser size={25} color="#0F5BA4" /></a>
 
+            </div>
             {/* Mobile Nav Toggle */}
             <MobileMenuButton onClick={() => setMobileNavOpen(prev => !prev)}>
                 <HamburgerIcon>

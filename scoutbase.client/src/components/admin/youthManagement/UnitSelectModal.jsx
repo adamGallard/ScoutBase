@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PrimaryButton } from '../SharedStyles';
+import { PrimaryButton } from '@/components/common/SharedStyles';
 
 export default function UnitSelectModal({ units, onConfirm, onCancel }) {
     const [selected, setSelected] = useState([]);

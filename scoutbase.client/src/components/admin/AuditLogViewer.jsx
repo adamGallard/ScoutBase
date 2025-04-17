@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { AdminTable, PageTitle } from '@/components/SharedStyles';
+import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import { FileText } from "lucide-react";
 
 

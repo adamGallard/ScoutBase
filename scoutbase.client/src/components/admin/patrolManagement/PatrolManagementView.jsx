@@ -8,7 +8,7 @@ import {
     PageTitle,
     PrimaryButton,
     AdminTable, CompactInput, CompactInputGroup, CompactSelect
-} from '@/components/SharedStyles';
+} from '@/components/common/SharedStyles';
 import PatrolLinkModal from './PatrolLinkModal';
 
 export default function PatrolManagementView({ groupId, userInfo }) {

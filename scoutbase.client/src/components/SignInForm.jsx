@@ -9,7 +9,7 @@ import {
     Content,
     LogoWrapper,
 PrimaryButton
-} from '../components/SharedStyles';
+} from '@/components/common/SharedStyles';
 
 export default function SignInForm({ member, parentName, onSign, latestStatus, groupId }) {
     const [comment, setComment] = useState('');
