@@ -9,7 +9,7 @@ import { checkTokenValidity } from '@/helpers/authHelper';
 import { logAuditEvent } from '@/helpers/auditHelper';
 
 // ✅ Layout Components
-import Header from '@/components/Header';
+import AdminHeader from '@/components/admin/AdminHeader';
 import Footer from '@/components/Footer';
 import Sidebar from '@/components/admin/Sidebar';
 import RequireAuth from '@/components/RequireAuth';
@@ -204,7 +204,16 @@ export default function AdminPage() {
             )}
 
             <PageWrapper style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-                <Header />
+                <AdminHeader
+                    userInfo={userInfo}
+                    groups={groups || []}
+                    activeGroupId={activeGroupId}
+                    setActiveGroupId={setActiveGroupId}
+                    actingAsAdmin={actingAsAdmin}
+                    setActingAsAdmin={setActingAsAdmin}
+                    setActingAsGroupId={setActingAsGroupId}
+                    handleLogout={handleLogout}
+                />
                     
 
                 <div style={{ display: 'flex', flex: 1 }}>
@@ -214,93 +223,6 @@ export default function AdminPage() {
                         actingAsAdmin={actingAsAdmin} />
 
                     <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-
-                            {groups.length > 0 && (
-                                <>
-                                    <AdminHeaderRow isWarning={userInfo?.role === 'Super Admin' && actingAsAdmin}>
-                                        {userInfo?.role === 'Super Admin' && actingAsAdmin && (
-                                            <AdminWarningLabel>⚠️ Acting as Group Leader</AdminWarningLabel>
-                                        )}
-                                    <AdminDropdownContainer>
-                                        <AdminDropdownToggle onClick={() => setShowDropdown((prev) => !prev)}>
-                                            <Settings size={18} />
-                                        </AdminDropdownToggle>
-
-                                        {showDropdown && (
-                                            <AdminDropdownMenu>
-                                                <div style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                                                    <User size={16}/> {userInfo?.name} ({userInfo?.role})
-                                                </div>
-                                                    <Label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <MapPin size={16} />
-                                                        {groups.find((g) => g.id === userInfo?.group_id)?.name || 'Unknown Group'}
-                                                    </Label>
-                                                
-
-                                                {userInfo?.role === 'Super Admin' && (
-                                                    <>
-                                                        <Label>Group:</Label>
-                                                        <StyledSelect
-                                                            value={activeGroupId}
-                                                            onChange={(e) => setActiveGroupId(e.target.value)}
-                                                        >
-                                                            {groups.map((g) => (
-                                                                <option key={g.id} value={g.id}>{g.name}</option>
-                                                            ))}
-                                                        </StyledSelect>
-
-                                                        <ToggleSwitchWrapper>
-                                                            <span className="text-sm">Act as Group Leader</span>
-                                                            <label className="toggle-switch">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    checked={actingAsAdmin}
-                                                                    onChange={async (e) => {
-                                                                        const checked = e.target.checked;
-                                                                        setActingAsAdmin(checked);
-                                                                        setActingAsGroupId(checked ? activeGroupId : null);
-
-                                                                        await logAuditEvent({
-                                                                            userId: userInfo.id,
-                                                                            groupId: activeGroupId,
-                                                                            role: 'Super Admin',
-                                                                            action: 'toggle_acting_as_admin',
-                                                                            targetType: 'group',
-                                                                            targetId: activeGroupId,
-                                                                            metadata: { enabled: checked }
-                                                                        });
-                                                                    }}
-                                                                />
-                                                                <span className="toggle-slider"></span>
-                                                            </label>
-                                                        </ToggleSwitchWrapper>
-                                                    </>
-                                                )}
-
-                                                <button
-                                                    onClick={handleLogout}
-                                                    style={{
-                                                        width: '100%',
-                                                        textAlign: 'left',
-                                                        color: '#dc2626',
-                                                        fontSize: '1rem',
-                                                        fontWeight: 300,
-                                                        border: 'none',
-                                                        background: 'none',
-                                                        cursor: 'pointer',
-                                                        marginTop: '0.5rem'
-                                                    }}
-                                                >
-                                                    <LogOut size={16} /> Logout
-                                                </button>
-                                            </AdminDropdownMenu>
-                                        )}
-                                        </AdminDropdownContainer>
-                                    </AdminHeaderRow>
-                                </>
-                            )}
-
-
 
                         {renderContent()}
                     </Content>
