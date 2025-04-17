@@ -1,24 +1,35 @@
 ﻿import React from 'react';
 import logo from '../assets/scoutbase-logo.png';
-import { HighlightNote, PageWrapper,  Main, LogoWrapper, Content } from '../components/SharedStyles';
-import Footer from '../components/Footer'; // from separate file
-import Header from '../components/Header';
-
+import {
+    HighlightNote,
+    PageWrapper,
+    Main,
+    LogoWrapper,
+    Content,
+    StyledLogo,
+} from '../components/SharedStyles';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import { Helmet } from 'react-helmet';
 
 export default function LandingPage() {
     return (
         <PageWrapper>
-            <Header />
+            <Helmet>
+                <title>Welcome to ScoutBase</title>
+            </Helmet>
 
+            <Header />
 
             <Main>
                 <LogoWrapper>
-                    <img src={logo} alt="ScoutBase Logo" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+                    <StyledLogo src={logo} alt="ScoutBase Logo" />
                 </LogoWrapper>
 
                 <Content>
-                    <h1>Hello</h1>
-                    <h2>Welcome to ScoutBase</h2>
+                    <h1>Welcome to ScoutBase</h1>
+                    <h2>Your Digital Scouting Companion</h2>
+
                     <p>
                         ScoutBase is your digital companion for managing attendance in the Scouts community. Built by leaders, for leaders — so you can spend less time on admin and more time outdoors.
                     </p>
@@ -28,6 +39,7 @@ export default function LandingPage() {
                     <p>
                         <strong>🧭 For Leaders:</strong> Reduce your paperwork, improve communication with families, and generate attendance and activity reports with a single click.
                     </p>
+
                     <HighlightNote>
                         🔐 Please log in using the secure sign-in link provided to you by your Scout Group Leader.
                     </HighlightNote>
@@ -35,7 +47,6 @@ export default function LandingPage() {
             </Main>
 
             <Footer />
-
         </PageWrapper>
     );
 }

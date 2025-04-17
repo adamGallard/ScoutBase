@@ -80,8 +80,8 @@ export const Main = styled.main`
 `;
 
 export const LogoWrapper = styled.div`
-  width: 12rem;
-  height: 12rem;
+  width: 17rem;
+  height: 17em;
   border-radius: 9999px;
   background-color: #0f5ba4;
   display: flex;
@@ -114,7 +114,7 @@ export const Content = styled.div`
   p {
     font-size: 0.95rem;
     max-width: 32rem;
-    margin: 0 auto 2rem;
+    margin: 0 0 2rem;
     line-height: 1.6;
   }
 `;
@@ -517,4 +517,11 @@ export const ButtonRowRight = styled.div`
   justify-content: flex-end;
   margin-top: 1rem;
   margin-bottom: 2rem;
+`;
+
+export const StyledLogo = styled.img`
+  width: 90%;
+  max-width: 300px;
+  height: auto;
+  object-fit: contain;
 `;
