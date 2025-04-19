@@ -3,7 +3,7 @@ import QRCode from 'react-qr-code';
 
 
 export default function GroupQRCode({ groupStub }) {
-    const qrUrl = `https://scout-base.vercel.app/sign-in?group=${encodeURIComponent(groupStub)}`;
+    const qrUrl = `https://scoutbase.app/sign-in?group=${encodeURIComponent(groupStub)}`;
 
     return (
         <div style={{ textAlign: 'center', padding: '1rem' }}>
