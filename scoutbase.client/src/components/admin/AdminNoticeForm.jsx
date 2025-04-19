@@ -9,13 +9,15 @@ import {
     StyledSelect,
     AdminTable
 } from '@/components/common/SharedStyles';
+import { Pencil, Trash } from 'lucide-react';
 
-const sections = ['All', 'Joeys', 'Cubs', 'Scouts', 'Venturers'];
+const sections = ['All Parents', 'Joeys', 'Cubs', 'Scouts', 'Venturers'];
 
 export default function AdminNoticeForm({ groupId, userInfo }) {
     const [form, setForm] = useState({ title: '', message: '', section: 'All' });
     const [status, setStatus] = useState(null);
     const [notices, setNotices] = useState([]);
+    const [editingId, setEditingId] = useState(null);
 
     useEffect(() => {
         if (groupId) fetchNotices();
@@ -34,43 +36,46 @@ export default function AdminNoticeForm({ groupId, userInfo }) {
     const submit = async () => {
         if (!form.title || !form.message) return;
         setStatus('sending');
+        const data = {
+            group_id: groupId,
+            title: form.title,
+            message: form.message,
+            target_section: form.section === 'All Parents' ? 'All' : form.section,
+        };
 
-        let parentIds = null;
+        let error;
 
-        if (form.section !== 'All') {
-            const { data: links } = await supabase
-                .from('parent_youth')
-                .select('parent_id, youth (section)')
-                .eq('group_id', groupId);
-
-            const matching = links
-                .filter(link => link.youth?.section === form.section)
-                .map(link => link.parent_id);
-
-            parentIds = [...new Set(matching)];
+        if (editingId) {
+            const result = await supabase.from('notifications').update(data).eq('id', editingId);
+            error = result.error;
+        } else {
+            const result = await supabase.from('notifications').insert([data]);
+            error = result.error;
         }
 
-        const insertData = parentIds && parentIds.length > 0
-            ? parentIds.map(pid => ({
-                group_id: groupId,
-                title: form.title,
-                message: form.message,
-                parent_id: pid
-            }))
-            : [{
-                group_id: groupId,
-                title: form.title,
-                message: form.message,
-                parent_id: null
-            }];
-
-        const { error } = await supabase.from('notifications').insert(insertData);
         setStatus(error ? 'error' : 'success');
 
         if (!error) {
-            setForm({ title: '', message: '', section: 'All' });
+            setForm({ title: '', message: '', section: 'All Parents' });
+            setEditingId(null);
             fetchNotices();
         }
+    };
+
+    const handleEdit = (msg) => {
+        setForm({
+            title: msg.title,
+            message: msg.message,
+            section: msg.target_section || 'All Parents'
+        });
+        setEditingId(msg.id);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this notice?')) return;
+        const { error } = await supabase.from('notifications').delete().eq('id', id);
+        if (!error) fetchNotices();
     };
 
     const formatDate = (dt) => new Date(dt).toLocaleString(undefined, {
@@ -123,33 +128,41 @@ export default function AdminNoticeForm({ groupId, userInfo }) {
                                 <th>Title</th>
                                 <th>Section</th>
                                 <th>Message</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {Object.values(
-                                notices.reduce((acc, notice) => {
-                                    const key = `${notice.title}|${notice.message}|${notice.group_id}`;
-                                    if (!acc[key]) {
-                                        acc[key] = {
-                                            ...notice,
-                                            recipients: notice.parent_id ? 1 : 'All',
-                                            firstSent: notice.created_at,
-                                        };
-                                    } else {
-                                        acc[key].recipients =
-                                            acc[key].recipients === 'All' ? 'All' : acc[key].recipients + 1;
-                                        acc[key].firstSent = new Date(acc[key].firstSent) < new Date(notice.created_at)
-                                            ? acc[key].firstSent
-                                            : notice.created_at;
-                                    }
-                                    return acc;
-                                }, {})
+                                Object.values(
+                                    notices.reduce((acc, notice) => {
+                                        const key = `${notice.title}|${notice.message}|${notice.group_id}|${notice.target_section || 'All Parents'}`;
+                                        if (!acc[key]) {
+                                            acc[key] = {
+                                                ...notice,
+                                                recipients: notice.parent_id ? 1 : 'All',
+                                                firstSent: notice.created_at,
+                                                groupLabel: notice.target_section || 'All Parents'
+                                            };
+                                        } else {
+                                            acc[key].recipients =
+                                                acc[key].recipients === 'All' ? 'All' : acc[key].recipients + 1;
+                                            acc[key].firstSent = new Date(acc[key].firstSent) < new Date(notice.created_at)
+                                                ? acc[key].firstSent
+                                                : notice.created_at;
+                                        }
+                                        return acc;
+                                    }, {})
+                                )
                             ).map((msg) => (
                                 <tr key={msg.id}>
                                     <td>{formatDate(msg.firstSent)}</td>
                                     <td>{msg.title}</td>
-                                    <td>{msg.recipients === 'All' ? 'All Parents' : `${msg.recipients} targeted`}</td>
+                                    <td>{msg.groupLabel}</td>
                                     <td>{msg.message}</td>
+                                    <td>
+                                        <button onClick={() => handleEdit(msg)} title="Edit"><Pencil size={16} /></button>
+                                        <button onClick={() => handleDelete(msg.id)} title="Delete"><Trash size={16} /></button>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

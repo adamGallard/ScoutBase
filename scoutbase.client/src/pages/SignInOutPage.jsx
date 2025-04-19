@@ -24,6 +24,8 @@ import Header from '@/components/common/Header';
 import UpdatePinModal from '@/components/UpdatePinModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { logAuditEvent } from '@/helpers/auditHelper';
+import ParentNoticeView from '@/components/ParentNoticeView';
+import LoggedInHeader from '@/components/common/LoggedInHeader';
 
 const useQuery = () => new URLSearchParams(useLocation().search);
 
@@ -51,26 +53,7 @@ export default function SignInOutPage() {
     const [showUpdatePinModal, setShowUpdatePinModal] = useState(false);
     const [showForgottenPinModal, setShowForgottenPinModal] = useState(false);
     const [primaryLeaderEmail, setPrimaryLeaderEmail] = useState(null);
-    const [notices, setNotices] = useState([]);
-    const [loadingNotices, setLoadingNotices] = useState(true);
 
-    useEffect(() => {
-        const fetchNotices = async () => {
-            if (!groupId || !matchingParent?.id) return;
-
-            const { data, error } = await supabase
-                .from('notifications')
-                .select('*')
-                .eq('group_id', groupId)
-                .or(`parent_id.is.null,parent_id.eq.${matchingParent.id}`)
-                .order('created_at', { ascending: false });
-
-            if (!error) setNotices(data);
-            setLoadingNotices(false);
-        };
-
-        fetchNotices();
-    }, [groupId, matchingParent]);
 
     const filteredYouthList = youthList.filter(
         (m) => sectionFilter === '' || m.section === sectionFilter
@@ -161,6 +144,13 @@ export default function SignInOutPage() {
 
     };
 
+    const scrollToNotices = () => {
+        const noticeElement = document.getElementById('parent-notices');
+        if (noticeElement) {
+            noticeElement.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     if (groupNotFound) {
         return (
             <PageWrapper>
@@ -186,30 +176,23 @@ export default function SignInOutPage() {
 
     return (
         <PageWrapper>
-            <Header />
-
-            {submitted && matchingParent && (
-                <div
-                    style={{
-                        width: '100%',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        maxWidth: '500px',
-                        margin: '0 auto',
-                        padding: '0.5rem 1rem',
-                        boxSizing: 'border-box'
-                    }}
-                >
-                    <span style={{ fontSize: '0.875rem', color: '#0F5BA4', fontWeight: 600 }}>
-                        Logged in as: {matchingParent.name}
-                    </span>
-                    <PrimaryButton isMobile={isMobile}
-                        onClick={() => setShowUpdatePinModal(true)}
-                    >
-                        Update PIN
-                    </PrimaryButton>
-                </div>
+            {!submitted || !matchingParent ? (
+                <Header />
+            ) : (
+                    <LoggedInHeader
+                        parentName={matchingParent.name}
+                        onUpdatePin={() => setShowUpdatePinModal(true)}
+                        groupId={groupId}
+                        onLogout={() => {
+                            setSubmitted(false);
+                            setParentName('');
+                            setSearchTerm('');
+                            setPin('');
+                            setMatchingParent(null);
+                            setYouthList([]);
+                            setSelectedMember(null);
+                        }}
+                    />
             )}
 
             <Main style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
@@ -226,33 +209,14 @@ export default function SignInOutPage() {
 
                     <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{groupName || 'Scout Group'}</h1>
                     <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>Sign In / Out</h2>
-                    <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
-                        {submitted && notices.length > 0 && (
-                            <div style={{
-                                background: '#f0f9ff',
-                                border: '1px solid #bae6fd',
-                                borderRadius: '8px',
-                                padding: '1rem',
-                                marginBottom: '1.5rem',
-                                textAlign: 'left'
-                            }}>
-                                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.75rem', color: '#0F5BA4' }}>Notices</h3>
-                                <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
-                                    {notices.slice(0, 5).map((notice) => (
-                                        <li key={notice.id} style={{ marginBottom: '1rem' }}>
-                                            <strong style={{ display: 'block', marginBottom: '0.25rem' }}>{notice.title}</strong>
-                                            <span style={{ display: 'block', fontSize: '0.9rem' }}>{notice.message}</span>
-                                            <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
-                                                {new Date(notice.created_at).toLocaleString()}
-                                                {notice.parent_id && ' (Private)'}
-                                            </small>
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
 
-                        Enter your name to see the youth members linked to you.
+                        {submitted && groupId && matchingParent?.id && (
+                            <ParentNoticeView groupId={groupId} parentId={matchingParent.id} />
+                    )}
+                    <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
+                        {submitted
+                            ? 'Please select the youth you want to sign in or out.'
+                            : 'Enter your name to see the youth members linked to you.'}
                     </p>
 
                     {!submitted ? (
