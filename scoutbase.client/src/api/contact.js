@@ -16,9 +16,9 @@ export default async function handler(req, res) {
 
     try {
         const data = await resend.emails.send({
-            from: 'ScoutBase Contact <noreply@yourdomain.com>', // needs to be a verified domain
-            to: ['your@email.com'], // your target email
-            subject: `📬 New Contact Form Submission from ${name}`,
+            from: 'ScoutBase Contact ', // needs to be a verified domain
+            to: ['281595@scoutsqld.com.au'], // your target email
+            subject: `New Contact Form Submission from ${name}`,
             reply_to: email,
             html: `
         <p><strong>Name:</strong> ${name}</p>
