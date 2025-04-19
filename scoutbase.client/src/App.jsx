@@ -6,6 +6,8 @@ import SignInRouteWrapper from './components/SignInRouteWrapper';
 import Privacy from './pages/Privacy';
 import Features from './pages/Features';
 import Logout from './pages/Logout';
+import About from './pages/About';
+import ContactPage from './pages/Contact';
 
 export default function App() {
     return (
@@ -18,6 +20,9 @@ export default function App() {
                 <Route path="/privacy" element={<Privacy />} />
                 <Route path="/features" element={<Features />} />
                 <Route path="/Logout" element={<Logout />} />
+                <Route path="*" element={<LandingPage />} />
+                <Route path="/about" element={<About />} />"
+				<Route path="/contact" element={<ContactPage />} />
             </Routes>
         </Router>
     );

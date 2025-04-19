@@ -12,7 +12,7 @@ const FooterWrapper = styled.footer`
 `;
 
 const FooterContainer = styled.div`
-  max-width: 72rem;
+
   margin: 0 auto;
   padding: 1.5rem 1rem;
   display: flex;

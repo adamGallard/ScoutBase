@@ -71,8 +71,9 @@ const Header = () => {
             {/* Desktop Navigation */}
             <Nav>
                 <a href="/">Home</a>
-                <a href="/features">Features</a>
-                <a href="mailto:281595@scoutsqld.com.au">Contact</a>
+                    <a href="/features">Features</a>
+					<a href="/about">About</a>
+                <a href="/contact">Contact</a>
                 <a href="/privacy">Privacy</a>
             </Nav>
            
@@ -93,7 +94,7 @@ const Header = () => {
                 <MobileDropdown>
                     <a href="/">Home</a>
                     <a href="/features">Features</a>
-                    <a href="mailto:281595@scoutsqld.com.au">Contact</a>
+                    <a href="/contact">Contact</a>
                     <a href="/privacy">Privacy</a>
                 </MobileDropdown>
             )}
