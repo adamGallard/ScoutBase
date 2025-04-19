@@ -37,6 +37,7 @@ import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
 import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
 import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; // or your actual path
+import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -169,6 +170,8 @@ export default function AdminPage() {
                 return handleLogout();
             case 'notices':
                 return <AdminNoticeForm groupId={activeGroupId} userInfo={userInfo} />;
+            case 'parent-header-links':
+                return <ParentHeaderLinks groupId={activeGroupId} />;
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;

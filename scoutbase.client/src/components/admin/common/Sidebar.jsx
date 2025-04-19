@@ -2,7 +2,7 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink
 
 } from 'lucide-react';
 
@@ -96,6 +96,12 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                     label: 'Users',
                     icon: <User size={16} />
                 },
+                can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
+                    key: 'parent-header-links',
+                    label: 'Parent Header',
+                    icon: <FolderSymlink size={16} />
+                },
+
 
                 // 🗺 Only roles with full access (Super Admin)
                 can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
