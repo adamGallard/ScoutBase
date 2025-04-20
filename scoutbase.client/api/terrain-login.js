@@ -12,7 +12,7 @@ export default async function handler(req) {
             status: 405,
             headers: { 'Content-Type': 'application/json' }
         });
-    }
+        }
 
     try {
         const { region, memberId, password } = await req.json();
