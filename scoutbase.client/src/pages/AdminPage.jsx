@@ -47,6 +47,7 @@ import { useActingGroup } from "@/hooks/useActingGroup";
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
 import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
+import TranistionHistoryReport  from '@/components/admin/reports/ReportTransistionHistory';
 
 
 
@@ -172,6 +173,8 @@ export default function AdminPage() {
                 return <AdminNoticeForm groupId={activeGroupId} userInfo={userInfo} />;
             case 'parent-header-links':
                 return <ParentHeaderLinks groupId={activeGroupId} />;
+            case 'report-transitions':
+                 return <TranistionHistoryReport groupId={activeGroupId} userInfo={userInfo} />;    
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;

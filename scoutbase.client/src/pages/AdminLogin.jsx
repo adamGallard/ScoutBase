@@ -27,105 +27,24 @@ export default function AdminLogin() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const clientIds = [
-        '6v98tbc09aqfvh52fml3usas3c',
-        '5g9rg6ppc5g1pcs5odb7nf7hf9',
-        '1u4uajve0lin0ki5n6b61ovva7',
-        '21m9o832lp5krto1e8ioo6ldg2'
-    ];
-
-    const loginToTerrain = async (region, memberId, password) => {
-        const fullUsername = `${region}-${memberId}`;
-        let successfulTokenPair = null;
-        let workingClientId = null;
-
-        for (const clientId of clientIds) {
-            try {
-                const response = await fetch('https://cognito-idp.ap-southeast-2.amazonaws.com/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-amz-json-1.1',
-                        'X-Amz-Target': 'AWSCognitoIdentityProviderService.InitiateAuth'
-                    },
-                    body: JSON.stringify({
-                        AuthFlow: 'USER_PASSWORD_AUTH',
-                        ClientId: clientId,
-                        AuthParameters: {
-                            USERNAME: fullUsername,
-                            PASSWORD: password
-                        }
-                    })
-                });
-
-                const data = await response.json();
-                const accessToken = data.AuthenticationResult?.AccessToken;
-                const idToken = data.AuthenticationResult?.IdToken;
-
-                if (accessToken && idToken) {
-                    successfulTokenPair = { accessToken, idToken };
-                    workingClientId = clientId;
-                    break;
-                }
-
-                console.warn(`⚠️ Login failed for client ID ${clientId}`);
-            } catch (err) {
-                console.warn(`❌ Error with client ID ${clientId}:`, err);
-            }
-        }
-
-        if (!successfulTokenPair) {
-            throw new Error('Login failed: Invalid credentials or no valid client ID');
-        }
-
-        const { accessToken, idToken } = successfulTokenPair;
-
-        // Save tokens
-        localStorage.setItem('scoutbase-client-id', workingClientId);
-        localStorage.setItem('scoutbase-terrain-idtoken', idToken);
-        localStorage.setItem('scoutbase-terrain-token', accessToken);
-        localStorage.setItem('scoutbase-terrain-userid', fullUsername);
-
-        // Attempt to fetch units
-        try {
-            const profileResponse = await fetch('https://members.terrain.scouts.com.au/profiles', {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${idToken}`
-                }
-            });
-
-            if (!profileResponse.ok) {
-                console.warn('⚠️ Failed to fetch profile data:', await profileResponse.text());
-                localStorage.setItem('scoutbase-terrain-units', JSON.stringify([]));
-                localStorage.setItem('scoutbase-terrain-units-available', 'false'); // 👈 SET HERE
-            } else {
-                const profileData = await profileResponse.json();
-                const flatUnits = profileData.profiles.map(p => ({
-                    unitId: p.unit.id,
-                    unitName: p.unit.name,
-                    section: p.unit.section
-                }));
-                localStorage.setItem('scoutbase-terrain-units', JSON.stringify(flatUnits));
-                localStorage.setItem('scoutbase-terrain-units-available', 'true'); // 👈 SET HERE
-            }
-        } catch (err) {
-            console.warn('⚠️ Exception during profile fetch:', err);
-            localStorage.setItem('scoutbase-terrain-units', JSON.stringify([]));
-            localStorage.setItem('scoutbase-terrain-units-available', 'false'); // 👈 SET HERE
-        }
-    }
-
-
-
-
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError('');
 
         try {
-            await loginToTerrain(region, memberId, password);
-            localStorage.setItem('scoutbase-admin-authed', 'true');
+            const response = await fetch('/api/terrain-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ region, memberId, password })
+            });
+
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.error || 'Login failed');
+            }
+
+            // ✅ Success – navigate to admin
             navigate('/admin');
         } catch (err) {
             setError(err.message);
@@ -144,7 +63,7 @@ export default function AdminLogin() {
                         Admin Login (Terrain)
                     </h2>
                     <p style={{ fontSize: '0.95rem', marginBottom: '1rem', textAlign: 'center', color: '#555' }}>
-                        Login using your <strong>Terrain Member Number and Password</strong>. You must be listed as a leader in <strong>Terrain</strong> and also be registered as an <strong>Leader in ScoutBase</strong> to access the admin area.
+                        Login using your <strong>Terrain Member Number and Password</strong>. You must be listed as a leader in <strong>Terrain</strong> and also be registered as a <strong>Leader in ScoutBase</strong> to access the admin area.
                     </p>
 
                     <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
