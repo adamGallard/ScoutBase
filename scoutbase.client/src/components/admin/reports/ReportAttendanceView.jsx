@@ -69,6 +69,7 @@ export default function AttendanceView({
             if (entry.action === 'signed out') byYouth[id].signOut = entry;
         });
 
+
         const grouped = Object.values(byYouth);
         const filtered = effectiveSectionFilter
             ? grouped.filter((r) => r.youth.section === effectiveSectionFilter)
@@ -76,7 +77,7 @@ export default function AttendanceView({
 
         setFilteredAttendance(filtered);
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
-
+ 
     useEffect(() => {
         fetchAttendance();
     }, [fetchAttendance]);
@@ -103,7 +104,7 @@ export default function AttendanceView({
                 }
             }
         });
-
+ 
         let totalSignedIn = 0;
         const pie = [];
 
@@ -155,6 +156,7 @@ export default function AttendanceView({
 
     const totalSignedIn = filteredAttendance.filter(r => r.signIn).length;
     const totalSignedOut = filteredAttendance.filter(r => r.signOut).length;
+
 
     return (
         <div className="content-box">
@@ -231,24 +233,33 @@ export default function AttendanceView({
                             <th>Name</th>
                             <th>Section</th>
                             <th>Signed In</th>
+                            <th>Comments</th>
                             <th>Signed Out</th>
+                            <th>Comments</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAttendance.map(({ youth, signIn, signOut }) => (
-                            <tr key={youth.id}>
-                                <td>{youth.name}</td>
-                                <td>{youth.section}</td>
-                                <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
-                                <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
-                            </tr>
-                        ))}
+                        {filteredAttendance.map(({ youth, signIn, signOut }) => {
+
+                            return (
+                                <tr key={youth.id}>
+                                    <td>{youth.name}</td>
+                                    <td>{youth.section}</td>
+                                    <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
+                                    <td>{signIn?.comment || ''}</td>
+                                    <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
+                                    <td>{signOut?.comment || ''}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                     <tfoot>
                         <tr style={{ fontWeight: 'bold' }}>
                             <td colSpan="2">Totals</td>
                             <td>{totalSignedIn} signed in</td>
+                            <td></td>
                             <td>{totalSignedOut} signed out</td>
+                            <td></td>
                         </tr>
                     </tfoot>
                 </AdminTable>
