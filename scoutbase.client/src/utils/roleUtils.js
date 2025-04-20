@@ -8,6 +8,10 @@ const rolePermissions = {
     'Section User': ['viewReports']
 };
 
+export const hasSectionAccess = (userInfo) => {
+    return ['Section Leader', 'Section User'].includes(userInfo.role);
+};
+
 export const can = (role, permission, options = {}) => {
     const { actingAsGroupId, actingAsAdmin, userSection, targetSection } = options;
 
@@ -60,4 +64,12 @@ export const getAssignableRoles = (currentUser) => {
     if (currentUser.role === 'Group Leader') return roles.filter(r => r !== 'Super Admin');
     if (currentUser.role === 'Section Leader') return ['Section Leader', 'Section User'];
     return [];
+};
+
+export const canViewSection = (userInfo, section) => {
+    if (userInfo.role === 'Super Admin' || userInfo.role === 'Group Leader') return true;
+    if (userInfo.role === 'Section Leader' || userInfo.role === 'Section User') {
+        return section === userInfo.section;
+    }
+    return false;
 };

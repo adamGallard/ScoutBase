@@ -552,3 +552,21 @@ export const AdminTextArea = styled.textarea`
     cursor: not-allowed;
   }
 `;
+
+export const FilterRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  label {
+    font-weight: bold;
+  }
+
+  select {
+    padding: 0.5rem;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+  }
+`;
