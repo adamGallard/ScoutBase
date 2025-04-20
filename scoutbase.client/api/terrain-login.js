@@ -1,21 +1,17 @@
 // File: /api/terrain-login.js
 
-import { NextResponse } from 'next/server';
-
-export const config = {
-    runtime: 'edge'
-};
-
-export default async function handler(req) {
+export default async function handler(req, res) {
     if (req.method !== 'POST') {
-        return new NextResponse(JSON.stringify({ error: 'Only POST allowed' }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        return res.status(405).json({ error: 'Only POST allowed' });
     }
 
     try {
-        const { region, memberId, password } = await req.json();
+        const { region, memberId, password } = req.body;
+
+        if (!region || !memberId || !password) {
+            return res.status(400).json({ error: 'Missing fields' });
+        }
+
         const fullUsername = `${region}-${memberId}`;
 
         const clientIds = [
@@ -55,32 +51,18 @@ export default async function handler(req) {
         }
 
         if (!successfulTokenPair) {
-            return new NextResponse(JSON.stringify({ error: 'Login failed' }), {
-                status: 401,
-                headers: { 'Content-Type': 'application/json' }
-            });
+            return res.status(401).json({ error: 'Login failed' });
         }
 
-        const headers = new Headers({
-            'Set-Cookie': [
-                `scoutbase-idtoken=${successfulTokenPair.idToken}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Strict`,
-                `scoutbase-token=${successfulTokenPair.accessToken}; HttpOnly; Secure; Path=/; Max-Age=3600; SameSite=Strict`,
-                `scoutbase-terrain-userid=${fullUsername}; Path=/; Max-Age=3600; SameSite=Strict`
-            ]
+        // Return tokens for now — in production you can set cookies server-side via middleware
+        return res.status(200).json({
+            accessToken: successfulTokenPair.accessToken,
+            idToken: successfulTokenPair.idToken,
+            fullUsername
         });
 
-        return new NextResponse(null, {
-            status: 302,
-            headers: {
-                ...headers,
-                Location: '/admin'
-            }
-        });
     } catch (err) {
-        console.error(err);
-        return new NextResponse(JSON.stringify({ error: 'Unexpected error' }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-        });
+        console.error('Login error:', err);
+        return res.status(500).json({ error: 'Unexpected error' });
     }
 }
