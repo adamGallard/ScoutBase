@@ -7,5 +7,5 @@
 	],
 	"buildCommand": "npm run build",
 	"installCommand": "npm install",
-	"ignoreCommand": "echo $VERCEL_GIT_BRANCH | grep -q '^feature/' && echo 'Skipping feature branch' && exit 1 || exit 0"
+	"ignoreCommand": "echo $VERCEL_GIT_BRANCH | grep -q '^feature/' && echo 'Skipping feature branch' && exit 0 || exit 1"
 }
