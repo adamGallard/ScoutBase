@@ -227,7 +227,7 @@ export default function SignInOutPage() {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 style={{
-                                    width: '100%',
+                                    width: '80%',
                                     padding: isMobile ? '0.75rem' : '0.5rem',
                                     fontSize: isMobile ? '1rem' : '0.875rem',
                                     marginBottom: '1rem'
@@ -242,7 +242,7 @@ export default function SignInOutPage() {
                                 maxLength={4}
                                 onChange={(e) => setPin(e.target.value)}
                                 style={{
-                                    width: '100%',
+                                    width: '80%',
                                     padding: isMobile ? '0.75rem' : '0.5rem',
                                     fontSize: isMobile ? '1rem' : '0.875rem',
                                     marginBottom: '1rem'

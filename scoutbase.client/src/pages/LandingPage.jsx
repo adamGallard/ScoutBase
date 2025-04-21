@@ -31,7 +31,7 @@ export default function LandingPage() {
                     <h2>Your Digital Scouting Companion</h2>
 
                     <p>
-                        ScoutBase is your digital companion for managing attendance in the Scouts community. Built by leaders, for leaders — so you can spend less time on admin and more time outdoors.
+                        ScoutBase is your digital companion for managing attendance in the Scouts community. Built by leaders, for leaders — so you can spend less time on administration and more time outdoors.
                     </p>
                     <p>
                         <strong>👪 For Parents:</strong> Easily sign in and out your child, track event attendance, and stay connected with your Scout Group in real time.
