@@ -65,7 +65,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
                 { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
-                { key: 'report-transitions', label: 'Transition History', icon: <Repeat size={16} /> },
+                { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
                 { key: 'report-full-export', label: 'Full Export', icon: <Download size={16} /> },
             ]
         },

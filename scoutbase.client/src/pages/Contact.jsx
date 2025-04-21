@@ -39,6 +39,11 @@ export default function ContactPage() {
             <Main style={{ display: 'block', maxWidth: '48rem', margin: '0 auto' }}>
                 <Content>
                     <PageTitle>Contact Us</PageTitle>
+                    <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#374151' , width: '36rem'}}>
+                        Have a question, feedback, or suggestion? We're here to help! Fill out the form below and our team
+                        will get back to you within 2-3 business days.
+                    </p>
+
                     <form onSubmit={handleSubmit} style={{ maxWidth: '600px', margin: '0 auto' }}>
                         <label>Name</label>
                         <AdminInput
