@@ -1,13 +1,13 @@
 // src/components/admin/PatrolManagementView.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Pencil, Trash, Plus, Flag ,Link} from 'lucide-react';
+import { Pencil, Trash, Plus, Flag ,Link, Download} from 'lucide-react';
 import {
     PageWrapper,
     Content,
     PageTitle,
     PrimaryButton,
-    AdminTable, CompactInput, CompactInputGroup, CompactSelect
+    AdminTable, CompactInput, CompactInputGroup, CompactSelect, 
 } from '@/components/common/SharedStyles';
 import PatrolLinkModal from './PatrolLinkModal';
 
@@ -27,7 +27,27 @@ export default function PatrolManagementView({ groupId, userInfo }) {
             .eq('section', section)
             .order('name');
 
-        if (!error) setPatrols(data || []);
+        if (error) {
+            console.error('Error fetching patrols:', error);
+            return;
+        }
+
+        const patrolsWithCounts = await Promise.all(
+            data.map(async (p) => {
+                const { count, error: cntErr } = await supabase
+                    .from('youth')
+                    .select('id', { count: 'exact', head: true })
+                    .eq('patrol_id', p.id)
+                    .eq('group_id', groupId);
+                if (cntErr) {
+                    console.error(`Error fetching count for patrol ${p.id}:`, cntErr);
+                    return { ...p, youth_count: 0 };
+                }
+                return { ...p, youth_count: count };
+            })
+        );
+
+        setPatrols(patrolsWithCounts);
     };
 
     useEffect(() => {
@@ -61,9 +81,48 @@ export default function PatrolManagementView({ groupId, userInfo }) {
 
     const isSectionLeader = userInfo?.role === 'Section Leader';
 
+    const exportCSV = async () => {
+        const { data: youthData, error: youthErr } = await supabase
+            .from('youth')
+            .select('id, name, rank, patrol_id')
+            .eq('group_id', groupId);
+        if (youthErr) {
+            console.error('Error fetching youth for CSV:', youthErr);
+            return;
+        }
+
+        let csv = 'Patrol,Section,Youth Name,Rank\n';
+        patrols.forEach((p) => {
+            const members = youthData.filter((y) => y.patrol_id === p.id);
+            if (members.length) {
+                members.forEach((m) => {
+                    csv += `"${p.name}","${p.section}","${m.name}","${m.rank || ''}"\n`;
+                });
+            } else {
+                csv += `"${p.name}","${p.section}","",""\n`;
+            }
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'patrols_export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
-        <PageWrapper>
-            <Content>
+        <div className="content-box">
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '5rem',
+                marginBottom: '1rem',
+                flexWrap: 'wrap'
+            }}>
                 <PageTitle>
                     <Flag size={24} style={{ marginRight: '0.5rem' }} />
                     Patrol Management
@@ -95,13 +154,18 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     <PrimaryButton onClick={addPatrol}>
                         <Plus size={16} /> Add Patrol
                         </PrimaryButton>
+                        <PrimaryButton onClick={exportCSV} style={{ marginBottom: '1rem' }}>
+                            <Download size={16} /> Export CSV
+                        </PrimaryButton>
                     </div>
+
              </CompactInputGroup> 
 
                 <AdminTable>
                     <thead>
                         <tr>
                             <th>Name</th>
+                            <th>Members</th>
                             <th>Section</th>
                             <th>Actions</th>
                         </tr>
@@ -109,17 +173,8 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     <tbody>
                         {patrols.map((p) => (
                             <tr key={p.id}>
-                                <td>
-                                    {editingId === p.id ? (
-                                        <input
-                                            value={editName}
-                                            onChange={(e) => setEditName(e.target.value)}
-                                            style={{ padding: '0.3rem' }}
-                                        />
-                                    ) : (
-                                        p.name
-                                    )}
-                                </td>
+                                <td>{p.name}</td>
+                                <td>{p.youth_count ?? 0}</td>
                                 <td>{p.section}</td>
                                 <td style={{ display: 'flex', gap: '0.5rem' }}>
                                     {editingId === p.id ? (
@@ -129,13 +184,16 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                                         </>
                                     ) : (
                                         <>
-                                            <button onClick={() => setLinkingPatrol(p)} title="Link youth to patrol">
+                                            <button
+                                                onClick={() => setLinkingPatrol(p)}
+                                                title="Link youth to patrol">
                                                 <Link size={16} />
                                             </button>
-                                            <button onClick={() => {
-                                                setEditingId(p.id);
-                                                setEditName(p.name);
-                                            }}>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingId(p.id);
+                                                    setEditName(p.name);
+                                                }}>
                                                 <Pencil size={16} />
                                             </button>
                                             <button onClick={() => deletePatrol(p.id)}>
@@ -158,8 +216,8 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                         onClose={() => setLinkingPatrol(null)}
                     />
                 )}
-            </Content>
-        </PageWrapper>
+            </div>
+        </div>
     );
 }
 

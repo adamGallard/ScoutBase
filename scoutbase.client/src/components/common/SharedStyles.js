@@ -7,7 +7,9 @@ export const PageWrapper = styled.div`
   font-family: sans-serif;
   display: flex;
   flex-direction: column;
+  marginBottom: '1rem',
 `;
+
 
 export const Header = styled.header`
   display: flex;
@@ -178,6 +180,7 @@ export const PrimaryButton = styled.button.withConfig({
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out, transform 0.1s;
+margin: 0.25rem 0.5rem;
 
   &:hover {
     background-color: #0c4a87;
@@ -568,5 +571,32 @@ export const FilterRow = styled.div`
     font-size: 1rem;
     border: 1px solid #ccc;
     border-radius: 4px;
+  }
+`;
+export const Badge = styled.span`
+  display: inline-block;
+  background-color: #0F5BA4;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0.25rem;
+  margin-left: 0.5rem;
+`;
+
+export const Select = styled.select`
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  color: #333;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 0.25rem;
+  appearance: none;
+  outline: none;
+  &:focus {
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 2px rgba(15, 91, 164, 0.25);
   }
 `;

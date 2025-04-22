@@ -8,7 +8,7 @@ import { logAuditEvent } from '@/helpers/auditHelper';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
-    const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', phone: '',comments:'' });
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -71,16 +71,16 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             targetId: data?.[0]?.id,  // grab the new parent's ID from insert result
             metadata: `Added parent: ${formData.name}`
         });
-        setFormData({ name: '', email: '', phone: '' });
+        setFormData({ name: '', email: '', phone: '',comments:'' });
         fetchParents();
     };
 
     const updateParent = async (id) => {
-        const { name, email, phone } = formData;
+        const { name, email, phone, comments } = formData;
 
         const { error } = await supabase
             .from('parent')
-            .update({ name, email, phone })
+            .update({ name, email, phone, comments })
             .eq('id', id);
 
         if (error) {
@@ -158,6 +158,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
+                        <th>Comments</th>
                         <th style={{ width: '140px' }}>Actions</th>
                     </tr>
                 </thead>
@@ -193,6 +194,17 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                 ) : (
                                     p.phone
                                 )}
+                            </td>
+                            <td>
+                                {editingParentId === p.id ? (
+                                    <input
+                                        value={formData.comments}
+                                        onChange={(e) => setFormData(f => ({ ...f, comments: e.target.value }))}
+                                    />
+                                ) : (
+                                    p.comments
+                                )}
+
                             </td>
                             <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingParentId === p.id ? (
@@ -238,6 +250,12 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                 <input
                                     value={formData.phone}
                                     onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.comments}
+                                    onChange={(e) => setFormData(f => ({ ...f, comments: e.target.value }))}
                                 />
                             </td>
                             <td>
