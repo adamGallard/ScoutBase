@@ -216,7 +216,7 @@ export default function SignInOutPage() {
                     <p style={{ fontSize: '1rem', marginBottom: '1.5rem', color: '#333' }}>
                         {submitted
                             ? 'Please select the youth you want to sign in or out.'
-                            : 'Enter your name to see the youth members linked to you.'}
+                            : 'Please enter your name and PIN to sign in and view the youth members linked to your account.'}
                     </p>
 
                     {!submitted ? (

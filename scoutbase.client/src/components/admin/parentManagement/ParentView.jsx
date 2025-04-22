@@ -18,7 +18,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
 
     const fetchParents = useCallback(async () => {
         const { data, error } = await supabase
-            .from('parent')
+            .from('parent')  // ensure correct table name
             .select(`
             *,
             parent_youth (
@@ -36,16 +36,20 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             return;
         }
 
-        // Filter in JS if Section Leader
         let filtered = data;
         if (userInfo?.role === 'Section Leader' && userInfo?.section) {
-            filtered = data.filter((parent) =>
-                parent.parent_youth?.some(
-                    (py) =>
-                        py.youth?.section === userInfo.section ||
-                        py.youth?.linking_section === userInfo.section
-                )
-            );
+            filtered = data.filter((parent) => {
+                const links = parent.parent_youth || [];
+                // Include parents with no linked youth, or any youth in this section
+                return (
+                    links.length === 0 ||
+                    links.some(
+                        (py) =>
+                            py.youth?.section === userInfo.section ||
+                            py.youth?.linking_section === userInfo.section
+                    )
+                );
+            });
         }
 
         setParents(filtered);
@@ -59,19 +63,41 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     }, [groupId, fetchParents]);
 
     const addParent = async () => {
-         const hashedPIN = await bcrypt.hash(defaultPIN, 10);
-        if (!formData.name || !formData.email || !formData.phone) return;
-        await supabase.from('parent').insert([{ ...formData, group_id: groupId, pin_hash: hashedPIN }]);
+        const hashedPIN = await bcrypt.hash(defaultPIN, 10);
+        const { name, email, phone, comments } = formData;
+        if (!name || !email || !phone) return;
+
+        // 1) Insert and get back the new row as `newParent`
+        const { data: newParent, error: insertError } = await supabase
+            .from('parent')              // correct table name
+            .insert({
+                name,
+                email,
+                phone,
+                comments,
+                group_id: groupId,
+                pin_hash: hashedPIN
+            })
+            .select()                     // return all columns
+            .single();                    // unwrap array to single object
+
+        if (insertError) {
+            console.error('Error adding parent:', insertError);
+            return;
+        }
+
+        // newParent is guaranteed to be an object now
         await logAuditEvent({
             userId: userInfo.id,
             groupId,
             role: userInfo.role,
             action: 'Add',
             targetType: 'Parent',
-            targetId: data?.[0]?.id,  // grab the new parent's ID from insert result
-            metadata: `Added parent: ${formData.name}`
+            targetId: newParent.id,
+            metadata: `Added parent: ${newParent.name}`
         });
-        setFormData({ name: '', email: '', phone: '',comments:'' });
+
+        setFormData({ name: '', email: '', phone: '', comments: '' });
         fetchParents();
     };
 
