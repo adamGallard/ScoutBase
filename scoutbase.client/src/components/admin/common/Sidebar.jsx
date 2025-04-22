@@ -2,8 +2,7 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink
-
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -67,6 +66,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
                 { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
                 { key: 'report-full-export', label: 'Full Export', icon: <Download size={16} /> },
+                { key: 'report-data-quality', label: 'Data Quality', icon: <FileCheck2 size={16} /> }
             ]
         },
 

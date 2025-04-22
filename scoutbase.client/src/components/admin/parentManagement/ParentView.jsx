@@ -4,6 +4,7 @@ import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react'
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/helpers/auditHelper';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
@@ -15,10 +16,16 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const [itemsPerPage] = useState(12); // or however many you want per page
     const [addError, setAddError] = useState('');
     const defaultPIN = '1258';
+    const query = new URLSearchParams(useLocation().search);
+    const targetId = query.get('id'); // '5bd3990b...'
+    const navigate = useNavigate();
+    const location = useLocation();
+    const [targetName, setTargetName] = useState(null);
+    const [deletedMessage, setDeletedMessage] = useState('');
 
     const fetchParents = useCallback(async () => {
         const { data, error } = await supabase
-            .from('parent')  // ensure correct table name
+            .from('parent')
             .select(`
             *,
             parent_youth (
@@ -40,7 +47,6 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
         if (userInfo?.role === 'Section Leader' && userInfo?.section) {
             filtered = data.filter((parent) => {
                 const links = parent.parent_youth || [];
-                // Include parents with no linked youth, or any youth in this section
                 return (
                     links.length === 0 ||
                     links.some(
@@ -52,11 +58,19 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             });
         }
 
+        // 👇 Filter to only the one if `targetId` exists
+        let matchedParent = null;
+
+        if (targetId) {
+            filtered = filtered.filter(p => p.id === targetId);
+            if (filtered.length === 1) {
+                matchedParent = filtered[0];
+            }
+        }
+
         setParents(filtered);
-    }, [groupId, userInfo]);
-
-
-
+        setTargetName(matchedParent?.name || null);
+    }, [groupId, userInfo, targetId]);
 
     useEffect(() => {
         if (groupId) fetchParents();
@@ -69,6 +83,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             setAddError('Name, email and phone are required.');
             return;
         }
+
 
         // 1) Insert and get back the new row as `newParent`
         const { data: newParent, error: insertError } = await supabase
@@ -153,6 +168,18 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                 targetId: id,
                 metadata: `Deleted parent: ${deletedParent?.name}`
             });
+            // If we were filtered on this ID, clear the filter and reload all
+            if (targetId === id) {
+                navigate(location.pathname, { replace: true }); // remove ?id=
+                setEditingParentId(null);
+                setFormData({ name: '', email: '', phone: '', comments: '' });
+                setTargetName(null);
+            }
+
+            // Fetch updated parent list
+            
+            setDeletedMessage(`Parent "${deletedParent?.name}" has been deleted.`);
+            setTimeout(() => setDeletedMessage(''), 4000); // message disappears after 4s
             fetchParents();
         }
     };
@@ -186,7 +213,57 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                 onChange={(e) => setFilter(e.target.value.toLowerCase())}
                 style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
             />
+            {deletedMessage && (
+                <div style={{
+                    backgroundColor: '#d4edda',
+                    color: '#155724',
+                    border: '1px solid #c3e6cb',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '6px',
+                    marginBottom: '1rem'
+                }}>
+                    {deletedMessage}
+                </div>
+            )}
+            {targetId && targetName && (
+                <div style={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    border: '1px solid #ffeeba',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '6px',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
 
+                    <span>
+                        Showing results filtered to <strong>{targetName}</strong> (parent)
+                    </span>
+                    <button
+                        onClick={() => {
+                            setFilter('');
+                            setEditingParentId(null);
+                            setFormData({ name: '', email: '', phone: '', comments: '' });
+                            setTargetName(null);
+                            navigate(location.pathname, { replace: true }); // remove ?id=
+                            fetchParents(); // reload all
+                        }}
+                        style={{
+                            backgroundColor: '#856404',
+                            color: '#fff',
+                            border: 'none',
+                            padding: '0.35rem 0.75rem',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem'
+                        }}
+                    >
+                        Clear Filter
+                    </button>
+                </div>
+            )}
             <AdminTable>
                 <thead>
                     <tr>
