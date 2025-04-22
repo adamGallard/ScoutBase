@@ -48,6 +48,7 @@ import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceVie
 import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
+import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 
 
 
@@ -174,6 +175,8 @@ export default function AdminPage() {
                 return <ParentHeaderLinks groupId={activeGroupId} />;
             case 'report-transitions':  
                 return <ReportTransitionHistory groupId={userInfo.group_id} userInfo={userInfo} />;
+            case 'report-data-quality':
+				return <ReportDataQuality groupId={userInfo.group_id} userInfo={userInfo} />;
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
