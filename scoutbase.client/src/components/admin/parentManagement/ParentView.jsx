@@ -8,7 +8,7 @@ import { logAuditEvent } from '@/helpers/auditHelper';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
-    const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+    const [formData, setFormData] = useState({ name: '', email: '', phone: '',comments:'' });
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -18,7 +18,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
 
     const fetchParents = useCallback(async () => {
         const { data, error } = await supabase
-            .from('parent')
+            .from('parent')  // ensure correct table name
             .select(`
             *,
             parent_youth (
@@ -36,16 +36,20 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             return;
         }
 
-        // Filter in JS if Section Leader
         let filtered = data;
         if (userInfo?.role === 'Section Leader' && userInfo?.section) {
-            filtered = data.filter((parent) =>
-                parent.parent_youth?.some(
-                    (py) =>
-                        py.youth?.section === userInfo.section ||
-                        py.youth?.linking_section === userInfo.section
-                )
-            );
+            filtered = data.filter((parent) => {
+                const links = parent.parent_youth || [];
+                // Include parents with no linked youth, or any youth in this section
+                return (
+                    links.length === 0 ||
+                    links.some(
+                        (py) =>
+                            py.youth?.section === userInfo.section ||
+                            py.youth?.linking_section === userInfo.section
+                    )
+                );
+            });
         }
 
         setParents(filtered);
@@ -59,28 +63,50 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     }, [groupId, fetchParents]);
 
     const addParent = async () => {
-         const hashedPIN = await bcrypt.hash(defaultPIN, 10);
-        if (!formData.name || !formData.email || !formData.phone) return;
-        await supabase.from('parent').insert([{ ...formData, group_id: groupId, pin_hash: hashedPIN }]);
+        const hashedPIN = await bcrypt.hash(defaultPIN, 10);
+        const { name, email, phone, comments } = formData;
+        if (!name || !email || !phone) return;
+
+        // 1) Insert and get back the new row as `newParent`
+        const { data: newParent, error: insertError } = await supabase
+            .from('parent')              // correct table name
+            .insert({
+                name,
+                email,
+                phone,
+                comments,
+                group_id: groupId,
+                pin_hash: hashedPIN
+            })
+            .select()                     // return all columns
+            .single();                    // unwrap array to single object
+
+        if (insertError) {
+            console.error('Error adding parent:', insertError);
+            return;
+        }
+
+        // newParent is guaranteed to be an object now
         await logAuditEvent({
             userId: userInfo.id,
             groupId,
             role: userInfo.role,
             action: 'Add',
             targetType: 'Parent',
-            targetId: data?.[0]?.id,  // grab the new parent's ID from insert result
-            metadata: `Added parent: ${formData.name}`
+            targetId: newParent.id,
+            metadata: `Added parent: ${newParent.name}`
         });
-        setFormData({ name: '', email: '', phone: '' });
+
+        setFormData({ name: '', email: '', phone: '', comments: '' });
         fetchParents();
     };
 
     const updateParent = async (id) => {
-        const { name, email, phone } = formData;
+        const { name, email, phone, comments } = formData;
 
         const { error } = await supabase
             .from('parent')
-            .update({ name, email, phone })
+            .update({ name, email, phone, comments })
             .eq('id', id);
 
         if (error) {
@@ -158,6 +184,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
+                        <th>Comments</th>
                         <th style={{ width: '140px' }}>Actions</th>
                     </tr>
                 </thead>
@@ -193,6 +220,17 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                 ) : (
                                     p.phone
                                 )}
+                            </td>
+                            <td>
+                                {editingParentId === p.id ? (
+                                    <input
+                                        value={formData.comments}
+                                        onChange={(e) => setFormData(f => ({ ...f, comments: e.target.value }))}
+                                    />
+                                ) : (
+                                    p.comments
+                                )}
+
                             </td>
                             <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingParentId === p.id ? (
@@ -238,6 +276,12 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                 <input
                                     value={formData.phone}
                                     onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.comments}
+                                    onChange={(e) => setFormData(f => ({ ...f, comments: e.target.value }))}
                                 />
                             </td>
                             <td>

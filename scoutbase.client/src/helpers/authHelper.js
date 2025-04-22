@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+﻿import { supabase } from '../lib/supabaseClient';
 import bcrypt from 'bcryptjs';
 
 export const verifyPin = async (enteredPin, storedHash) => {
@@ -11,7 +11,13 @@ export const verifyPin = async (enteredPin, storedHash) => {
     }
 };
 
-const normalizeMobile = (input) => input.replace(/\D/g, '');
+export function normalizeMobile(raw = '') {
+    // ensure it’s a string
+    const str = typeof raw === 'string' ? raw : String(raw);
+    // remove any non‑digit characters
+    return str.replace(/\D+/g, '');
+}
+
 
 export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, groupId) => {
     const trimmed = identifier.trim();

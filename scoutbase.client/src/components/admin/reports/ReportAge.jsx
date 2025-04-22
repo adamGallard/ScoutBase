@@ -1,9 +1,11 @@
 ﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
-import { PrimaryButton,PageTitle } from '@/components/common/SharedStyles';
+import { PrimaryButton, PageTitle, Select } from '@/components/common/SharedStyles';
 import { getAgeWithMonths, getLinkingStatus, getLinkingThreshold } from '@/utils/dateUtils';
 import { Cake } from 'lucide-react';
+
+const SECTIONS = ['Joeys', 'Cubs', 'Scouts', 'Venturers'];
 export default function ReportAge({ groupId }) {
     const [rows, setRows] = useState([]);
     const [filtered, setFiltered] = useState([]);
@@ -58,12 +60,17 @@ export default function ReportAge({ groupId }) {
             <p>This report highlights youth approaching or past their expected linking age.</p>
 
             <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)}>
+                <Select
+                    value={sectionFilter}
+                    onChange={(e) => setSectionFilter(e.target.value)}
+                >
                     <option value="">All Sections</option>
-                    {Object.keys(getLinkingThreshold).map(s => (
-                        <option key={s} value={s}>{s}</option>
+                    {SECTIONS.map((sec) => (
+                        <option key={sec} value={sec}>
+                            {sec}
+                        </option>
                     ))}
-                </select>
+                </Select>
 
                 <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                     <option value="">All Stages</option>
