@@ -1,4 +1,4 @@
-// src/components/admin/PatrolManagementView.jsx
+﻿// src/components/admin/PatrolManagementView.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Flag ,Link, Download} from 'lucide-react';
@@ -18,6 +18,7 @@ export default function PatrolManagementView({ groupId, userInfo }) {
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState('');
     const [linkingPatrol, setLinkingPatrol] = useState(null);
+    const [addError, setAddError] = useState('');
 
     const fetchPatrols = async () => {
         const { data, error } = await supabase
@@ -55,13 +56,28 @@ export default function PatrolManagementView({ groupId, userInfo }) {
     }, [groupId, section]);
 
     const addPatrol = async () => {
-        if (!newPatrolName.trim()) return;
-        await supabase.from('patrols').insert({
+        if (!newPatrolName.trim()) {
+            setAddError('Patrol name is required.');
+            return;
+        }
+
+        const { error: insertError } = await supabase.from('patrols').insert({
             name: newPatrolName.trim(),
             group_id: groupId,
             section,
         });
+
+        if (insertError?.code === '23505') {
+            setAddError('A patrol with this name already exists in this section.');
+            return;
+        } else if (insertError) {
+            setAddError(insertError.message || 'Unexpected error adding patrol.');
+            return;
+        }
+
+        // Clear form + error if successful
         setNewPatrolName('');
+        setAddError('');
         fetchPatrols();
     };
 
@@ -160,7 +176,11 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     </div>
 
              </CompactInputGroup> 
-
+                {addError && (
+                    <div style={{ color: 'red', marginBottom: '1rem' }}>
+                        ⚠️ Could not add Patrol: {addError}
+                    </div>
+                )}
                 <AdminTable>
                     <thead>
                         <tr>
