@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
@@ -13,7 +13,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const [filter, setFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage] = useState(12); // or however many you want per page
-
+    const [addError, setAddError] = useState('');
     const defaultPIN = '1258';
 
     const fetchParents = useCallback(async () => {
@@ -65,7 +65,10 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const addParent = async () => {
         const hashedPIN = await bcrypt.hash(defaultPIN, 10);
         const { name, email, phone, comments } = formData;
-        if (!name || !email || !phone) return;
+        if (!name || !email || !phone) {
+            setAddError('Name, email and phone are required.');
+            return;
+        }
 
         // 1) Insert and get back the new row as `newParent`
         const { data: newParent, error: insertError } = await supabase
@@ -83,6 +86,12 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
 
         if (insertError) {
             console.error('Error adding parent:', insertError);
+            if (insertError.code === '23505') {
+                // Postgres unique violation
+                setAddError('This Parent is already added.');
+            } else {
+                setAddError(insertError.message || 'Failed to add Parent.');
+            }
             return;
         }
 
@@ -96,7 +105,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             targetId: newParent.id,
             metadata: `Added parent: ${newParent.name}`
         });
-
+        setAddError('');
         setFormData({ name: '', email: '', phone: '', comments: '' });
         fetchParents();
     };
@@ -291,7 +300,11 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                     )}
                 </tbody>
             </AdminTable>
-
+            {addError && (
+                <div style={{ color: 'red', marginBottom: '1rem' }}>
+                    ⚠️ Could not add parent: {addError}
+                </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem', gap: '1rem' }}>
                 <button
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}

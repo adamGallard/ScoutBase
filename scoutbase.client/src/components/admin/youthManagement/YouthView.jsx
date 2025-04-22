@@ -20,7 +20,7 @@ import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 import { logAuditEvent } from '@/helpers/auditHelper';
 export default function YouthView({ groupId, userInfo }) {
 
-
+    const [addError, setAddError] = useState('');
     const [youthList, setYouthList] = useState([]);
     const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '' });
     const [editingYouthId, setEditingYouthId] = useState(null);
@@ -120,13 +120,26 @@ export default function YouthView({ groupId, userInfo }) {
     }, [filter, sectionFilter, stageFilter]);
 
     const addYouth = async () => {
-        if (!youthForm.name || !youthForm.dob) return;
+        if (!youthForm.name || !youthForm.dob) {
+            setAddError('Name and date of birth are required.');
+            return;
+        }
 
         const { data, error } = await supabase
             .from('youth')
             .insert([{ ...youthForm, group_id: groupId }])
             .select()
             .single();
+        if (error) {
+            console.error('Supabase error:', error);
+            if (error.code === '23505') {
+                // Postgres unique violation
+                setAddError('This youth is already added.');
+            } else {
+                setAddError(error.message || 'Failed to add youth.');
+            }
+            return;
+        }
 
         if (!error && data) {
             await logAuditEvent({
@@ -138,6 +151,7 @@ export default function YouthView({ groupId, userInfo }) {
                 targetId: data.id,
                 metadata: `Added youth: ${data.name} (${data.section})`
             });
+            setAddError('');
         }
         if (data) {
             setYouthForm({ name: '', dob: '', membership_stage: '' });
@@ -424,6 +438,11 @@ export default function YouthView({ groupId, userInfo }) {
                     )}
                 </tbody>
             </AdminTable>
+            {addError && (
+                <div style={{ color: 'red', marginBottom: '1rem' }}>
+                    ⚠️ {addError}
+                </div>
+            )}
             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                 <button onClick={() => setCurrentPage(p => Math.max(p - 1, 1))} disabled={currentPage === 1}>
                     Previous
