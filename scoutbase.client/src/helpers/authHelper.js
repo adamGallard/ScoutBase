@@ -35,7 +35,7 @@ export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, gro
 
     const match = data.find(p => {
         if (isPhone) {
-            return normalizeMobile(p.mobile) === normalizeMobile(trimmed);
+            return normalizeMobile(p.phone) === normalizeMobile(trimmed);
         } else {
             return p.name?.trim().toLowerCase() === trimmed.toLowerCase();
         }
