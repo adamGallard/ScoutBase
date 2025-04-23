@@ -1,17 +1,31 @@
 ﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
-import { PrimaryButton, PageTitle, Select } from '@/components/common/SharedStyles';
+import { PrimaryButton, PageTitle, Select, AdminTable } from '@/components/common/SharedStyles';
 import { getAgeWithMonths, getLinkingStatus, getLinkingThreshold } from '@/utils/dateUtils';
-import { Cake } from 'lucide-react';
+import { Cake, ChevronUp, ChevronDown } from 'lucide-react';
 
 const SECTIONS = ['Joeys', 'Cubs', 'Scouts', 'Venturers'];
+
 export default function ReportAge({ groupId }) {
     const [rows, setRows] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [sectionFilter, setSectionFilter] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [loading, setLoading] = useState(false);
+    const [linkingFilter, setLinkingFilter] = useState('');
+    const [sortField, setSortField] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc');
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -29,7 +43,7 @@ export default function ReportAge({ groupId }) {
 
             const enriched = (data || []).map(youth => {
                 const age = getAgeWithMonths(youth.dob);
-                const shouldLink = getLinkingStatus(youth.dob, youth.section)
+                const shouldLink = getLinkingStatus(youth.dob, youth.section, youth.membership_stage);
                 return {
                     ...youth,
                     age,
@@ -45,41 +59,59 @@ export default function ReportAge({ groupId }) {
     }, [groupId]);
 
     useEffect(() => {
-        setFiltered(
-            rows.filter(r =>
+        let result = rows.filter(r =>
                 (!sectionFilter || r.section === sectionFilter) &&
-                (!statusFilter || r.membership_stage === statusFilter)
-            )
+                (!statusFilter || r.membership_stage === statusFilter) &&
+                (statusFilter || r.membership_stage !== 'Retired') &&// Exclude Retired unless explicitly selected
+                (!linkingFilter || r.shouldLink === linkingFilter)
         );
-    }, [rows, sectionFilter, statusFilter]);
+        if (sortField) {
+            result.sort((a, b) => {
+                const aValue = a[sortField]?.toString().toLowerCase() ?? '';
+                const bValue = b[sortField]?.toString().toLowerCase() ?? '';
+                if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+        }
+
+        setFiltered(result);
+    }, [rows, sectionFilter, statusFilter, linkingFilter, sortField, sortDirection]);
+
+
 
     return (
         <div className="content-box">
             <PageTitle>
-                <Cake size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Youth Age Report</PageTitle>
+                <Cake size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
+                Youth Age Report
+            </PageTitle>
+
             <p>This report highlights youth approaching or past their expected linking age.</p>
 
             <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem' }}>
-                <Select
-                    value={sectionFilter}
-                    onChange={(e) => setSectionFilter(e.target.value)}
-                >
+                <Select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)}>
                     <option value="">All Sections</option>
-                    {SECTIONS.map((sec) => (
-                        <option key={sec} value={sec}>
-                            {sec}
-                        </option>
+                    {SECTIONS.map(sec => (
+                        <option key={sec} value={sec}>{sec}</option>
                     ))}
                 </Select>
 
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                <Select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
                     <option value="">All Stages</option>
                     <option value="Have a Go">Have a Go</option>
                     <option value="Linking">Linking</option>
                     <option value="Invested">Invested</option>
                     <option value="Retired">Retired</option>
-                </select>
-
+                </Select>
+                <Select
+                    value={linkingFilter}
+                    onChange={(e) => setLinkingFilter(e.target.value)}
+                >
+                    <option value="">All Actions</option>
+                    <option value="Approaching">Approaching</option>
+                    <option value="Overdue">Overdue</option>
+                </Select>
                 <PrimaryButton onClick={() => downloadCSV(filtered, 'age_report')}>
                     Download CSV
                 </PrimaryButton>
@@ -88,32 +120,47 @@ export default function ReportAge({ groupId }) {
             {loading && <p>Loading...</p>}
             {!loading && filtered.length === 0 && <p>No youth found.</p>}
 
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>DOB</th>
-                        <th>Age</th>
-                        <th>Section</th>
-                        <th>Status</th>
-                        <th>Action Needed</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {filtered.map(youth => (
-                        <tr key={youth.name} style={{
-                            backgroundColor: youth.shouldLink ? '#ffe4e1' : 'transparent'
-                        }}>
-                            <td>{youth.name}</td>
-                            <td>{youth.dob}</td>
-                            <td>{youth.age}</td>
-                            <td>{youth.section}</td>
-                            <td>{youth.membership_stage}</td>
-                            <td>{youth.shouldLink ? 'Linking overdue' : ''}</td>
+            {!loading && filtered.length > 0 && (
+                <AdminTable>
+                    <thead>
+                        <tr>
+                            {['name', 'dob', 'age', 'section', 'membership_stage', 'shouldLink'].map((field) => (
+                                <th key={field} onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
+                                    {field === 'shouldLink' ? 'Action Needed' : field.charAt(0).toUpperCase() + field.slice(1)}
+                                    {sortField === field && (sortDirection === 'asc' ? (<ChevronUp size={16} strokeWidth={2} />
+                                    ) : (
+                                        <ChevronDown size={16} strokeWidth={2} />
+                                    ))
+                                    }
+                                </th>
+                            ))}
                         </tr>
-                    ))}
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        {filtered.map((youth) => (
+                            <tr
+                                key={youth.name}
+                                style={{
+                                    backgroundColor:
+                                        youth.shouldLink === 'Overdue'
+                                            ? '#ffe4e1' // light red for overdue
+                                            : youth.shouldLink === 'Approaching'
+                                                ? '#fff8dc' // light yellow for approaching
+                                                : 'transparent'
+                                }}
+                            >
+                                <td>{youth.name}</td>
+                                <td>{youth.dob}</td>
+                                <td>{youth.age}</td>
+                                <td>{youth.section}</td>
+                                <td>{youth.membership_stage}</td>
+                                <td>{youth.shouldLink || ''} </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </AdminTable>
+            )}
         </div>
     );
 }
