@@ -63,10 +63,14 @@ export async function addYouthTransition(transition) {
     return { data, error };
 }
 export async function deleteYouthTransition(id) {
-    const { error } = await supabase
+    const { error, status, statusText } = await supabase
         .from('youth_transitions')
         .delete()
         .eq('id', id);
+
+    if (error) {
+        console.error(`❌ Error deleting transition [${status} - ${statusText}]:`, error.message);
+    }
 
     return { error };
 }

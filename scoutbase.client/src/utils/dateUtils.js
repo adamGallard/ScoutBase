@@ -34,7 +34,7 @@ export function getLinkingThreshold(section) {
     return thresholds[section] || null;
 }
 
-export function getLinkingStatus(dob, section) {
+export function getLinkingStatus(dob, section, membership_stage) {
     const sectionThresholds = {
         Joeys: 8,
         Cubs: 11,
@@ -53,12 +53,13 @@ export function getLinkingStatus(dob, section) {
     const limit = sectionThresholds[section];
     if (!limit) return '';
 
-    let status = '';
-    if (preciseAge === limit - 1) {
-        status = 'Approaching';
-    } else if (preciseAge >= limit) {
-        status = 'Overdue';
+    if (preciseAge >= limit && membership_stage === 'Invested') {
+        return 'Overdue';
     }
 
-    return status;
+    if (preciseAge === limit - 1) {
+        return 'Approaching';
+    }
+
+    return '';
 }

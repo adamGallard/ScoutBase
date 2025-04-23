@@ -1,11 +1,12 @@
-import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
-import {
-    PieChart, Pie, Tooltip, ResponsiveContainer, Cell
-} from 'recharts';
+import { Doughnut } from 'react-chartjs-2';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 
+
+ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
     activeGroupId,
     selectedDate,
@@ -41,14 +42,14 @@ export default function AttendanceView({
 
     useEffect(() => {
         fetchYouthList();
-    }, [fetchYouthList]);
+    }, [fetchYouthList, selectedDate]);
 
     const fetchAttendance = useCallback(async () => {
         if (!activeGroupId) return;
 
         const { data, error } = await supabase
             .from('attendance')
-            .select('*, youth (id, name, section), parent:signed_by (id, name)')
+            .select('*, youth (id, name, section, linking_section), parent:signed_by (id, name)')
             .eq('event_date', selectedDate)
             .eq('group_id', activeGroupId)
             .order('timestamp');
@@ -80,11 +81,45 @@ export default function AttendanceView({
  
     useEffect(() => {
         fetchAttendance();
-    }, [fetchAttendance]);
+    }, [fetchAttendance, selectedDate]);
 
     useEffect(() => {
-        if (!youthList.length || !filteredAttendance.length) return;
+        if (!youthList.length) return;
 
+        // ⚠️ Reset chart if attendance is empty
+        if (!filteredAttendance.length) {
+            const stageSummary = {
+                Invested: 0,
+                'Have a Go': 0,
+                Linking: 0,
+            };
+
+            youthList.forEach((y) => {
+                const stage = y.membership_stage;
+                if (stage in stageSummary) {
+                    stageSummary[stage]++;
+                }
+            });
+
+            const pie = Object.entries(stageSummary).map(([stage, total]) => ({
+                name: stage,
+                value: 0,
+                total
+            }));
+
+            if (youthList.length > 0) {
+                pie.push({
+                    name: "Not Signed In",
+                    value: youthList.length,
+                    total: youthList.length
+                });
+            }
+
+            setPieData(pie);
+            return;
+        }
+
+        // 🧮 Standard pie data logic
         const signedInIds = filteredAttendance
             .filter(r => r.signIn)
             .map(r => r.youth.id);
@@ -104,7 +139,7 @@ export default function AttendanceView({
                 }
             }
         });
- 
+
         let totalSignedIn = 0;
         const pie = [];
 
@@ -129,7 +164,7 @@ export default function AttendanceView({
         }
 
         setPieData(pie);
-    }, [filteredAttendance, youthList]);
+    }, [filteredAttendance, youthList, selectedDate]);
 
     const exportCSV = () => {
         const rows = [
@@ -156,7 +191,12 @@ export default function AttendanceView({
 
     const totalSignedIn = filteredAttendance.filter(r => r.signIn).length;
     const totalSignedOut = filteredAttendance.filter(r => r.signOut).length;
-
+    useEffect(() => {
+        console.log("📅 Date changed:", selectedDate);
+        console.log("👥 Youth List:", youthList);
+        console.log("✅ Filtered Attendance:", filteredAttendance);
+        console.log("📊 Pie Data:", pieData);
+    }, [selectedDate, youthList, filteredAttendance, pieData]);
 
     return (
         <div className="content-box">
@@ -199,31 +239,47 @@ export default function AttendanceView({
             </div>
 
             {pieData.length > 0 && (
-                <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                        <Tooltip />
-                        <Pie
-                            data={pieData}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={100}
-                            label={({ name, value, total }) => `${name}: ${value}/${total}`}
-                        >
-                            {pieData.map((entry, i) => (
-                                <Cell
-                                    key={`cell-${i}`}
-                                    fill={
-                                        entry.name === 'Not Signed In'
-                                            ? '#d1d5db'
-                                            : ["#0F5BA4", "#FACC15", "#38BDF8"][i % 3]
+                <div style={{ maxWidth: '250px', margin: '1rem auto' }}>
+                    <Doughnut
+                        data={{
+                            labels: pieData.map(d => d.name),
+                            datasets: [{
+                                data: pieData.map(d => d.value),
+                                backgroundColor: pieData.map(d =>
+                                    d.name === 'Not Signed In' ? '#d1d5db' : (
+                                        d.name === 'Have a Go' ? '#FACC15' :
+                                            d.name === 'Linking' ? '#38BDF8' :
+                                                '#0F5BA4'
+                                    )
+                                ),
+                                borderWidth: 1
+                            }]
+                        }}
+                        options={{
+                            cutout: '70%',
+                            plugins: {
+                                legend: {
+                                    position: 'bottom',
+                                    labels: {
+                                        boxWidth: 12
                                     }
-                                />
-                            ))}
-                        </Pie>
-                    </PieChart>
-                </ResponsiveContainer>
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function (context) {
+                                            const total = pieData[context.dataIndex]?.total;
+                                            const value = context.formattedValue;
+                                            return `${context.label}: ${value}/${total}`;
+                                        }
+                                    }
+                                }
+                            }
+                        }}
+                    />
+                    <div style={{ textAlign: 'center', marginTop: '0.5rem', fontWeight: 'bold' }}>
+                        {totalSignedIn} / {youthList.length} Present
+                    </div>
+                </div>
             )}
 
             <div className="table-container">

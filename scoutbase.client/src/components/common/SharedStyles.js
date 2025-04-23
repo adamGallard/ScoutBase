@@ -600,3 +600,31 @@ export const Select = styled.select`
     box-shadow: 0 0 0 2px rgba(15, 91, 164, 0.25);
   }
 `;
+export const StyledTable = styled.table`
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  margin-top: 1rem;
+
+  th, td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+  }
+
+  tbody tr:nth-child(odd) {
+    background-color: #fafafa;
+  }
+
+  tbody tr:hover {
+    background-color: #f0f8ff;
+  }
+`;
