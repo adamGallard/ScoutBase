@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+﻿import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { logAuditEvent } from "@/helpers/auditHelper";
 
@@ -6,7 +6,7 @@ export function useTerrainUser() {
     const [userInfo, setUserInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const hasLoggedLogin = useRef(false);
+    const hasLoggedAudit = useRef(false);
 
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -55,15 +55,26 @@ export function useTerrainUser() {
 
                     setUserInfo(fullUserInfo);
 
-                    if (!hasLoggedLogin.current) {
-                        hasLoggedLogin.current = true;
-                        await logAuditEvent({
-                            userId: userRecord.id,
-                            groupId: userRecord.group_id,
-                            role: userRecord.role,
-                            action: 'admin_login',
-                            targetType: 'system'
-                        });
+                    const sessionAuditKey = `scoutbase-login-audit-${terrainUserId}`;
+
+                    // 🚫 Avoid multiple logs in dev/strict mode
+                    if (
+                        !sessionStorage.getItem(sessionAuditKey) &&
+                        !hasLoggedAudit.current
+                    ) {
+                        hasLoggedAudit.current = true;
+                        sessionStorage.setItem(sessionAuditKey, 'true');
+
+                        // Delay log to suppress duplicate in React Strict Mode
+                        setTimeout(() => {
+                            logAuditEvent({
+                                userId: userRecord.id,
+                                groupId: userRecord.group_id,
+                                role: userRecord.role,
+                                action: 'admin_login',
+                                targetType: 'system'
+                            });
+                        }, 250);
                     }
                 }
             } catch (err) {

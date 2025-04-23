@@ -192,10 +192,7 @@ export default function AttendanceView({
     const totalSignedIn = filteredAttendance.filter(r => r.signIn).length;
     const totalSignedOut = filteredAttendance.filter(r => r.signOut).length;
     useEffect(() => {
-        console.log("📅 Date changed:", selectedDate);
-        console.log("👥 Youth List:", youthList);
-        console.log("✅ Filtered Attendance:", filteredAttendance);
-        console.log("📊 Pie Data:", pieData);
+
     }, [selectedDate, youthList, filteredAttendance, pieData]);
 
     return (
