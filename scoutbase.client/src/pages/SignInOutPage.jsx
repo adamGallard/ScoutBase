@@ -26,8 +26,15 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { logAuditEvent } from '@/helpers/auditHelper';
 import ParentNoticeView from '@/components/ParentNoticeView';
 import LoggedInHeader from '@/components/common/LoggedInHeader';
-
+import { sections } from '@/components/common/Lookups.js';
 const useQuery = () => new URLSearchParams(useLocation().search);
+// Helpers to map between code and label
+    const codeToSectionLabel = code =>
+    sections.find(s => s.code === code)?.label ?? code;
+const sectionLabelToCode = label => {
+      const found = sections.find(s => s.label.toLowerCase() === label?.toLowerCase());
+      return found ? found.code : label;
+    };
 
 export default function SignInOutPage() {
     const query = useQuery();
@@ -56,7 +63,7 @@ export default function SignInOutPage() {
 
 
     const filteredYouthList = youthList.filter(
-        (m) => sectionFilter === '' || m.section === sectionFilter
+        (m) => sectionFilter === '' || sectionLabelToCode(m.section) === sectionFilter
     );
     const [forgottenPinName, setForgottenPinName] = useState('');
 
@@ -84,7 +91,12 @@ export default function SignInOutPage() {
     const handleSign = async (memberId, data) => {
         const { comment, timestamp, action, group_id } = data;
 
-        const eventDate = timestamp.split('T')[0]; // YYYY-MM-DD
+        const now = new Date();
+        const eventDate = [
+            now.getFullYear(),
+            String(now.getMonth() + 1).padStart(2, '0'),
+            String(now.getDate()).padStart(2, '0'),
+        ].join('-');
         const signedBy = matchingParent?.id || 'Unknown';
 
         const { error } = await supabase.from('attendance').insert([
@@ -307,11 +319,16 @@ export default function SignInOutPage() {
                                                     border: '1px solid #ccc',
                                                 }}
                                             >
-                                                <option value="">All</option>
-                                                <option value="Joeys">Joeys</option>
-                                                <option value="Cubs">Cubs</option>
-                                                <option value="Scouts">Scouts</option>
-                                                <option value="Venturers">Venturers</option>
+                                                                                          <option value="">All</option>
+                                                                                            {sections
+                                                                                                  .slice()
+                                                                                                  .sort((a, b) => a.order - b.order)
+                                                                                                  .map(({ code, label }) => (
+                                                                                                        <option key={code} value={code}>
+                                                                                                              {label}
+                                                                                                            </option>
+                                                                                                      ))
+                                                                                                }
                                             </select>
                                         </div>
 
@@ -347,7 +364,7 @@ export default function SignInOutPage() {
                                                     >
                                                         <div>
                                                             <div>{m.name}</div>
-                                                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{m.section}</div>
+                                                            <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>{codeToSectionLabel(m.section)}</div>
                                                         </div>
                                                         <div
                                                             style={{

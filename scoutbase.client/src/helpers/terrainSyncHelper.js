@@ -1,23 +1,24 @@
 ﻿import { supabase } from '../lib/supabaseClient';
+import { sections } from '@/components/common/Lookups.js';
 
-const sectionOrder = {
-    Joeys: 1,
-    Cubs: 2,
-    Scouts: 3,
-    Venturers: 4,
-    Rovers: 5
-};
+    // build a label→order map from your lookup
+    const sectionOrder = sections.reduce((acc, s) => {
+          acc[s.label] = s.order;
+          return acc;
+        }, {});
 
-function mapTerrainSection(section) {
-    const mapping = {
-        cub: 'Cubs',
-        joey: 'Joeys',
-        scout: 'Scouts',
-        venturer: 'Venturers',
-        rover: 'Rovers'
-    };
-    return mapping[section?.toLowerCase()] || section;
-}
+function mapTerrainSection(raw) {
+      if (!raw) return '';
+      const lc = raw.toLowerCase();
+      // try to match code (e.g. "joeys", "cubs") or singular prefix ("joey","cub")
+          let found = sections.find(
+                s => s.code === lc || s.code.startsWith(lc)
+              );
+     if (found) return found.label;
+      // fallback to matching label exactly
+          found = sections.find(s => s.label.toLowerCase() === lc);
+      return found ? found.label : raw;
+    }
 
 /**
  * Fetches youth members from Terrain for each unit
@@ -81,9 +82,11 @@ export async function getTerrainSyncPreview(token, groupId, units) {
     const toUpdate = [];
 
     for (const terrainY of terrainYouth) {
-        let match = existing.find(y =>
-            y.member_number?.trim() === terrainY.member_number
-        );
+                // the terrainY.section comes in as a raw string; normalize to your label
+                    terrainY.section = mapTerrainSection(terrainY.section);
+                           let match = existing.find(y =>
+                            y.member_number?.trim() === terrainY.member_number
+                        );
 
         if (!match) {
             match = existing.find(y =>
@@ -104,8 +107,8 @@ export async function getTerrainSyncPreview(token, groupId, units) {
                 match.section !== terrainY.section;
 
             if (hasChanges) {
-                const prevRank = sectionOrder[match.section];
-                const newRank = sectionOrder[terrainY.section];
+                const prevRank = sectionOrder[match.section] || 0;
+                const newRank = sectionOrder[terrainY.section] || 0;
 
                 if (prevRank && newRank && newRank < prevRank) {
                     console.warn(`🚫 Skipping backwards transition for ${match.name}: ${match.section} → ${terrainY.section}`);

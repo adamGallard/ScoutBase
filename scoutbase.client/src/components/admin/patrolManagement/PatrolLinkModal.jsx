@@ -75,7 +75,7 @@ export default function PatrolLinkModal({ patrolId, onClose, groupId, patrolName
 
     const unlinkedYouth = availableYouth
         .filter((y) => !y.patrol_id)
-        .filter((y) => y.membership_stage !== 'Retired')
+        .filter((y) => y.membership_stage !== 'retired')
         .filter((y) => y.name.toLowerCase().includes(search.toLowerCase()));
 
     const paginatedYouth = unlinkedYouth.slice(

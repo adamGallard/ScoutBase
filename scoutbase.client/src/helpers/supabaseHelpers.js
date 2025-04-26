@@ -1,6 +1,7 @@
 ﻿import { supabase } from '../lib/supabaseClient';
 import { logAuditEvent } from './auditHelper';
 import bcrypt from 'bcryptjs';
+import { sections, stages } from '@/components/common/Lookups.js';
 
 export async function getGroupBySlug(slug) {
     const { data, error } = await supabase
@@ -266,7 +267,7 @@ export async function handleYouthImportLogic(data, groupId, filename) {
 }
 
 function transformImportRows(rows, filename) {
-    const sectionOrder = ['Joeys', 'Cubs', 'Scouts', 'Venturers', 'Rovers'];
+    const sectionOrder = sections.map(s => s.label);
     const youthData = [];
     const transitionData = [];
     const parentData = [];
@@ -286,9 +287,10 @@ function transformImportRows(rows, filename) {
             const parsedDate = normalizeDate(row[field]);
 
             if (parsedDate) {
+                const investStage = stages.find(st => st.label === 'Invested');
                 transitions.push({
                     member_number,
-                    type: 'Invested',
+                    transition_type: investStage?.code ?? 'invested',
                     section,
                     date: parsedDate,
                     notes: `Imported from ${filename}`
@@ -300,9 +302,10 @@ function transformImportRows(rows, filename) {
             : null;
 
         if (resigned && transitions.length) {
+            const retiredStage = stages.find(st => st.label === 'Retired');
             transitions.push({
                 member_number,
-                type: 'Retired',
+                transition_type: retiredStage?.code ?? 'retired',
                 section: lastSection,
                 date: normalizeDate(resigned),
                 notes: `Imported from ${filename}`

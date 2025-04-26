@@ -3,6 +3,7 @@ import { PageWrapper, PageTitle, PrimaryButton, CompactSelect } from '@/componen
 import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
 import { FileCheck2 } from 'lucide-react';
+import { sections } from '@/components/common/Lookups.js';
 
 function ReportCard({ title, description, data, filename, fixPathBase }) {
     if (!data || data.length === 0) return null;
@@ -85,8 +86,11 @@ export default function DataQualityPage({ groupId }) {
         if (groupId) loadReports();
     }, [groupId]);
 
-    const filterBySection = (items) =>
-        sectionFilter === '' ? items : items.filter(item => item.section === sectionFilter);
+        // only filter items that actually have a `.section` field
+   const filterBySection = items =>
+              sectionFilter === ''
+                    ? items
+                : items.filter(item => item.section === sectionFilter);
 
     return (
         <PageWrapper>
@@ -99,13 +103,17 @@ export default function DataQualityPage({ groupId }) {
                 <CompactSelect
                     id="sectionFilter"
                     value={sectionFilter}
-                    onChange={(e) => setSectionFilter(e.target.value)}
+                    onChange={e => setSectionFilter(e.target.value)}
                 >
                     <option value="">All</option>
-                    <option value="Joeys">Joeys</option>
-                    <option value="Cubs">Cubs</option>
-                    <option value="Scouts">Scouts</option>
-                    <option value="Venturers">Venturers</option>
+                    {sections
+                        .sort((a, b) => a.order - b.order)
+                        .map(({ code, label }) => (
+                            <option key={code} value={code}>
+                                {label}
+                            </option>
+                        ))
+                    }
                 </CompactSelect>
             </div>
 

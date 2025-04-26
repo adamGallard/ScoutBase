@@ -4,7 +4,9 @@ import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-
+import { sections, stages } from '@/components/common/Lookups.js';
+const codeToLabel = code => sections.find(s => s.code === code)?.label ?? code;
+import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date util
 
 ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
@@ -20,7 +22,7 @@ export default function AttendanceView({
     const [pieData, setPieData] = useState([]);
 
     const isScopedToSection = ['Section Leader', 'Section User'].includes(userInfo?.role);
-    const [localSectionFilter, setLocalSectionFilter] = useState(userInfo?.section || '');
+    const [localSectionFilter, setLocalSectionFilter] = useState(userInfo?.section ?? '');
 
     const effectiveSectionFilter = isScopedToSection ? userInfo?.section : localSectionFilter;
 
@@ -34,15 +36,15 @@ export default function AttendanceView({
 
         if (!error && data) {
             const filtered = data.filter(
-                y => y.section === effectiveSectionFilter || y.linking_section === effectiveSectionFilter
-            );
+                          y =>
+                (!effectiveSectionFilter) ||
+                    y.section === effectiveSectionFilter ||
+                    y.linking_section === effectiveSectionFilter
+                );
             setYouthList(filtered);
         }
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
 
-    useEffect(() => {
-        fetchYouthList();
-    }, [fetchYouthList, selectedDate]);
 
     const fetchAttendance = useCallback(async () => {
         if (!activeGroupId) return;
@@ -72,46 +74,70 @@ export default function AttendanceView({
 
 
         const grouped = Object.values(byYouth);
-        const filtered = effectiveSectionFilter
-            ? grouped.filter((r) => r.youth.section === effectiveSectionFilter)
-            : grouped;
+               const filtered = effectiveSectionFilter
+                     ? grouped.filter(
+                              r =>
+                   r.youth.section === effectiveSectionFilter ||
+                        r.youth.linking_section === effectiveSectionFilter
+                    )
+              : grouped;
 
         setFilteredAttendance(filtered);
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
  
+
+    // on mount & whenever group/date/section change:
     useEffect(() => {
-        fetchAttendance();
-    }, [fetchAttendance, selectedDate]);
+        // 1) if we don't have a date yet, default to today
+        if (!selectedDate) {
+            onDateChange(getTodayDate());
+            return;     // wait for the new date before fetching
+        }
+
+        // 2) once we have both a group and a date, fetch everything
+        if (activeGroupId) {
+            fetchYouthList();
+            fetchAttendance();
+        }
+    }, [
+        activeGroupId,
+        selectedDate,
+        effectiveSectionFilter,
+        fetchYouthList,
+        fetchAttendance,
+        onDateChange
+    ]);
+
 
     useEffect(() => {
         if (!youthList.length) return;
 
-        // ⚠️ Reset chart if attendance is empty
+        // ⚠️ Reset chart if nobody’s signed in — but keep lookup colors
         if (!filteredAttendance.length) {
-            const stageSummary = {
-                Invested: 0,
-                'Have a Go': 0,
-                Linking: 0,
-            };
+            // 1. Count how many in each stage
+            const totalsByStage = youthList.reduce((acc, y) => {
+                acc[y.membership_stage] = (acc[y.membership_stage] || 0) + 1;
+                return acc;
+            }, {});
 
-            youthList.forEach((y) => {
-                const stage = y.membership_stage;
-                if (stage in stageSummary) {
-                    stageSummary[stage]++;
-                }
-            });
-
-            const pie = Object.entries(stageSummary).map(([stage, total]) => ({
-                name: stage,
-                value: 0,
-                total
+            // 2. Build pieData from your stages lookup (pulling in colors)
+            const pie = stages.map(({ code, label, color }) => ({
+                code,
+                name: label,
+                value: 0,                                   // nobody attended
+                total: totalsByStage[code] || 0,           // expected count
+                color
             }));
 
-            if (youthList.length > 0) {
+            // 3. Add “Not Signed In” slice if there are any expected
+            const totalExpected = pie.reduce((sum, s) => sum + s.total, 0);
+            if (totalExpected > 0) {
                 pie.push({
-                    name: "Not Signed In",
-                    value: youthList.length,
-                    total: youthList.length
+                    code: 'not_signed_in',
+                    name: 'Not Signed In',
+                    value: totalExpected,
+                    total: totalExpected,
+                    color: '#d1d5db'
                 });
             }
 
@@ -119,18 +145,19 @@ export default function AttendanceView({
             return;
         }
 
-        // 🧮 Standard pie data logic
+        // 🧮 Build pie data from membershipStages lookup
         const signedInIds = filteredAttendance
             .filter(r => r.signIn)
             .map(r => r.youth.id);
 
-        const stageSummary = {
-            Invested: { total: 0, attended: 0 },
-            'Have a Go': { total: 0, attended: 0 },
-            Linking: { total: 0, attended: 0 },
-        };
+        // Initialize a summary object keyed by stage.code
+        const stageSummary = stages.reduce((acc, { code }) => {
+            acc[code] = { total: 0, attended: 0 };
+            return acc;
+        }, {});
 
-        youthList.forEach((y) => {
+        // Tally totals & attended counts
+        youthList.forEach(y => {
             const stage = y.membership_stage;
             if (stageSummary[stage]) {
                 stageSummary[stage].total++;
@@ -140,26 +167,25 @@ export default function AttendanceView({
             }
         });
 
-        let totalSignedIn = 0;
-        const pie = [];
+        // Map into pie objects (including color from lookup)
+        const pie = stages.map(({ code, label, color }) => ({
+            code,
+            name: label,
+            value: stageSummary[code].attended,
+            total: stageSummary[code].total,
+            color
+        }));
 
-        Object.entries(stageSummary).forEach(([stage, { total, attended }]) => {
-            totalSignedIn += attended;
+        // Add "Not Signed In" slice if needed
+        const totalExpected = pie.reduce((sum, s) => sum + s.total, 0);
+        const totalSignedIn = pie.reduce((sum, s) => sum + s.value, 0);
+        if (totalExpected > totalSignedIn) {
             pie.push({
-                name: stage,
-                value: attended,
-                total,
-            });
-        });
-
-        const totalExpected = Object.values(stageSummary).reduce((sum, { total }) => sum + total, 0);
-        const notSignedIn = totalExpected - totalSignedIn;
-
-        if (notSignedIn > 0) {
-            pie.push({
+                code: 'not_signed_in',
                 name: 'Not Signed In',
-                value: notSignedIn,
-                total: totalExpected
+                value: totalExpected - totalSignedIn,
+                total: totalExpected,
+                color: '#d1d5db'
             });
         }
 
@@ -206,13 +232,20 @@ export default function AttendanceView({
                 {!isScopedToSection && (
                     <label>
                         Section:{' '}
-                        <select value={localSectionFilter} onChange={(e) => setLocalSectionFilter(e.target.value)}>
-                            <option value="">All</option>
-                            <option value="Joeys">Joeys</option>
-                            <option value="Cubs">Cubs</option>
-                            <option value="Scouts">Scouts</option>
-                            <option value="Venturers">Venturers</option>
-                        </select>
+                                       <select
+                  value={localSectionFilter}
+                                          onChange={e => setLocalSectionFilter(e.target.value)}
+                >
+                                         <option value="">All</option>
+                                          {sections
+                                                .sort((a, b) => a.order - b.order)
+                                               .map(({ code, label }) => (
+                                                      <option key={code} value={code}>
+                                                            {label}
+                                                          </option>
+                                                   ))
+                                             }
+                                        </select>
                     </label>
                 )}
 
@@ -242,13 +275,7 @@ export default function AttendanceView({
                             labels: pieData.map(d => d.name),
                             datasets: [{
                                 data: pieData.map(d => d.value),
-                                backgroundColor: pieData.map(d =>
-                                    d.name === 'Not Signed In' ? '#d1d5db' : (
-                                        d.name === 'Have a Go' ? '#FACC15' :
-                                            d.name === 'Linking' ? '#38BDF8' :
-                                                '#0F5BA4'
-                                    )
-                                ),
+                                backgroundColor: pieData.map(d => d.color),
                                 borderWidth: 1
                             }]
                         }}
@@ -297,7 +324,7 @@ export default function AttendanceView({
                             return (
                                 <tr key={youth.id}>
                                     <td>{youth.name}</td>
-                                    <td>{youth.section}</td>
+                                    <td>{codeToLabel(youth.section)}</td>
                                     <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
                                     <td>{signIn?.comment || ''}</td>
                                     <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>

@@ -7,12 +7,18 @@ import { exportToCSV } from '@/utils/csvUtils';
 import { PageWrapper, PrimaryButton, FilterRow, PageTitle, StyledTable, Select } from '@/components/common/SharedStyles';
 import { hasSectionAccess } from '@/utils/roleUtils';
 import { Repeat } from 'lucide-react';
-
+import { sections,stages } from '@/components/common/Lookups.js';
 export default function TransitionHistoryReport({ groupId, userInfo }) {
     const [data, setData] = useState([]);
     const [sectionFilter, setSectionFilter] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const canFilterBySection = userInfo?.role === 'Group Leader' || hasSectionAccess(userInfo);
+    const codeToLabel = code =>
+        sections.find(s => s.code === code)?.label ?? code;
+    const StageToLabel = code =>
+        stages.find(s => s.code === code)?.label ?? code;
+
+
     useEffect(() => {
         const fetchData = async () => {
             const transitions = await fetchTransitionHistory(groupId, sectionFilter, userInfo);
@@ -61,10 +67,15 @@ export default function TransitionHistoryReport({ groupId, userInfo }) {
                                 style={{ minWidth: '140px' }}
                             >
                                 <option value="">All</option>
-                                <option value="Joeys">Joeys</option>
-                                <option value="Cubs">Cubs</option>
-                                <option value="Scouts">Scouts</option>
-                                <option value="Venturers">Venturers</option>
+                                                               {sections
+                                                                      .slice()
+                                                                      .sort((a, b) => a.order - b.order)
+                                                                      .map(({ code, label }) => (
+                                                                            <option key={code} value={code}>
+                                                                                  {label}
+                                                                                </option>
+                                                                          ))
+                                                                    }
                             </Select>
                         </div>
                     )}
@@ -111,8 +122,8 @@ export default function TransitionHistoryReport({ groupId, userInfo }) {
                         <tbody>
                             {transitions.map((t) => (
                                 <tr key={t.id}>
-                                    <td>{t.section}</td>
-                                    <td>{t.transition_type}</td>
+                                    <td>{codeToLabel(t.section)}</td>
+                                    <td>{StageToLabel(t.transition_type)}</td>
                                     <td>{new Date(t.date).toLocaleDateString()}</td>
                                     <td>{t.notes || '-'}</td>
                                 </tr>

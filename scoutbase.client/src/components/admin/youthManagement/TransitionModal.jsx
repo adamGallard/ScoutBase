@@ -1,20 +1,38 @@
-﻿import React, { useEffect, useState } from 'react';
-import { fetchTransitionsForYouth, addYouthTransition, deleteYouthTransition } from '../../../helpers/supabaseHelpers';
+﻿// src/components/admin/TransitionModal.jsx
+
+import React, { useEffect, useState } from 'react';
+import {
+    fetchTransitionsForYouth,
+    addYouthTransition,
+    deleteYouthTransition
+} from '@/helpers/supabaseHelpers';
 import { PrimaryButton } from '@/components/common/SharedStyles';
 import { formatDate } from '@/utils/dateUtils';
-export default function TransitionModal({ youth, onClose, isMobile, refreshYouth }) {
+import { sections, stages } from '@/components/common/Lookups.js';
+
+// Helpers to map code → human-friendly label
+const codeToSectionLabel = code =>
+    sections.find(s => s.code === code)?.label ?? code;
+
+const codeToStageLabel = code =>
+    stages.find(s => s.code === code)?.label ?? code;
+
+export default function TransitionModal({
+    youth,
+    onClose,
+    isMobile,
+    refreshYouth
+}) {
     const [transitions, setTransitions] = useState([]);
     const [form, setForm] = useState({
-        transition_type: 'section_change',
+        transition_type: '',
         section: '',
         transition_date: '',
         notes: '',
     });
 
     useEffect(() => {
-        if (youth?.id) {
-            loadTransitions();
-        }
+        if (youth?.id) loadTransitions();
     }, [youth]);
 
     const loadTransitions = async () => {
@@ -25,12 +43,19 @@ export default function TransitionModal({ youth, onClose, isMobile, refreshYouth
     const handleSubmit = async () => {
         const { transition_type, section, transition_date, notes } = form;
 
-        if ((transition_type === 'Linking' || transition_type === 'Invested') && !section) {
+        // If you still want to enforce “section required” for certain transitions,
+        // do that here. But the dropdown will always be visible.
+        if (
+            (transition_type === 'Linking' ||
+                transition_type === 'Invested' ||
+                transition_type === 'section_change') &&
+            !section
+        ) {
             alert('Please select a section for this transition.');
             return;
         }
 
-        const { data, error } = await addYouthTransition({
+        const { error } = await addYouthTransition({
             youth_id: youth.id,
             transition_type,
             section,
@@ -44,91 +69,106 @@ export default function TransitionModal({ youth, onClose, isMobile, refreshYouth
         }
 
         setForm({
-            transition_type: 'section_change',
+            transition_type: '',
             section: '',
             transition_date: '',
-            notes: ''
+            notes: '',
         });
-
         await loadTransitions();
-        if (refreshYouth) refreshYouth(); // to re-pull updated youth info
+        if (refreshYouth) refreshYouth();
     };
 
-
-    const handleDelete = async (id) => {
+    const handleDelete = async id => {
         await deleteYouthTransition(id);
         loadTransitions();
     };
-
 
     return (
         <div style={modalOverlayStyle}>
             <div style={modalContentStyle}>
                 <h3>Transitions for {youth.name}</h3>
+
+                {/* Existing transitions list */}
                 <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
-                    {transitions.map((t) => (
+                    {transitions.map(t => (
                         <div key={t.id} style={{ marginBottom: '0.5rem' }}>
-                            <strong>{t.transition_type}</strong>
-                            {t.section ? ` → ${t.section}` : ''} on {formatDate(t.transition_date)}
+                            <strong>{codeToStageLabel(t.transition_type)}</strong>
+                            {t.section ? ` → ${codeToSectionLabel(t.section)}` : ''} on {formatDate(t.transition_date)}
                             {t.notes && <> — {t.notes}</>}
-                            <button onClick={() => handleDelete(t.id)} style={{ marginLeft: '1rem' }}>Delete</button>
+                            <button
+                                onClick={() => handleDelete(t.id)}
+                                style={{ marginLeft: '1rem' }}
+                            >
+                                Delete
+                            </button>
                         </div>
                     ))}
                 </div>
 
+                {/* Form: Transition + Section + Date + Notes + Add */}
                 <div style={{ marginBottom: '1rem' }}>
+                    {/* Transition dropdown */}
                     <select
                         value={form.transition_type}
-                        onChange={(e) => setForm({ ...form, transition_type: e.target.value })}
+                        onChange={e => setForm({ ...form, transition_type: e.target.value })}
                     >
-                        <option value="">Select</option>
-                        <option value="Have a Go">Have a Go</option>
-                        <option value="Linking">Linking</option>
-                        <option value="Invested">Invested</option>
-                        <option value="Retired">Retired</option>
+                        <option value="">Select transition</option>
+                        {stages.map(({ code, label }) => (
+                            <option key={code} value={code}>{label}</option>
+                        ))}
                     </select>
 
-                    {form.transition_type !== 'left' && (
-                        <select
-                            value={form.section}
-                            onChange={(e) => setForm({ ...form, section: e.target.value })}
-                            style={{ marginLeft: '0.5rem' }}
-                        >
-                            <option value="">Select</option>
-                            <option value="Joeys">Joeys</option>
-                            <option value="Cubs">Cubs</option>
-                            <option value="Scouts">Scouts</option>
-                            <option value="Venturers">Venturers</option>
-                        </select>
-                    )}
+                    {/* Always-visible Section dropdown */}
+                    <select
+                        value={form.section}
+                        onChange={e => setForm({ ...form, section: e.target.value })}
+                        style={{ marginLeft: '0.5rem' }}
+                    >
+                        <option value="">Select section</option>
+                        {sections
+                            .slice()
+                            .sort((a, b) => a.order - b.order)
+                            .map(({ code, label }) => (
+                                <option key={code} value={code}>{label}</option>
+                            ))
+                        }
+                    </select>
 
+                    {/* Date picker */}
                     <input
                         type="date"
                         value={form.transition_date}
-                        onChange={(e) => setForm({ ...form, transition_date: e.target.value })}
+                        onChange={e => setForm({ ...form, transition_date: e.target.value })}
                         style={{ marginLeft: '0.5rem' }}
                     />
 
+                    {/* Notes */}
                     <input
                         type="text"
                         placeholder="Notes"
                         value={form.notes}
-                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                        onChange={e => setForm({ ...form, notes: e.target.value })}
                         style={{ marginLeft: '0.5rem', width: '150px' }}
                     />
 
-                    <PrimaryButton isMobile={isMobile} onClick={handleSubmit} style={{ marginLeft: '0.5rem' }}>
+                    <PrimaryButton
+                        isMobile={isMobile}
+                        onClick={handleSubmit}
+                        style={{ marginLeft: '0.5rem' }}
+                    >
                         Add
                     </PrimaryButton>
                 </div>
 
-                <PrimaryButton isMobile={isMobile} onClick={onClose}>Close</PrimaryButton>
+                <PrimaryButton isMobile={isMobile} onClick={onClose}>
+                    Close
+                </PrimaryButton>
             </div>
         </div>
     );
 }
 
-// Simple modal styling
+// Modal backdrop
 const modalOverlayStyle = {
     position: 'fixed',
     top: 0, left: 0, right: 0, bottom: 0,
@@ -139,6 +179,7 @@ const modalOverlayStyle = {
     zIndex: 999
 };
 
+// Modal box
 const modalContentStyle = {
     backgroundColor: 'white',
     borderRadius: '8px',

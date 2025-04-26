@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
 import { PrimaryButton,PageTitle } from '@/components/common/SharedStyles';
 import { Mail } from 'lucide-react';  
+import { sections } from '@/components/common/Lookups.js';
 
 export default function ReportParentEmails({ groupId }) {
     const [rows, setRows] = useState([]);
@@ -12,7 +13,13 @@ export default function ReportParentEmails({ groupId }) {
     const [rawData, setRawData] = useState([]);
     const [allYouth, setAllYouth] = useState([]);
 
-    const sections = ['All', 'Joeys', 'Cubs', 'Scouts', 'Venturers'];
+    const sectionOptions = [
+        { code: '', label: 'All' },
+        // sort by your defined order, then spread in the rest
+        ...sections
+            .slice()                       // clone so you don’t mutate the original
+            .sort((a, b) => a.order - b.order)
+    ];
 
     // Load parent_youth links and youth table
     useEffect(() => {
@@ -114,8 +121,10 @@ export default function ReportParentEmails({ groupId }) {
                     onChange={(e) => setSectionFilter(e.target.value)}
                     style={{ padding: '0.5rem', borderRadius: '6px', border: '1px solid #ccc' }}
                 >
-                    {sections.map(sec => (
-                        <option key={sec} value={sec}>{sec}</option>
+                    {sectionOptions.map(({ code, label }) => (
+                        <option key={code} value={code}>
+                            {label}
+                        </option>
                     ))}
                 </select>
             </div>

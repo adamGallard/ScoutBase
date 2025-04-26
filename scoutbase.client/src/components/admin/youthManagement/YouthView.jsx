@@ -18,6 +18,24 @@ import YouthDetailsModal from './YouthDetailsModal';
 import ImportYouthModal from './ImportYouthModal';
 import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 import { logAuditEvent } from '@/helpers/auditHelper';
+import { sections, stages } from '@/components/common/Lookups.js';
+// Helpers to map code → label
+    const codeToSectionLabel = code =>
+          sections.find(s => s.code === code)?.label ?? code;
+const codeToStageLabel = code =>
+      stages.find(s => s.code === code)?.label ?? code;
+const sectionLabelToCode = val => {
+    if (!val) return '';
+    // try matching code first
+    let s = sections.find(s => s.code === val);
+    if (s) return s.code;
+    // then try matching label (case‐insensitive)
+    s = sections.find(s => s.label.toLowerCase() === val.toLowerCase());
+    if (s) return s.code;
+    // fallback: return the raw value
+    return val;
+};
+
 export default function YouthView({ groupId, userInfo }) {
 
     const [addError, setAddError] = useState('');
@@ -212,20 +230,34 @@ export default function YouthView({ groupId, userInfo }) {
         }
     };
 
-    const filteredList = [...youthList]
-        .filter((y) => {
-            const matchesSection = userInfo?.role === 'Section Leader'
-                ? y.section === userInfo.section || y.linking_section === userInfo.section
-                : (!sectionFilter || y.section === sectionFilter || y.linking_section === sectionFilter);
-
-            const matchesSearch = !filter || y.name.toLowerCase().includes(filter);
-            const matchesStage = !stageFilter
-                ? y.membership_stage !== 'Retired'
-                : y.membership_stage === stageFilter;
-
-            return matchesSection && matchesSearch && matchesStage;
-        })
-        .sort((a, b) => a.name.localeCompare(b.name));
+    const filteredList = youthList
+              .filter(y => {
+                    // normalize both stored fields and the selected filter
+                  const secCode = sectionLabelToCode(y.section);
+                  const linkCode = sectionLabelToCode(y.linking_section);
+                  const filterCode = sectionLabelToCode(sectionFilter);
+            
+                       let matchesSection;
+                    if (userInfo?.role === 'Section Leader') {
+                        const leaderCode = (userInfo.section);
+                          matchesSection = !leaderCode
+                                || secCode === leaderCode
+                                || linkCode === leaderCode;
+                        } else {
+                          matchesSection = !filterCode
+                               || secCode === filterCode
+                                || linkCode === filterCode;
+                        }
+                  // Name search
+                          const matchesSearch = !filter
+                               || y.name.toLowerCase().includes(filter);
+                          // Stage filter (you could do a similar helper if needed)
+                              const matchesStage = !stageFilter
+                                    ? y.membership_stage !== 'retired'
+                                    : y.membership_stage === stageFilter;
+                          return matchesSection && matchesSearch && matchesStage;
+                       })
+              .sort((a, b) => a.name.localeCompare(b.name));
 
     const paginatedList = filteredList.slice(
         (currentPage - 1) * itemsPerPage,
@@ -281,10 +313,15 @@ export default function YouthView({ groupId, userInfo }) {
                         style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                     >
                         <option value="">All Sections</option>
-                        <option value="Joeys">Joeys</option>
-                        <option value="Cubs">Cubs</option>
-                        <option value="Scouts">Scouts</option>
-                        <option value="Venturers">Venturers</option>
+                        {sections
+                            .slice()
+                            .sort((a, b) => a.order - b.order)
+                            .map(({ code, label }) => (
+                                <option key={code} value={code}>
+                                    {label}
+                                </option>
+                            ))
+                        }
                     </select>
                 )}
 
@@ -294,10 +331,15 @@ export default function YouthView({ groupId, userInfo }) {
                     style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                 >
                     <option value="">All Stages</option>
-                    <option value="Have a Go">Have a Go</option>
-                    <option value="Linking">Linking</option>
-                    <option value="Invested">Invested</option>
-                    <option value="Retired">Retired</option>
+                    {stages
+                                             .slice()
+                                              .sort((a, b) => a.order - b.order)
+                                              .map(({ code, label }) => (
+                                                    <option key={code} value={code}>
+                                                          {label}
+                                                        </option>
+                                                  ))
+                                            }
                 </select>
                 <button
                     onClick={() => {
@@ -352,12 +394,12 @@ export default function YouthView({ groupId, userInfo }) {
                             <td>
                                 {editingYouthId === y.id ? (
                                     <span>{youthForm.section}</span>
-                                ) : y.section}
+                                ) :  codeToSectionLabel(y.section)}
                             </td>
                             <td>
                                 {editingYouthId === y.id ? (
                                     <span>{youthForm.membership_stage}</span>
-                                ) : (y.membership_stage )}
+                                ) : codeToStageLabel(y.membership_stage )}
                             </td>
                             <td style={{ display: 'flex', gap: '0.5rem' }}>
                                 {editingYouthId === y.id ? (
