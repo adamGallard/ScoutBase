@@ -2,7 +2,7 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2, CalendarClock
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -76,6 +76,11 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             key: 'notices',
             label: 'Notices',
             icon: <Megaphone size={16} />
+        },
+        can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
+            key: 'message-parents',
+            label: 'Messages',
+            icon: <MessageCircle size={16} />
         },
         can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
             key: 'qr-code',

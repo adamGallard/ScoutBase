@@ -26,6 +26,7 @@
     "recharts": "^2.15.2",
     "resend": "^4.3.0",
     "styled-components": "^6.1.17",
+    "twilio": "^5.5.2",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
   "devDependencies": {

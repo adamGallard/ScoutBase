@@ -36,8 +36,9 @@ import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashbo
 import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
 import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
-import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; // or your actual path
+import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; 
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
+import MessageParentsPage from '../components/admin/MessageParentsPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -149,6 +150,8 @@ export default function AdminPage() {
                         }}
                     />
                 );
+            case 'message-parents':
+                return <MessageParentsPage groupId={activeGroupId} />;
             case 'add-youth':
                 return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':
