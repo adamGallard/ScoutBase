@@ -169,7 +169,6 @@ export default function AdminDashboard() {
                 parentsMissingContact: parentsMissingContact.length
             });
         }
-        console.log("⛳ stats:", stats);
         fetchStats();
     }, [userInfo, isSectionLeader]);
 
