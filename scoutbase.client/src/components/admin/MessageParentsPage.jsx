@@ -13,6 +13,19 @@ import {
 const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label ?? code;
 
+function toE164(raw) {
+    // remove everything but digits
+    let digits = raw.replace(/\D/g, '');
+    // if it starts with 0, swap for country code 61
+    if (digits.startsWith('0')) {
+        digits = '61' + digits.slice(1);
+    }
+    return '+' + digits;
+}
+function isE164(num) {
+    return /^\+[1-9]\d{1,14}$/.test(num);
+}
+
 export default function MessageParentsPage({ groupId }) {
     const [sectionFilter, setSectionFilter] = useState('');
     const [parentsList, setParentsList] = useState([]);
@@ -86,24 +99,37 @@ export default function MessageParentsPage({ groupId }) {
 
     const handleSend = async () => {
         if (!message || selectedParents.length === 0) return;
-        setSending(true);
 
+        // build & format numbers
         const toNums = parentsList
             .filter(p => selectedParents.includes(p.id))
-            .map(p => p.phone);
+            .map(p => toE164(p.phone))
+            .filter(isE164);
 
+        if (toNums.length === 0) {
+            return alert('No valid phone numbers to send.');
+        }
+
+        setSending(true);
+        try {
             await Promise.all(
-                 toNums.map(to =>
-                        fetch('/api/send-sms', {
- method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ to, body: message })
-                        })
-          )
-        );
-
-        setSending(false);
-        alert('Messages sent!');
+                toNums.map(to =>
+                    fetch('/api/send-sms', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to, body: message })
+                    }).then(res => {
+                        if (!res.ok) throw new Error(`Failed to send to ${to}: ${res.statusText}`);
+                    })
+                )
+            );
+            alert('Messages sent successfully!');
+        } catch (err) {
+            console.error('SMS send error:', err);
+            alert(`Error sending SMS: ${err.message}`);
+        } finally {
+            setSending(false);
+        }
     };
 
     return (
