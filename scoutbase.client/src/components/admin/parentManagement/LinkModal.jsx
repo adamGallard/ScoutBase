@@ -1,8 +1,12 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
+import { sections } from '@/components/common/Lookups.js';
 
+// helper to map section code → label
+   const codeToSectionLabel = code =>
+    sections.find(s => s.code === code)?.label ?? code;
 export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const [linkedYouth, setLinkedYouth] = useState([]);
     const [availableYouth, setAvailableYouth] = useState([]);
@@ -126,7 +130,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                         >
                             {/* 1. Name */}
                             <span>
-                                {youth.name} ({youth.section})
+                                {youth.name} ({codeToSectionLabel(youth.section)})
                             </span>
 
                             {/* 2. Relationship textbox */}
@@ -197,7 +201,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                                     marginBottom: '0.2rem'
                                 }}
                             >
-                                <span>{youth.name} ({youth.section})</span>
+                                <span>{youth.name} ({codeToSectionLabel(youth.section)})</span>
                                 <input
                                     type="text"
                                     placeholder="Relationship"
