@@ -92,12 +92,14 @@ export default function MessageParentsPage({ groupId }) {
             .filter(p => selectedParents.includes(p.id))
             .map(p => p.phone);
 
-        await Promise.all(
-            toNums.map(to =>
-                supabase.functions.invoke('send-sms', {
-                    body: { to, body: message }
-                })
-            )
+            await Promise.all(
+                 toNums.map(to =>
+                        fetch('/api/send-sms', {
+ method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ to, body: message })
+                        })
+          )
         );
 
         setSending(false);
