@@ -49,7 +49,7 @@ import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
-
+import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
 
 
 export default function AdminPage() {
@@ -130,6 +130,10 @@ export default function AdminPage() {
                         userInfo={userInfo}
                     />
                 );
+            case 'report-attendance-period':
+                return <ReportAttendancePeriod groupId={activeGroupId} userInfo={userInfo} />;
+
+
             case 'add-parent':
                 return (
                     <ParentView

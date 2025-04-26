@@ -2,7 +2,7 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2, CalendarClock
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -59,6 +59,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             expandable: true,
             children: [
                 { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
+				{ key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
                 { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
