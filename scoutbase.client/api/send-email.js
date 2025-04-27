@@ -16,7 +16,9 @@ export default async function handler(req, res) {
     try {
         await resend.emails.send({
             from: 'ScoutBase Admin <noreply@scoutbase.app>',
-            bcc:to,
+            to: 'noreply@scoutbase.app',
+            bcc: to,
+            reply_to: process.env.DEFAULT_REPLY_TO || 'cubs@belmont.scoutsqld.com.au',
             subject,
             html: message.replace(/\n/g, '<br>'),
         });

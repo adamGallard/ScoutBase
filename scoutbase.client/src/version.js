@@ -1,5 +1,5 @@
 // version.js
 export const appVersion = {
-	version: '0.9.10',
+	version: '0.10.1',
 
 };
