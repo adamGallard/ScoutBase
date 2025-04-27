@@ -38,7 +38,8 @@ import AuditLogViewer from '@/components/admin/AuditLogViewer';
 import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
 import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; 
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
-import MessageParentsPage from '../components/admin/MessageParentsPage';
+import MessageSMSPage from '@/components/admin/MessageSMSPage';
+import MessageEmailPage from '@//components/admin/MessageEmailPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -150,8 +151,10 @@ export default function AdminPage() {
                         }}
                     />
                 );
-            case 'message-parents':
-                return <MessageParentsPage groupId={activeGroupId} />;
+            case 'message-sms':
+                return <MessageSMSPage groupId={activeGroupId} />;
+            case 'message-email':
+                return <MessageEmailPage groupId={activeGroupId} />;
             case 'add-youth':
                 return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':

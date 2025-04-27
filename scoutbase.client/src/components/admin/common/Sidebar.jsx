@@ -2,7 +2,8 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone,
+    FolderSymlink, FileCheck2, CalendarClock, MessageCircle, MessageSquare
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -71,17 +72,20 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             ]
         },
 
-        // 🛠 Tools / Utilities
+        // Messaging
         can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
-            key: 'notices',
-            label: 'Notices',
-            icon: <Megaphone size={16} />
-        },
-        can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
-            key: 'message-parents',
+            key: 'Messages-group',
             label: 'Messages',
-            icon: <MessageCircle size={16} />
+            icon: <MessageSquare size={16} />,
+            expandable: true,
+            children: [
+                { key: 'notices', label: 'Notices', icon: <Megaphone size={16} /> },
+                { key: 'message-sms', label: 'SMS', icon: <MessageCircle size={16} /> },
+                { key: 'message-email', label: 'Email', icon: <Mail size={16} /> }
+            ]
         },
+                
+
         can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
             key: 'qr-code',
             label: 'QR Code',
