@@ -15,12 +15,8 @@ const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label ?? code;
 
 function toE164(raw) {
-    // remove everything but digits
     let digits = raw.replace(/\D/g, '');
-    // if it starts with 0, swap for country code 61
-    if (digits.startsWith('0')) {
-        digits = '61' + digits.slice(1);
-    }
+    if (digits.startsWith('0')) digits = '61' + digits.slice(1);
     return '+' + digits;
 }
 function isE164(num) {
@@ -29,6 +25,7 @@ function isE164(num) {
 
 export default function MessageParentsPage({ groupId }) {
     const [sectionFilter, setSectionFilter] = useState('');
+    const [nameFilter, setNameFilter] = useState('');
     const [parentsList, setParentsList] = useState([]);
     const [selectedParents, setSelectedParents] = useState([]);
     const [message, setMessage] = useState('');
@@ -40,7 +37,7 @@ export default function MessageParentsPage({ groupId }) {
         setLoading(true);
 
         (async () => {
-            let query = supabase
+            const { data, error } = await supabase
                 .from('parent_youth')
                 .select(`
           parent:parent_id (
@@ -50,20 +47,13 @@ export default function MessageParentsPage({ groupId }) {
             group_id
           ),
           youth:youth_id (
-            section
+            section,
+            linking_section
           )
         `)
                 .eq('is_primary', true)
-                .eq('parent.group_id', groupId);
-
-            if (sectionFilter) {
-                query = query.eq('youth.section', sectionFilter);
-            }
-
-            const { data, error } = await query.order('name', {
-                foreignTable: 'parent',
-                ascending: true
-            });
+                .eq('parent.group_id', groupId)
+                .order('name', { foreignTable: 'parent', ascending: true });
 
             setLoading(false);
             if (error) {
@@ -71,19 +61,34 @@ export default function MessageParentsPage({ groupId }) {
                 return;
             }
 
-                  const dedup = {};
-                  (data || []).forEach(r => {
-                        const p = r.parent;
-                        // some rows may lack the youth relation—safely default to empty
-                            const sec = r.youth?.section ?? '';
-                        dedup[p.id] = { ...p, section: sec };
-             });
-          // alphabetical by parent name
-              const sortedParents = Object.values(dedup)
-                   .sort((a, b) => a.name.localeCompare(b.name));
-          setParentsList(sortedParents);
+            // dedupe & collect both section fields
+            const dedup = {};
+            data.forEach(r => {
+                const p = r.parent;
+                const sec1 = r.youth?.section ?? '';
+                const sec2 = r.youth?.linking_section ?? '';
+                if (!dedup[p.id]) {
+                    dedup[p.id] = { ...p, sections: [] };
+                }
+                if (sec1 && !dedup[p.id].sections.includes(sec1)) {
+                    dedup[p.id].sections.push(sec1);
+                }
+                if (sec2 && !dedup[p.id].sections.includes(sec2)) {
+                    dedup[p.id].sections.push(sec2);
+                }
+            });
+
+            setParentsList(
+                Object.values(dedup).sort((a, b) => a.name.localeCompare(b.name))
+            );
         })();
-    }, [groupId, sectionFilter]);
+    }, [groupId]);
+
+    // filter by section (including linking_section) and by name substring
+    const displayedParents = parentsList.filter(p =>
+        (!sectionFilter || p.sections.includes(sectionFilter)) &&
+        p.name.toLowerCase().includes(nameFilter.toLowerCase())
+    );
 
     const toggleParent = id =>
         setSelectedParents(prev =>
@@ -91,24 +96,24 @@ export default function MessageParentsPage({ groupId }) {
         );
 
     const handleSelectAll = () => {
-        if (selectedParents.length === parentsList.length) {
+        if (selectedParents.length === displayedParents.length) {
             setSelectedParents([]);
         } else {
-            setSelectedParents(parentsList.map(p => p.id));
+            setSelectedParents(displayedParents.map(p => p.id));
         }
     };
 
     const handleSend = async () => {
         if (!message || selectedParents.length === 0) return;
 
-        // build & format numbers
-        const toNums = parentsList
+        const toNums = displayedParents
             .filter(p => selectedParents.includes(p.id))
             .map(p => toE164(p.phone))
             .filter(isE164);
 
         if (toNums.length === 0) {
-            return alert('No valid phone numbers to send.');
+            alert('No valid phone numbers to send.');
+            return;
         }
 
         setSending(true);
@@ -118,9 +123,9 @@ export default function MessageParentsPage({ groupId }) {
                     fetch('/api/send-sms', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ to, body: message })
+                        body: JSON.stringify({ to, body: message }),
                     }).then(res => {
-                        if (!res.ok) throw new Error(`Failed to send to ${to}: ${res.statusText}`);
+                        if (!res.ok) throw new Error(`Failed to send to ${to}`);
                     })
                 )
             );
@@ -134,26 +139,32 @@ export default function MessageParentsPage({ groupId }) {
     };
 
     return (
-        <div className="content-box">
-            <PageTitle><MessageCircle size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }}/> Send SMS to Parents</PageTitle>
+        <PageWrapper>
+            <PageTitle>
+                <MessageCircle size={25} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                Send SMS to Parents
+            </PageTitle>
+
             <section id="sms-page-instructions">
-                <p><strong>Send a text message to parents.</strong> Filter by section (or leave “All”), tick the boxes next to each parent, type your message, then click <code>Send</code> to deliver via SMS.</p>
+                <p>
+                    <strong>Send a text message to parents.</strong> Filter by section or name, tick recipients,
+                    type your message, then click <code>Send</code> to deliver via SMS.
+                </p>
             </section>
+
             <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <label>
                     Section:
                     <CompactSelect
                         value={sectionFilter}
                         onChange={e => setSectionFilter(e.target.value)}
-                        style={{ marginLeft: '0.5rem' }}
+                        style={{ marginLeft: 8 }}
                     >
                         <option value="">All</option>
                         {sections
                             .sort((a, b) => a.order - b.order)
                             .map(({ code, label }) => (
-                                <option key={code} value={code}>
-                                    {label}
-                                </option>
+                                <option key={code} value={code}>{label}</option>
                             ))}
                     </CompactSelect>
                 </label>
@@ -170,36 +181,48 @@ export default function MessageParentsPage({ groupId }) {
                         style={{
                             width: '100%',
                             padding: '0.5rem',
-                            borderRadius: '4px',
+                            borderRadius: 4,
                             border: '1px solid #ccc',
-                            resize: 'vertical'
+                            resize: 'vertical',
                         }}
                     />
                     <PrimaryButton
                         onClick={handleSend}
-                        disabled={sending || !message || selectedParents.length === 0}
+                        disabled={sending || !message || !selectedParents.length}
                         style={{ marginTop: '0.5rem' }}
                     >
                         {sending ? 'Sending…' : `Send to ${selectedParents.length} Parent(s)`}
                     </PrimaryButton>
                 </div>
 
-                {/* Right: parents list + select all */}
-                <div style={{ flex: '1 1 60%', maxHeight: '600px', overflowY: 'auto' }}>
+                {/* Right: parent list + filters + select all */}
+                <div style={{ flex: '1 1 60%', maxHeight: 600, overflowY: 'auto' }}>
+                    {/* Name filter */}
+                    <input
+                        type="text"
+                        placeholder="Filter by name…"
+                        value={nameFilter}
+                        onChange={e => setNameFilter(e.target.value)}
+                        style={{
+                            width: '80%',
+                            padding: '0.5rem',
+                            marginBottom: '0.5rem',
+                            borderRadius: 4,
+                            border: '1px solid #ccc',
+                        }}
+                    />
+
                     <div style={{ marginBottom: '0.5rem' }}>
-                        <PrimaryButton
-                            onClick={handleSelectAll}
-                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
-                        >
-                            {selectedParents.length === parentsList.length ? 'Deselect All' : 'Select All'}
+                        <PrimaryButton onClick={handleSelectAll} style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}>
+                            {selectedParents.length === displayedParents.length ? 'Deselect All' : 'Select All'}
                         </PrimaryButton>
                     </div>
 
                     {loading ? (
                         <p>Loading parents…</p>
                     ) : (
-                        <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                            {parentsList.map(parent => (
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            {displayedParents.map(parent => (
                                 <li key={parent.id} style={{ marginBottom: '0.5rem' }}>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <input
@@ -208,16 +231,16 @@ export default function MessageParentsPage({ groupId }) {
                                             onChange={() => toggleParent(parent.id)}
                                         />
                                         <span>
-                                            {parent.name} ({codeToSectionLabel(parent.section)}) – {parent.phone}
+                                            {parent.name} – {parent.phone}
                                         </span>
                                     </label>
                                 </li>
                             ))}
-                            {parentsList.length === 0 && <p>No primary-contact parents found.</p>}
+                            {displayedParents.length === 0 && <p>No matching parents found.</p>}
                         </ul>
                     )}
                 </div>
             </div>
-        </div>
+        </PageWrapper>
     );
 }
