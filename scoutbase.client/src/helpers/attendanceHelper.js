@@ -37,7 +37,7 @@ export const fetchYouthByParentId = async (parentId) => {
 };
 
 
-export async function fetchLatestAttendanceForYouthList(supabase, youthList, groupId) {
+export async function fetchLatestAttendanceForYouthList(youthList, groupId) {
     const today = new Date().toISOString().split("T")[0];
     const statuses = {};
 

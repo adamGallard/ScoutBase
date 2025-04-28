@@ -1,3 +1,5 @@
+﻿// src/components/parent/HeaderLinkAdmin.jsx
+
 import { useEffect, useState } from 'react';
 import {
     PageTitle,
@@ -11,7 +13,11 @@ import { Trash } from 'lucide-react';
 
 export default function HeaderLinkAdmin({ groupId }) {
     const [links, setLinks] = useState([]);
-    const [form, setForm] = useState({ label: '', url: '' });
+    const [form, setForm] = useState({
+        title: '',
+        url: '',
+        description: ''
+    });
 
     useEffect(() => {
         if (groupId) fetchLinks();
@@ -19,8 +25,8 @@ export default function HeaderLinkAdmin({ groupId }) {
 
     const fetchLinks = async () => {
         const { data, error } = await supabase
-            .from('header_buttons')
-            .select('*')
+            .from('parent_links')
+            .select('id,group_id,title,url,description')
             .eq('group_id', groupId)
             .order('created_at', { ascending: true });
 
@@ -28,57 +34,77 @@ export default function HeaderLinkAdmin({ groupId }) {
     };
 
     const addLink = async () => {
-        if (!form.label || !form.url) return;
+        if (!form.title || !form.url) return;
 
-        const { error } = await supabase.from('header_buttons').insert([{
-            group_id: groupId,
-            label: form.label,
-            url: form.url,
-        }]);
+        const { data, error } = await supabase
+            .from('parent_links')
+            .insert([{
+                group_id: groupId,
+                title: form.title,
+                url: form.url,
+                description: form.description,
+            }])
+            .select('id,group_id,title,url,description');
 
-        if (!error) {
-            setForm({ label: '', url: '' });
-            fetchLinks();
+        if (error) {
+            console.error('Insert error:', error);
+            return;
         }
+
+        setForm({ title: '', url: '', description: '' });
+        fetchLinks();
     };
 
     const deleteLink = async (id) => {
-        const { error } = await supabase.from('header_buttons').delete().eq('id', id);
+        const { error } = await supabase
+            .from('parent_links')
+            .delete()
+            .eq('id', id);
+
         if (!error) fetchLinks();
     };
 
     return (
         <PageWrapper>
-            <PageTitle>Header Links</PageTitle>
+            <PageTitle>Parent Links</PageTitle>
 
             <div style={{ maxWidth: '600px', marginBottom: '2rem' }}>
                 <AdminInput
-                    placeholder="Link Label"
-                    value={form.label}
-                    onChange={(e) => setForm(f => ({ ...f, label: e.target.value }))}
+                    placeholder="Link title"
+                    value={form.title}
+                    onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
                 />
                 <AdminInput
                     placeholder="URL (https://...)"
                     value={form.url}
-                    onChange={(e) => setForm(f => ({ ...f, url: e.target.value }))}
+                    onChange={e => setForm(f => ({ ...f, url: e.target.value }))}
                 />
-                <PrimaryButton onClick={addLink}>Add Link</PrimaryButton>
+                <AdminInput
+                    placeholder="Description (optional)"
+                    value={form.description}
+                    onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                />
+                <PrimaryButton onClick={addLink}>
+                    Add Link
+                </PrimaryButton>
             </div>
 
             {links.length > 0 && (
                 <AdminTable>
                     <thead>
                         <tr>
-                            <th>Label</th>
+                            <th>Title</th>
                             <th>URL</th>
+                            <th>Description</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {links.map(link => (
                             <tr key={link.id}>
-                                <td>{link.label}</td>
+                                <td>{link.title}</td>
                                 <td>{link.url}</td>
+                                <td>{link.description}</td>
                                 <td>
                                     <button onClick={() => deleteLink(link.id)} title="Delete">
                                         <Trash size={16} />

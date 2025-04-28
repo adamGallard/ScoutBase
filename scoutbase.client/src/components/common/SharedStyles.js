@@ -630,3 +630,30 @@ export const StyledTable = styled.table`
     background-color: #f0f8ff;
   }
 `;
+
+export const SecondaryButton = styled.button`
+ background: #fff; 
+ color: #0F5BA4;
+  border: 1px solid #0F5BA4;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 1rem;
+`;
+
+    /** Container for the Active / Archived tabs */
+    export const TabList = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+    /** Individual tab button */
+export const TabButton = styled.button`
+    flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-bottom: 2px solid ${({ isActive }) => (isActive ? '#0F5BA4' : 'transparent')};
+  background: none;
+  font-size: 1rem;
+  color: ${({ isActive }) => (isActive ? '#0F5BA4' : '#333')};
+`;

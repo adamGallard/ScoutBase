@@ -108,7 +108,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 },
                 can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
                     key: 'parent-header-links',
-                    label: 'Parent Header',
+                    label: 'Parent Links',
                     icon: <FolderSymlink size={16} />
                 },
 

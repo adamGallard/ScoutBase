@@ -1,0 +1,52 @@
+/* fixed bottom, full-width, safe-area aware */
+.footer-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    padding-bottom: env(safe-area-inset-bottom);
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+}
+
+/* each link fills equally, centered */
+.footer-nav-link {
+    flex: 1;
+    text-align: center;
+    color: #718096;
+    text-decoration: none;
+    display: flex;
+    justify-content: center;
+}
+
+    .footer-nav-link.active {
+        color: #0F5BA4;
+    }
+
+/* wrapper for icon + optional badge */
+.icon-wrapper {
+    position: relative;
+}
+
+/* small red badge in corner */
+.footer-nav-badge {
+    position: absolute;
+    top: 0;
+    right: -4px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.6rem;
+    line-height: 1;
+    border-radius: 8px;
+    padding: 2px 4px;
+}
+
+/* optional: hide any text labels for a purely icon-only nav */
+.footer-nav-link > span {
+    display: none;
+}

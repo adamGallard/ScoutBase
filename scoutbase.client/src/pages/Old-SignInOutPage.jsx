@@ -210,10 +210,11 @@ export default function SignInOutPage() {
             <Main style={{ display: 'flex', justifyContent: 'center', padding: '0.5rem' }}>
                 <Content
                     style={{
-                        maxWidth: '500px',
+                        maxWidth: isMobile ? '100%' : '500px', 
                         width: '100%',
                         textAlign: 'center',
                         padding: isMobile ? '1rem' : '2rem',
+                        margin: '0 auto', 
                         boxSizing: 'border-box'
                     }}
                 >
