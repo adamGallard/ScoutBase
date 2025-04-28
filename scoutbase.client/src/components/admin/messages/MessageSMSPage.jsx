@@ -9,6 +9,7 @@ import {
     PrimaryButton,
     CompactSelect,
 } from '@/components/common/SharedStyles';
+import { MessageCircle } from 'lucide-react';
 
 const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label ?? code;
@@ -133,9 +134,11 @@ export default function MessageParentsPage({ groupId }) {
     };
 
     return (
-        <PageWrapper>
-            <PageTitle>📨 Send SMS to Parents</PageTitle>
-
+        <div className="content-box">
+            <PageTitle><MessageCircle size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }}/> Send SMS to Parents</PageTitle>
+            <section id="sms-page-instructions">
+                <p><strong>Send a text message to parents.</strong> Filter by section (or leave “All”), tick the boxes next to each parent, type your message, then click <code>Send</code> to deliver via SMS.</p>
+            </section>
             <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <label>
                     Section:
@@ -215,6 +218,6 @@ export default function MessageParentsPage({ groupId }) {
                     )}
                 </div>
             </div>
-        </PageWrapper>
+        </div>
     );
 }

@@ -9,7 +9,7 @@ import {
     StyledSelect,
     AdminTable
 } from '@/components/common/SharedStyles';
-import { Pencil, Trash } from 'lucide-react';
+import { Pencil, Trash, Megaphone } from 'lucide-react';
 
 import { sections } from '@/components/common/Lookups';
 
@@ -101,9 +101,11 @@ export default function AdminNoticeForm({ groupId, userInfo }) {
         });
 
     return (
-        <PageWrapper>
-            <PageTitle>Send a Parent Notice</PageTitle>
-
+        <div className="content-box">
+            <PageTitle><Megaphone size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />Send a Parent Notice</PageTitle>
+            <section id="parent-notice-instructions">
+                <p><strong>Post a notice to the Parent Portal.</strong> Select the section (or “All”), compose your notice, and click <code>Publish</code>—parents will see it next time they log in.</p>
+            </section>
             <div style={{ maxWidth: 600, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <StyledSelect
                     value={form.section}
@@ -130,7 +132,7 @@ export default function AdminNoticeForm({ groupId, userInfo }) {
                 />
 
                 <PrimaryButton onClick={submit} disabled={status === 'sending'}>
-                    {status === 'sending' ? 'Sending...' : 'Send Notice'}
+                    {status === 'sending' ? 'Sending...' : 'Publish'}
                 </PrimaryButton>
 
                 {status === 'success' && <p style={{ color: 'green' }}>✅ Message sent!</p>}
@@ -201,6 +203,6 @@ export default function AdminNoticeForm({ groupId, userInfo }) {
                     </AdminTable>
                 </div>
             )}
-        </PageWrapper>
+        </div>
     );
 }

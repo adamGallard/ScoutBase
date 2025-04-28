@@ -36,10 +36,10 @@ import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashbo
 import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
 import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
-import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; 
+import AdminNoticeForm from '@/components/admin/messages/AdminNoticeForm'; 
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
-import MessageSMSPage from '@/components/admin/MessageSMSPage';
-import MessageEmailPage from '@//components/admin/MessageEmailPage';
+import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
+import MessageEmailPage from '@//components/admin/messages/MessageEmailPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';

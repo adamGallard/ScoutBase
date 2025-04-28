@@ -145,7 +145,7 @@ export default function PatrolManagementView({ groupId, userInfo }) {
     };
 
     return (
-        <PageWrapper>
+        <div className="content-box">
             <PageTitle>
                 <Flag size={24} style={{ marginRight: '0.5rem' }} />
                 Patrol Management
@@ -238,6 +238,6 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     onClose={() => setLinkingPatrol(null)}
                 />
             )}
-        </PageWrapper>
+        </div>
     );
 }
