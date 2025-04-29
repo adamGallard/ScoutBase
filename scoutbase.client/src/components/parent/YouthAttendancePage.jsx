@@ -45,7 +45,7 @@ export default function YouthAttendancePage() {
 	// If no parent or groupId, redirect to login
 	useEffect(() => {
 		if (!parent || !groupId) {
-			navigate(`/parent-login?group=${groupSlug}`, { replace: true });
+			navigate(`/sign-in?group=${groupSlug}`, { replace: true });
 		}
 	}, [parent, groupId, groupSlug, navigate]);
 
@@ -114,6 +114,13 @@ export default function YouthAttendancePage() {
 				{parent?.name}
 			</PageTitle>
 
+			{/* Instruction to Select a Child */}
+			{step === 'list' && (
+				<p style={{ fontSize: '1rem', color: '#555', marginBottom: '1rem' }}>
+					Please select your child from the list below to sign them in or out.
+				</p>
+			)}
+
 			{/* Youth List */}
 			{step === 'list' && (
 				<>
@@ -151,6 +158,7 @@ export default function YouthAttendancePage() {
 						filteredYouth.map(y => {
 							const latest = latestStatusMap[y.id];
 							return (
+
 								<div
 									key={y.id}
 									style={{
@@ -216,14 +224,16 @@ export default function YouthAttendancePage() {
 					)}
 
 					<PrimaryButton
-						onClick={() => navigate(`/parent-logout`)}
-						style={{
-							padding: '1rem', fontSize: '1rem', width: '90%',
-							maxWidth: '500px', margin: '0.5rem auto',
-						}}
-					>
-						Logout
-					</PrimaryButton>
+     isMobile={isMobile}
+					     type="button"
+					      onClick={() => {
+						        // clear any in-memory state if needed…
+						        // then navigate back to the group login
+							        navigate(`/sign-in?group=${groupSlug}`);
+						      }}
+    >
+					      Logout
+					    </PrimaryButton>
 				</>
 			)}
 
@@ -233,6 +243,11 @@ export default function YouthAttendancePage() {
 					member={selectedMember}
 					parentName={parent.name}
 					onSign={handleSign}
+					onCancel={() => {
+						// go back to the list view
+						setStep('list');
+						setSelectedMember(null);
+					}}
 					latestStatus={latestStatusMap[selectedMember.id]}
 				/>
 			)}

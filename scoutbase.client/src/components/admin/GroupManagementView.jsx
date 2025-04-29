@@ -10,6 +10,7 @@ export default function GroupManagementView() {
         name: '',
         slug: '',
         location: '',
+		calendar_url: '',
         timezone: '',
         active: true,
     });
@@ -17,7 +18,7 @@ export default function GroupManagementView() {
     const fetchGroups = useCallback(async () => {
         const { data, error } = await supabase
             .from('groups')
-            .select('id, name, slug, location, timezone, active')
+            .select('id, name, slug, location, calendar_url,timezone, active')
             .order('name');
 
         if (error) {
@@ -34,14 +35,14 @@ export default function GroupManagementView() {
     const addGroup = async () => {
         if (!formData.name || !formData.slug || !formData.location || !formData.timezone) return;
         await supabase.from('groups').insert([formData]);
-        setFormData({ name: '', slug: '', location: '', timezone: '', active: true });
+        setFormData({ name: '', slug: '', location: '', calendar_url: '', timezone: '', active: true });
         fetchGroups();
     };
 
     const updateGroup = async (id) => {
         await supabase.from('groups').update(formData).eq('id', id);
         setEditingGroupId(null);
-        setFormData({ name: '', slug: '', location: '', timezone: '', active: true });
+        setFormData({ name: '', slug: '', location: '', calendar_url: '', timezone: '', active: true });
         fetchGroups();
     };
 
@@ -64,6 +65,7 @@ export default function GroupManagementView() {
                     <tr>
                         <th>Name</th>
                         <th>Slug</th>
+                        <th>Calendar URL</th>
                         <th>Location</th>
                         <th>Timezone</th>
                         <th>Active</th>
@@ -88,6 +90,14 @@ export default function GroupManagementView() {
                                         onChange={(e) => setFormData(f => ({ ...f, slug: e.target.value }))}
                                     />
                                 ) : g.slug}
+                            </td>
+                            <td>
+                                {editingGroupId === g.id ? (
+                                    <input
+                                        value={formData.calendar_url}
+                                        onChange={(e) => setFormData(f => ({ ...f, calendar_url: e.target.value }))}
+                                    />
+                                ) : g.calendar_url}
                             </td>
                             <td>
                                 {editingGroupId === g.id ? (
@@ -120,7 +130,7 @@ export default function GroupManagementView() {
                                         <button onClick={() => updateGroup(g.id)}><Check size={16} /></button>
                                         <button onClick={() => {
                                             setEditingGroupId(null);
-                                            setFormData({ name: '', slug: '', location: '', timezone: '', active: true });
+                                            setFormData({ name: '', slug: '', location: '', calendar_url: '', timezone: '', active: true });
                                         }}><X size={16} /></button>
                                     </>
                                 ) : (
@@ -145,6 +155,12 @@ export default function GroupManagementView() {
                                 <input
                                     value={formData.slug}
                                     onChange={(e) => setFormData(f => ({ ...f, slug: e.target.value }))}
+                                />
+                            </td>
+                            <td>
+                                <input
+                                    value={formData.calendar_url}
+                                    onChange={(e) => setFormData(f => ({ ...f, calendar_url: e.target.value }))}
                                 />
                             </td>
                             <td>

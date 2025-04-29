@@ -11,7 +11,7 @@ import {
 PrimaryButton
 } from '@/components/common/SharedStyles';
 
-export default function SignInForm({ member, parentName, onSign, latestStatus, groupId }) {
+export default function SignInForm({ member, parentName, onCancel, onSign, latestStatus, groupId }) {
     const [comment, setComment] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const isMobile = useIsMobile();
@@ -63,6 +63,21 @@ export default function SignInForm({ member, parentName, onSign, latestStatus, g
                 >
                     {latestStatus?.action === 'signed in' ? 'Sign Out' : 'Sign In'}
                 </PrimaryButton>
+
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    style={{
+                        padding: isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem',
+                        fontSize: isMobile ? '1rem' : '0.875rem',
+                        backgroundColor: '#ccc',
+                        border: 'none',
+                        borderRadius: '6px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Cancel
+                </button>
             </div>
         </form>
     );
