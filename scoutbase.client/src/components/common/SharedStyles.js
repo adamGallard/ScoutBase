@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 
 export const PageWrapper = styled.div`
-  min-height: 100vh;
+  min-height: 98vh;
   background-color: #f9fafb;
   color: #111827;
   font-family: sans-serif;
@@ -331,10 +331,12 @@ export const ModalOverlay = styled.div`
 
 export const ModalBox = styled.div`
   background: white;
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 10px;
-  max-width: 500px;
-  width: 90%;
+  width: 85vw;
+  max-width: 750px;      /* caps the width at 700px */
+  max-height: 75vh;      /* caps height at 75% of viewport */
+  overflow-y: auto;      /* scroll vertically if content is too tall */
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   font-family: sans-serif;
 
@@ -361,17 +363,17 @@ export const ModalBox = styled.div`
   }
 
   li {
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.25rem;
   }
 
   input[type="text"],
   input[type="date"],
   input[type="email"],
   input[type="number"] {
-    width: 100%;
+    width: 80%;
     padding: 0.75rem;
     font-size: 1rem;
-    margin: 1rem 0;
+    margin: 0.2rem 0;
     border: 1px solid #d1d5db;
     border-radius: 6px;
   }
@@ -627,4 +629,31 @@ export const StyledTable = styled.table`
   tbody tr:hover {
     background-color: #f0f8ff;
   }
+`;
+
+export const SecondaryButton = styled.button`
+ background: #fff; 
+ color: #0F5BA4;
+  border: 1px solid #0F5BA4;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  font-size: 1rem;
+`;
+
+    /** Container for the Active / Archived tabs */
+    export const TabList = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+`;
+
+    /** Individual tab button */
+export const TabButton = styled.button`
+    flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-bottom: 2px solid ${({ isActive }) => (isActive ? '#0F5BA4' : 'transparent')};
+  background: none;
+  font-size: 1rem;
+  color: ${({ isActive }) => (isActive ? '#0F5BA4' : '#333')};
 `;

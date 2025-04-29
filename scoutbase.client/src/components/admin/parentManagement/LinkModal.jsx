@@ -1,15 +1,21 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
+import { sections } from '@/components/common/Lookups.js';
 
+// helper to map section code → label
+   const codeToSectionLabel = code =>
+    sections.find(s => s.code === code)?.label ?? code;
 export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const [linkedYouth, setLinkedYouth] = useState([]);
     const [availableYouth, setAvailableYouth] = useState([]);
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const [parentName, setParentName] = useState('');
-    const itemsPerPage = 10;
+    const itemsPerPage = 8;
+    const [relationshipMap, setRelationshipMap] = useState({});
+
     useEffect(() => {
         if (parentId) {
             loadParentName();
@@ -30,10 +36,10 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const loadLinkedYouth = async () => {
         const { data } = await supabase
             .from('parent_youth')
-            .select('youth (id, name, section), is_primary')
+            .select('youth (id, name, section), is_primary, relationship')
             .eq('parent_id', parentId);
         if (data) {
-            setLinkedYouth(data.map(l => ({ ...l.youth, is_primary: l.is_primary })));
+            setLinkedYouth(data.map(l => ({ ...l.youth, is_primary: l.is_primary, relationship: l.relationship })));
         }
     };
 
@@ -47,9 +53,9 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
         }
     };
 
-    const addLink = async (youthId) => {
+    const addLink = async (youthId, relationship) => {
         await supabase.from('parent_youth').insert([
-            { parent_id: parentId, youth_id: youthId, group_id: groupId }
+            { parent_id: parentId, youth_id: youthId, group_id: groupId, relationship  }
         ]);
         await logAuditEvent({
             userId: userInfo?.id,
@@ -58,7 +64,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
             action: 'Link',
             targetType: 'Parent-Youth',
             targetId: `${parentId}`,
-            metadata: `Linked youth ID ${youthId} to parent ID ${parentId}`
+            metadata: `Linked youth ID ${youthId} to parent ID ${parentId} as "${relationship}`
         });
         loadLinkedYouth();
         setCurrentPage(1);
@@ -111,25 +117,59 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                 <h3>Linked Youth{parentName && ` for ${parentName}`}</h3>
 
                 <ul>
-                    {[...linkedYouth]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((youth) => (
-                            <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                <div>
-                                    <span>{youth.name} ({youth.section})</span>
-                                </div>
-                                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                    <label style={{ fontSize: '0.85rem' }}>
-                                        <input
-                                            type="checkbox"
-                                            checked={youth.is_primary || false}
-                                            onChange={() => togglePrimary(youth.id, !youth.is_primary)}
-                                        />
-                                        {' '}Primary
-                                    </label>
-                                    <button onClick={() => removeLink(youth.id)}>Remove</button>
-                                </div>
-                            </li>
+                    {linkedYouth.map(youth => (
+                        <li
+                            key={youth.id}
+                            style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 300px auto auto',  // four columns
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                marginBottom: '0.2rem'
+                            }}
+                        >
+                            {/* 1. Name */}
+                            <span>
+                                {youth.name} ({codeToSectionLabel(youth.section)})
+                            </span>
+
+                            {/* 2. Relationship textbox */}
+                            <input
+                                type="text"
+                                placeholder="Relationship"
+                                style={{ width: '200px' }}         // enforce same width
+                                value={youth.relationship}
+                                onChange={e => {
+                                    setLinkedYouth(linkedYouth.map(l =>
+                                        l.id === youth.id
+                                            ? { ...l, relationship: e.target.value }
+                                            : l
+                                    ));
+                                }}
+                                onBlur={async () => {
+                                    await supabase
+                                        .from('parent_youth')
+                                        .update({ relationship: youth.relationship })
+                                        .eq('parent_id', parentId)
+                                        .eq('youth_id', youth.id);
+                                }}
+                            />
+
+                            {/* 3. Primary checkbox */}
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={youth.is_primary}
+                                    onChange={() => togglePrimary(youth.id, !youth.is_primary)}
+                                />
+                                Primary
+                            </label>
+
+                            {/* 4. Remove button */}
+                            <button onClick={() => removeLink(youth.id)}>
+                                Remove
+                            </button>
+                        </li>
                     ))}
                 </ul>
 
@@ -145,19 +185,52 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                     }}
                 />
 
-                <ul style={{ textAlign: 'left', marginBottom: '1rem' }}>
-                    {[...paginatedYouth]
-                        .sort((a, b) => a.name.localeCompare(b.name))
-                        .map((youth) => (
-                        <li key={youth.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                            <span>{youth.name} ({youth.section})</span>
-                            <button onClick={() => addLink(youth.id)}>Add</button>
-                        </li>
-                    ))}
-                </ul>
+                <ul style={{ textAlign: 'left', marginBottom: '0.2rem' }}>
+                    {paginatedYouth.map(youth => {
+                        const rel = (relationshipMap[youth.id] || '').trim();
+                        const canAdd = rel.length > 0;
 
+                        return (
+                            <li
+                                key={youth.id}
+                                style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 300px auto',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    marginBottom: '0.2rem'
+                                }}
+                            >
+                                <span>{youth.name} ({codeToSectionLabel(youth.section)})</span>
+                                <input
+                                    type="text"
+                                    placeholder="Relationship"
+                                    style={{ width: '200px' }}
+                                    value={relationshipMap[youth.id] ?? ''}
+                                    onChange={e =>
+                                        setRelationshipMap({
+                                            ...relationshipMap,
+                                            [youth.id]: e.target.value
+                                        })
+                                    }
+                                />
+                                <button
+                                    onClick={() => addLink(youth.id, rel)}
+                                    disabled={!canAdd}
+                                    style={{
+                                        opacity: canAdd ? 1 : 0.5,
+                                        cursor: canAdd ? 'pointer' : 'not-allowed'
+                                    }}
+                                >
+                                    Add
+                                </button>
+                            </li>
+                        );
+                    })}
+                </ul>
+                <br />
                 {totalPages > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                         <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1}>
                             Previous
                         </button>

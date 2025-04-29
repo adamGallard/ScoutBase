@@ -36,8 +36,10 @@ import SuperAdminDashboard from '@/components/admin/dashbaoards/SuperAdminDashbo
 import UserDashboard from '@/components/admin/dashbaoards/UserDashboard';
 import AuditLogViewer from '@/components/admin/AuditLogViewer'; 
 import PatrolManagementView from '@/components/admin/patrolManagement/PatrolManagementView';
-import AdminNoticeForm from '@/components/admin/AdminNoticeForm'; // or your actual path
+import AdminNoticeForm from '@/components/admin/messages/AdminNoticeForm'; 
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
+import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
+import MessageEmailPage from '@//components/admin/messages/MessageEmailPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -49,7 +51,7 @@ import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
-
+import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
 
 
 export default function AdminPage() {
@@ -130,6 +132,10 @@ export default function AdminPage() {
                         userInfo={userInfo}
                     />
                 );
+            case 'report-attendance-period':
+                return <ReportAttendancePeriod groupId={activeGroupId} userInfo={userInfo} />;
+
+
             case 'add-parent':
                 return (
                     <ParentView
@@ -145,6 +151,10 @@ export default function AdminPage() {
                         }}
                     />
                 );
+            case 'message-sms':
+                return <MessageSMSPage groupId={activeGroupId} />;
+            case 'message-email':
+                return <MessageEmailPage groupId={activeGroupId} />;
             case 'add-youth':
                 return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'user-management':

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
     PageTitle,
     AdminTable,
@@ -17,6 +17,11 @@ import {
 import {BookOpenCheck} from 'lucide-react';
 import InspectionEntryForm from './InspectionEntryForm';
 import { supabase } from '@/lib/supabaseClient';
+import { sections } from '@/components/common/Lookups.js';
+
+// helper to map section code → label
+const codeToSectionLabel = code =>
+    sections.find(s => s.code === code)?.label ?? code;
 
 const InspectionPage = ({ groupId, userInfo }) => {
     const [section, setSection] = useState(userInfo.section || '');
@@ -147,10 +152,12 @@ const InspectionPage = ({ groupId, userInfo }) => {
                         onChange={(e) => setSection(e.target.value)}
                         style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
                     >
-                        <option value="" disabled>Select a section</option>
-                        {availableSections.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                        ))}
+                                        <option value="" disabled>Select a section</option>
+                                        {availableSections.map((s) => (
+                                                <option key={s} value={s}>
+                                                       {codeToSectionLabel(s)}
+                                                    </option>
+                                            ))}
                     </select>
                 </div>
             )}

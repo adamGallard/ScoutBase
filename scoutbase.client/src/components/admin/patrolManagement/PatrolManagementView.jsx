@@ -1,24 +1,38 @@
 ﻿// src/components/admin/PatrolManagementView.jsx
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Pencil, Trash, Plus, Flag ,Link, Download} from 'lucide-react';
+import { Pencil, Trash, Plus, Flag, Link as LinkIcon, Download } from 'lucide-react';
 import {
     PageWrapper,
     Content,
     PageTitle,
     PrimaryButton,
-    AdminTable, CompactInput, CompactInputGroup, CompactSelect, 
+    AdminTable,
+    CompactInput,
+    CompactInputGroup,
+    CompactSelect,
 } from '@/components/common/SharedStyles';
 import PatrolLinkModal from './PatrolLinkModal';
 
+import { sections, sectionMap,stages } from '@/components/common/Lookups';
+
 export default function PatrolManagementView({ groupId, userInfo }) {
-    const [section, setSection] = useState(userInfo?.role === 'Section Leader' ? userInfo.section : 'Cubs');
+    const isSectionLeader = userInfo?.role === 'Section Leader';
+
+    // default to the user’s section (if Section Leader) or first lookup section
+    const defaultSection = isSectionLeader
+        ? userInfo.section
+        : sections[0]?.code || '';
+    const [section, setSection] = useState(defaultSection);
+
     const [patrols, setPatrols] = useState([]);
     const [newPatrolName, setNewPatrolName] = useState('');
     const [editingId, setEditingId] = useState(null);
     const [editName, setEditName] = useState('');
     const [linkingPatrol, setLinkingPatrol] = useState(null);
     const [addError, setAddError] = useState('');
+    // find the code for the "Retired" stage so we can filter it out
+    const retiredStageCode = stages.find(s => s.label === 'Retired')?.code;
 
     const fetchPatrols = async () => {
         const { data, error } = await supabase
@@ -39,7 +53,8 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     .from('youth')
                     .select('id', { count: 'exact', head: true })
                     .eq('patrol_id', p.id)
-                    .eq('group_id', groupId);
+                    .eq('group_id', groupId)
+                    .neq('membership_stage', retiredStageCode);
                 if (cntErr) {
                     console.error(`Error fetching count for patrol ${p.id}:`, cntErr);
                     return { ...p, youth_count: 0 };
@@ -75,7 +90,6 @@ export default function PatrolManagementView({ groupId, userInfo }) {
             return;
         }
 
-        // Clear form + error if successful
         setNewPatrolName('');
         setAddError('');
         fetchPatrols();
@@ -95,13 +109,13 @@ export default function PatrolManagementView({ groupId, userInfo }) {
         }
     };
 
-    const isSectionLeader = userInfo?.role === 'Section Leader';
-
     const exportCSV = async () => {
+        // fetch non-retired youth only
         const { data: youthData, error: youthErr } = await supabase
             .from('youth')
             .select('id, name, rank, patrol_id')
-            .eq('group_id', groupId);
+            .eq('group_id', groupId)
+            .neq('membership_stage', retiredStageCode);
         if (youthErr) {
             console.error('Error fetching youth for CSV:', youthErr);
             return;
@@ -132,112 +146,98 @@ export default function PatrolManagementView({ groupId, userInfo }) {
 
     return (
         <div className="content-box">
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '5rem',
-                marginBottom: '1rem',
-                flexWrap: 'wrap'
-            }}>
-                <PageTitle>
-                    <Flag size={24} style={{ marginRight: '0.5rem' }} />
-                    Patrol Management
-                </PageTitle>
+            <PageTitle>
+                <Flag size={24} style={{ marginRight: '0.5rem' }} />
+                Patrol Management
+            </PageTitle>
 
-
-                <CompactInputGroup>
-                    <div>
-                        {!isSectionLeader && (
-                        
-                            <CompactSelect 
-                                value={section}
-                                onChange={(e) => setSection(e.target.value)}
-                            >
-                                <option value="Joeys">Joeys</option>
-                                <option value="Cubs">Cubs</option>
-                                <option value="Scouts">Scouts</option>
-                                <option value="Venturers">Venturers</option>
-                            </CompactSelect>
-                    )}
-                        <CompactInput
-                        placeholder="New Patrol Name"
-                        value={newPatrolName}
-                        onChange={(e) => setNewPatrolName(e.target.value)}
-                       >
-                        </CompactInput>
-
-
-                    <PrimaryButton onClick={addPatrol}>
-                        <Plus size={16} /> Add Patrol
-                        </PrimaryButton>
-                        <PrimaryButton onClick={exportCSV} style={{ marginBottom: '1rem' }}>
-                            <Download size={16} /> Export CSV
-                        </PrimaryButton>
-                    </div>
-
-             </CompactInputGroup> 
-                {addError && (
-                    <div style={{ color: 'red', marginBottom: '1rem' }}>
-                        ⚠️ Could not add Patrol: {addError}
-                    </div>
-                )}
-                <AdminTable>
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Members</th>
-                            <th>Section</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {patrols.map((p) => (
-                            <tr key={p.id}>
-                                <td>{p.name}</td>
-                                <td>{p.youth_count ?? 0}</td>
-                                <td>{p.section}</td>
-                                <td style={{ display: 'flex', gap: '0.5rem' }}>
-                                    {editingId === p.id ? (
-                                        <>
-                                            <button onClick={() => updatePatrol(p.id)}>Save</button>
-                                            <button onClick={() => setEditingId(null)}>Cancel</button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={() => setLinkingPatrol(p)}
-                                                title="Link youth to patrol">
-                                                <Link size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    setEditingId(p.id);
-                                                    setEditName(p.name);
-                                                }}>
-                                                <Pencil size={16} />
-                                            </button>
-                                            <button onClick={() => deletePatrol(p.id)}>
-                                                <Trash size={16} />
-                                            </button>
-                                        </>
-                                    )}
-                                </td>
-                            </tr>
+            <CompactInputGroup>
+                {!isSectionLeader && (
+                    <CompactSelect value={section} onChange={e => setSection(e.target.value)}>
+                        {sections.map(s => (
+                            <option key={s.code} value={s.code}>
+                                {s.label}
+                            </option>
                         ))}
-                    </tbody>
-                </AdminTable>
-
-                {linkingPatrol && (
-                    <PatrolLinkModal
-                        patrolId={linkingPatrol.id}
-                        groupId={groupId}
-                        patrolName={linkingPatrol.name}
-                        section={linkingPatrol.section}
-                        onClose={() => setLinkingPatrol(null)}
-                    />
+                    </CompactSelect>
                 )}
-            </div>
+                <CompactInput
+                    placeholder="New Patrol Name"
+                    value={newPatrolName}
+                    onChange={e => setNewPatrolName(e.target.value)}
+                />
+                <PrimaryButton onClick={addPatrol}>
+                    <Plus size={16} /> Add Patrol
+                </PrimaryButton>
+                <PrimaryButton onClick={exportCSV} style={{ marginLeft: '1rem' }}>
+                    <Download size={16} /> Export CSV
+                </PrimaryButton>
+            </CompactInputGroup>
+
+            {addError && (
+                <div style={{ color: 'red', marginTop: '0.5rem' }}>
+                    ⚠️ Could not add patrol: {addError}
+                </div>
+            )}
+
+            <AdminTable>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Members</th>
+                        <th>Section</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {patrols.map((p) => (
+                        <tr key={p.id}>
+                            <td>{p.name}</td>
+                            <td>{p.youth_count ?? 0}</td>
+                            <td>{sectionMap[p.section]?.label || p.section}</td>
+                            <td style={{ display: 'flex', gap: '0.5rem' }}>
+                                {editingId === p.id ? (
+                                    <>
+                                        <button onClick={() => updatePatrol(p.id)}>Save</button>
+                                        <button onClick={() => setEditingId(null)}>Cancel</button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => setLinkingPatrol(p)}
+                                            title="Link youth to patrol"
+                                        >
+                                            <LinkIcon size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setEditingId(p.id);
+                                                setEditName(p.name);
+                                            }}
+                                            title="Edit name"
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button onClick={() => deletePatrol(p.id)} title="Delete">
+                                            <Trash size={16} />
+                                        </button>
+                                    </>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </AdminTable>
+
+            {linkingPatrol && (
+                <PatrolLinkModal
+                    patrolId={linkingPatrol.id}
+                    groupId={groupId}
+                    patrolName={linkingPatrol.name}
+                    section={linkingPatrol.section}
+                    onClose={() => setLinkingPatrol(null)}
+                />
+            )}
         </div>
     );
 }
-

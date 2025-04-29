@@ -1,8 +1,8 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useState } from 'react';
 import styled from 'styled-components';
 import { TitleGroup, HeaderBar, PrimaryButton } from '@/components/common/SharedStyles';
 import { LogOut, ShieldUser, Mail } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+
 
 const Nav = styled.nav`
   display: none;
@@ -95,23 +95,17 @@ const CustomLinkButton = styled.a`
     background-color: #e5e7eb;
   }
 `;
-export default function LoggedInHeaderBar({ parentName, onUpdatePin, groupId, onLogout  }) {
+export default function LoggedInHeaderBar({ parentName, onUpdatePin, onLogout  }) {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const [links, setLinks] = useState([]);
+    const handleUpdatePin = () => {
+        console.log('🔑 Update PIN clicked');
+        onUpdatePin();
+    };
 
-        useEffect(() => {
-            const fetchButtons = async () => {
-                const { data, error } = await supabase
-                    .from('header_buttons')
-                    .select('*')
-                    .eq('group_id', groupId);
-
-                if (!error) setLinks(data);
-            };
-            if (groupId) fetchButtons();
-        }, [groupId]);
-
-
+    const handleLogout = () => {
+        console.log('🚪 Logout clicked');
+        onLogout();
+    };
     return (
         <HeaderBar>
             <TitleGroup>
@@ -122,43 +116,23 @@ export default function LoggedInHeaderBar({ parentName, onUpdatePin, groupId, on
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <Nav>
-                    {links.map((btn) => (
-                        <CustomLinkButton
-                            key={btn.id}
-                            href={btn.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            {btn.label}
-                        </CustomLinkButton>
-                    ))}
                     
-                    <button onClick={onUpdatePin}>Update PIN</button>
-                    <button onClick={onLogout}>
+                    <button type="button" onClick={handleUpdatePin}>Update PIN</button>
+                    <button type="button" onClick={handleLogout}>
                         <LogOut size={16} style={{ marginRight: '4px' }} />
                         Logout
                     </button>
                 </Nav>
 
-                <MobileMenuButton onClick={() => setMobileOpen(prev => !prev)}>
+                <MobileMenuButton type="button" onClick={() => setMobileOpen(prev => !prev)}>
                     <HamburgerIcon><div /><div /><div /></HamburgerIcon>
                 </MobileMenuButton>
 
                 {mobileOpen && (
                     <MobileDropdown>
-                        {links.map((btn) => (
-                            <a
-                                key={btn.id}
-                                href={btn.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                            >
-                                {btn.label}
-                            </a>
-                        ))}
-                       
-                        <button onClick={onUpdatePin}>Update PIN</button>
-                        <button onClick={onLogout}>Logout</button>
+                                               
+                        <button type="button" onClick={handleUpdatePin}>Update PIN</button>
+                        <button type="button" onClick={handleLogout}>Logout</button>
                     </MobileDropdown>
                 )}
             </div>

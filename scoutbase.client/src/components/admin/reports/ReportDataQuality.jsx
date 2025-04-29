@@ -1,8 +1,11 @@
-﻿import { useEffect, useState } from 'react';
+﻿// src/components/admin/reports/ReportDataQuality.jsx
+
+import React, { useEffect, useState } from 'react';
 import { PageWrapper, PageTitle, PrimaryButton, CompactSelect } from '@/components/common/SharedStyles';
 import { supabase } from '@/lib/supabaseClient';
 import { downloadCSV } from '@/utils/exportUtils';
 import { FileCheck2 } from 'lucide-react';
+import { sections, stages } from '@/components/common/Lookups.js';
 
 function ReportCard({ title, description, data, filename, fixPathBase }) {
     if (!data || data.length === 0) return null;
@@ -13,10 +16,12 @@ function ReportCard({ title, description, data, filename, fixPathBase }) {
             <p style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>{description}</p>
 
             <ul style={{ marginBottom: '1rem' }}>
-                {data.slice(0, 5).map((item) => (
+                {data.slice(0, 5).map(item => (
                     <li key={item.id}>
-                        {item.name || item.email || `ID: ${item.id}`} &nbsp;
-                        <a href={`${fixPathBase}?id=${item.id}`} style={{ fontSize: '0.8rem', color: '#0F5BA4' }}>Fix</a>
+                        {item.name || item.email || `ID: ${item.id}`}{' '}
+                        <a href={`${fixPathBase}?id=${item.id}`} style={{ fontSize: '0.8rem', color: '#0F5BA4' }}>
+                            Fix
+                        </a>
                     </li>
                 ))}
                 {data.length > 5 && <li>...and {data.length - 5} more</li>}
@@ -26,7 +31,6 @@ function ReportCard({ title, description, data, filename, fixPathBase }) {
         </div>
     );
 }
-
 
 export default function DataQualityPage({ groupId }) {
     const [sectionFilter, setSectionFilter] = useState('');
@@ -42,35 +46,68 @@ export default function DataQualityPage({ groupId }) {
 
     useEffect(() => {
         const loadReports = async () => {
-            const [pyp, parents, youth, patrols, transitions] = await Promise.all([
-                supabase.from('parent_youth').select('parent_id, youth_id, is_primary'),
-                supabase.from('parent').select('id, name, email, phone, group_id').eq('group_id', groupId),
-                supabase.from('youth').select('id, name, section, patrol_id, group_id').eq('group_id', groupId),
-                supabase.from('patrols').select('id, name, group_id, section').eq('group_id', groupId),
-                supabase.from('youth_transitions').select('id, youth_id')
-            ]);
+            // 1) Find the "Retired" stage code
+            const retiredCode = stages.find(s => s.label === 'Retired')?.code;
 
-            const primaryLinks = new Set(pyp.data.filter(p => p.is_primary).map(p => p.youth_id));
-            const youthWithNoPrimary = youth.data.filter(y => !primaryLinks.has(y.id));
+            // 2) Fetch each dataset, defaulting to [] if undefined
+            const { data: pypData = [] } = await supabase
+                .from('parent_youth')
+                .select('parent_id, youth_id, is_primary');
 
-            const parentsWithLinks = new Set(pyp.data.map(p => p.parent_id));
-            const unlinkedParents = parents.data.filter(p => !parentsWithLinks.has(p.id));
+            const { data: parentsData = [] } = await supabase
+                .from('parent')
+                .select('id, name, email, phone, group_id')
+                .eq('group_id', groupId);
 
-            const youthWithNoPatrol = youth.data.filter(y => !y.patrol_id);
-            const patrolsWithYouth = new Set(youth.data.map(y => y.patrol_id).filter(Boolean));
-            const patrolsNoYouth = patrols.data.filter(p => !patrolsWithYouth.has(p.id));
+            const { data: youthData = [] } = await supabase
+                .from('youth')
+                .select('id, name, section, patrol_id, group_id, membership_stage')
+                .eq('group_id', groupId)
+                .neq('membership_stage', retiredCode);
 
-            const youthRoles = await supabase.from('youth').select('patrol_id, rank');
-            const patrolsMissingPLAPL = patrols.data.filter(p => {
-                const members = youthRoles.data.filter(y => y.patrol_id === p.id);
+            const { data: patrolsData = [] } = await supabase
+                .from('patrols')
+                .select('id, name, group_id, section')
+                .eq('group_id', groupId);
+
+            const { data: transitionsData = [] } = await supabase
+                .from('youth_transitions')
+                .select('youth_id');
+
+            // 3) Compute each report slice
+
+            // Youth missing a primary parent
+            const primaryLinks = new Set(pypData.filter(p => p.is_primary).map(p => p.youth_id));
+            const youthWithNoPrimary = youthData.filter(y => !primaryLinks.has(y.id));
+
+            // Parents with no linked youth
+            const parentsWithLinks = new Set(pypData.map(p => p.parent_id));
+            const unlinkedParents = parentsData.filter(p => !parentsWithLinks.has(p.id));
+
+            // Youth not assigned to a patrol
+            const youthWithNoPatrol = youthData.filter(y => !y.patrol_id);
+
+            // Patrols without any youth
+            const patrolsWithYouth = new Set(youthData.map(y => y.patrol_id).filter(Boolean));
+            const patrolsNoYouth = patrolsData.filter(p => !patrolsWithYouth.has(p.id));
+
+            // Patrols missing a PL or APL
+            const { data: youthRolesData = [] } = await supabase
+                .from('youth')
+                .select('patrol_id, rank');
+            const patrolsMissingPLAPL = patrolsData.filter(p => {
+                const members = youthRolesData.filter(r => r.patrol_id === p.id);
                 return !members.some(m => m.rank === 'PL') || !members.some(m => m.rank === 'APL');
             });
 
-            const youthIds = new Set(transitions.data.map(t => t.youth_id));
-            const noTransition = youth.data.filter(y => !youthIds.has(y.id));
+            // Youth without any transitions
+            const transitionedIds = new Set(transitionsData.map(t => t.youth_id));
+            const noTransition = youthData.filter(y => !transitionedIds.has(y.id));
 
-            const noContactParents = parents.data.filter(p => !p.email && !p.phone);
+            // Parents missing both email and phone
+            const noContactParents = parentsData.filter(p => !p.email && !p.phone);
 
+            // 4) Update state
             setReports({
                 missingPrimaryParent: youthWithNoPrimary,
                 unlinkedParents,
@@ -82,44 +119,82 @@ export default function DataQualityPage({ groupId }) {
             });
         };
 
-        if (groupId) loadReports();
+        if (groupId) {
+            loadReports();
+        }
     }, [groupId]);
 
-    const filterBySection = (items) =>
-        sectionFilter === '' ? items : items.filter(item => item.section === sectionFilter);
+    // Only filter arrays that have a `.section` property:
+    const filterBySection = items =>
+        sectionFilter === ''
+            ? items
+            : items.filter(item => item.section === sectionFilter);
 
-    return (
+
+
+      // Prepare filtered lists for section‐aware categories
+          const filteredReports = {
+            missingPrimaryParent: filterBySection(reports.missingPrimaryParent),
+            unlinkedParents: reports.unlinkedParents,
+               missingPatrol: filterBySection(reports.missingPatrol),
+                    patrolsWithoutYouth: filterBySection(reports.patrolsWithoutYouth),
+                        patrolsMissingLeaders: filterBySection(reports.patrolsMissingLeaders),
+                            youthWithoutTransitions: filterBySection(reports.youthWithoutTransitions),
+                                parentsMissingContact: reports.parentsMissingContact
+                                  };
+  // Check if any category has items
+      const anyIssues = Object.values(filteredReports).some(arr => arr.length > 0);
+  return (
         <PageWrapper>
             <PageTitle>
-                <FileCheck2 size={24} style={{ marginRight: '0.5rem' }} />Data Quality Reports</PageTitle>
-            <p style={{ marginBottom: '1rem', color: '#444' }}>Check for missing links or important data gaps in your group records.</p>
+                <FileCheck2 size={24} style={{ marginRight: '0.5rem' }} />
+                Data Quality Reports
+            </PageTitle>
+            <p style={{ marginBottom: '1rem', color: '#444' }}>
+                Check for missing links or important data gaps in your group records.
+            </p>
 
             <div style={{ marginBottom: '2rem' }}>
-                <label htmlFor="sectionFilter" style={{ marginRight: '0.5rem' }}>Filter by section:</label>
+                <label htmlFor="sectionFilter" style={{ marginRight: '0.5rem' }}>
+                    Filter by section:
+                </label>
                 <CompactSelect
                     id="sectionFilter"
                     value={sectionFilter}
-                    onChange={(e) => setSectionFilter(e.target.value)}
+                    onChange={e => setSectionFilter(e.target.value)}
                 >
                     <option value="">All</option>
-                    <option value="Joeys">Joeys</option>
-                    <option value="Cubs">Cubs</option>
-                    <option value="Scouts">Scouts</option>
-                    <option value="Venturers">Venturers</option>
+                    {sections
+                        .sort((a, b) => a.order - b.order)
+                        .map(({ code, label }) => (
+                            <option key={code} value={code}>
+                                {label}
+                            </option>
+                        ))}
                 </CompactSelect>
             </div>
+          
+                {/* If no issues found, show a friendly message */}
+               {!anyIssues && (
+                      <p style={{ padding: '1rem', background: '#e6ffed', border: '1px solid #a3f7c4', borderRadius: '4px', textAlign: 'center' }}>
+                            🎉 No data issues found!
+                          </p>
+                    )}
+          
+
 
             <ReportCard
                 title="Youth Missing Primary Parent"
                 description="These youth have no parent marked as primary contact."
-                data={filterBySection(reports.missingPrimaryParent)}
+              data={filteredReports.missingPrimaryParent}
                 filename="youth_missing_primary"
-                fixPathBase="/admin/add-youth" // ✅ direct path for youth
+                fixPathBase="/admin/add-youth"
             />
+
             <ReportCard
                 title="Parents Without Linked Youth"
                 description="These parents are not linked to any youth."
-                data={reports.unlinkedParents}
+              data={filteredReports.unlinkedParents}
                 filename="unlinked_parents"
                 fixPathBase="/admin/add-parent"
             />
@@ -127,7 +202,7 @@ export default function DataQualityPage({ groupId }) {
             <ReportCard
                 title="Youth Not Assigned to a Patrol"
                 description="These youth do not have a patrol assigned."
-                data={filterBySection(reports.missingPatrol)}
+              data={filteredReports.missingPatrol}
                 filename="youth_no_patrol"
                 fixPathBase="/admin/add-youth"
             />
@@ -135,7 +210,7 @@ export default function DataQualityPage({ groupId }) {
             <ReportCard
                 title="Patrols Without Youth"
                 description="These patrols have no youth assigned to them."
-                data={filterBySection(reports.patrolsWithoutYouth)}
+              data={filteredReports.patrolsWithoutYouth}
                 filename="patrols_no_youth"
                 fixPathBase="/admin/patrol-management"
             />
@@ -143,7 +218,7 @@ export default function DataQualityPage({ groupId }) {
             <ReportCard
                 title="Patrols Missing PL or APL"
                 description="These patrols are missing either a Patrol Leader or Assistant Patrol Leader."
-                data={filterBySection(reports.patrolsMissingLeaders)}
+              data={filteredReports.patrolsMissingLeaders}
                 filename="patrols_missing_leaders"
                 fixPathBase="/admin/patrol-management"
             />
@@ -151,7 +226,7 @@ export default function DataQualityPage({ groupId }) {
             <ReportCard
                 title="Youth Without Any Transitions"
                 description="These youth do not have any entries in the transition history."
-                data={filterBySection(reports.youthWithoutTransitions)}
+              data={filteredReports.youthWithoutTransitions}
                 filename="youth_no_transitions"
                 fixPathBase="/admin/add-youth"
             />
@@ -159,7 +234,7 @@ export default function DataQualityPage({ groupId }) {
             <ReportCard
                 title="Parents Missing Email or Phone"
                 description="These parents have no email or phone number on record."
-                data={reports.parentsMissingContact}
+              data={filteredReports.parentsMissingContact}
                 filename="parents_missing_contact"
                 fixPathBase="/admin/add-parent"
             />

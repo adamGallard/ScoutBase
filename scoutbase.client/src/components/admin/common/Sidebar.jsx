@@ -2,7 +2,8 @@
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone, FolderSymlink, FileCheck2
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone,
+    FolderSymlink, FileCheck2, CalendarClock, MessageCircle, MessageSquare
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -59,6 +60,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             expandable: true,
             children: [
                 { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
+				{ key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
                 { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
                 { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
                 { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
@@ -70,12 +72,20 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             ]
         },
 
-        // 🛠 Tools / Utilities
+        // Messaging
         can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
-            key: 'notices',
-            label: 'Notices',
-            icon: <Megaphone size={16} />
+            key: 'Messages-group',
+            label: 'Messages',
+            icon: <MessageSquare size={16} />,
+            expandable: true,
+            children: [
+                { key: 'notices', label: 'Notices', icon: <Megaphone size={16} /> },
+                { key: 'message-sms', label: 'SMS', icon: <MessageCircle size={16} /> },
+                { key: 'message-email', label: 'Email', icon: <Mail size={16} /> }
+            ]
         },
+                
+
         can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
             key: 'qr-code',
             label: 'QR Code',
@@ -98,7 +108,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 },
                 can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
                     key: 'parent-header-links',
-                    label: 'Parent Header',
+                    label: 'Parent Links',
                     icon: <FolderSymlink size={16} />
                 },
 
