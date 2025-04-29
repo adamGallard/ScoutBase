@@ -27,7 +27,7 @@
     "react-qr-code": "^2.0.15",
     "react-qrcode-logo": "^3.0.0",
     "react-quill-new": "^3.4.6",
-    "react-router-dom": "^7.4.1",
+    "react-router-dom": "^7.5.3",
     "recharts": "^2.15.2",
     "resend": "^4.3.0",
     "styled-components": "^6.1.17",
