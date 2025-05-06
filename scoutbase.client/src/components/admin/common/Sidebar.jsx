@@ -3,7 +3,7 @@ import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone,
-    FolderSymlink, FileCheck2, CalendarClock, MessageCircle, MessageSquare
+    FolderSymlink, FileCheck2, CalendarClock, MessageCircle, MessageSquare, Settings
 } from 'lucide-react';
 
 import { can } from "@/utils/roleUtils";
@@ -106,6 +106,12 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                     label: 'Users',
                     icon: <User size={16} />
                 },
+                can(userInfo?.role, 'manageUsers', { actingAsGroupId, actingAsAdmin }) && {
+                    key: 'settings',
+                    label: 'Group Settings',
+                    icon: <Settings size={16} />
+                },
+
                 can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
                     key: 'parent-header-links',
                     label: 'Parent Links',

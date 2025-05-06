@@ -40,6 +40,7 @@ import AdminNoticeForm from '@/components/admin/messages/AdminNoticeForm';
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
 import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
 import MessageEmailPage from '@//components/admin/messages/MessageEmailPage';
+import SettingsPage from '@/components/admin/SettingsPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -186,7 +187,9 @@ export default function AdminPage() {
             case 'report-transitions':  
                 return <ReportTransitionHistory groupId={userInfo.group_id} userInfo={userInfo} />;
             case 'report-data-quality':
-				return <ReportDataQuality groupId={userInfo.group_id} userInfo={userInfo} />;
+                return <ReportDataQuality groupId={userInfo.group_id} userInfo={userInfo} />;
+			case 'settings':
+				return <SettingsPage groupId={userInfo.group_id} />;
             default:
                 if (userInfo?.role === 'Super Admin') {
                     return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
