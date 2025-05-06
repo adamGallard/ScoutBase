@@ -1,5 +1,4 @@
 ﻿// src/components/admin/MessageParentsPage.jsx
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { sections } from '@/components/common/Lookups.js';
@@ -11,30 +10,89 @@ import {
 } from '@/components/common/SharedStyles';
 import { MessageCircle } from 'lucide-react';
 
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Helpers                                                                  */
+/* ────────────────────────────────────────────────────────────────────────── */
 const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label ?? code;
 
-function toE164(raw) {
+const toE164 = raw => {
     let digits = raw.replace(/\D/g, '');
-    if (digits.startsWith('0')) digits = '61' + digits.slice(1);
+    if (digits.startsWith('0')) digits = '61' + digits.slice(1); // AU → +61 …
     return '+' + digits;
-}
-function isE164(num) {
-    return /^\+[1-9]\d{1,14}$/.test(num);
-}
+};
+const isE164 = num => /^\+[1-9]\d{1,14}$/.test(num);
+
+/* ────────────────────────────────────────────────────────────────────────── */
 
 export default function MessageParentsPage({ groupId }) {
+    /* 0. Mode = loading | off | nodetails | ready */
+    const [mode, setMode] = useState('loading');
+
+    /* 1. UI state */
     const [sectionFilter, setSectionFilter] = useState('');
     const [nameFilter, setNameFilter] = useState('');
     const [parentsList, setParentsList] = useState([]);
     const [selectedParents, setSelectedParents] = useState([]);
     const [message, setMessage] = useState('');
-    const [loading, setLoading] = useState(false);
+
+    const [loadingParents, setLoadingParents] = useState(false);
     const [sending, setSending] = useState(false);
 
+    /* ──────────────────────────────────────────────────────────────────────── */
+    /* 1. Fetch SMS toggle + Twilio settings                                   */
+    /* ──────────────────────────────────────────────────────────────────────── */
     useEffect(() => {
         if (!groupId) return;
-        setLoading(true);
+
+        (async () => {
+            const { data, error } = await supabase
+                .from('group_settings')
+                .select(
+                    `
+            sms_enabled,
+            twilio_account_sid,
+            twilio_auth_token,
+            twilio_messaging_service_sid
+          `
+                )
+                .eq('group_id', groupId)
+                .single();
+
+            if (error) {
+                console.error('Error fetching SMS settings:', error);
+                setMode('off');
+                return;
+            }
+
+            const {
+                sms_enabled,
+                twilio_account_sid,
+                twilio_auth_token,
+                twilio_messaging_service_sid,
+            } = data;
+
+            if (!sms_enabled) {
+                setMode('off');
+            } else if (
+                !twilio_account_sid ||
+                !twilio_auth_token ||
+                !twilio_messaging_service_sid
+            ) {
+                setMode('nodetails');
+            } else {
+                setMode('ready');
+            }
+        })();
+    }, [groupId]);
+
+    /* ──────────────────────────────────────────────────────────────────────── */
+    /* 2. Fetch parents only when SMS is usable                                */
+    /* ──────────────────────────────────────────────────────────────────────── */
+    useEffect(() => {
+        if (mode !== 'ready' || !groupId) return;
+
+        setLoadingParents(true);
 
         (async () => {
             const { data, error } = await supabase
@@ -55,39 +113,38 @@ export default function MessageParentsPage({ groupId }) {
                 .eq('parent.group_id', groupId)
                 .order('name', { foreignTable: 'parent', ascending: true });
 
-            setLoading(false);
+            setLoadingParents(false);
             if (error) {
                 console.error('Error fetching parents:', error);
                 return;
             }
 
-            // dedupe & collect both section fields
+            /* De‑dupe parents, combine section + linking_section */
             const dedup = {};
             data.forEach(r => {
                 const p = r.parent;
                 const sec1 = r.youth?.section ?? '';
                 const sec2 = r.youth?.linking_section ?? '';
-                if (!dedup[p.id]) {
-                    dedup[p.id] = { ...p, sections: [] };
-                }
-                if (sec1 && !dedup[p.id].sections.includes(sec1)) {
+                if (!dedup[p.id]) dedup[p.id] = { ...p, sections: [] };
+                if (sec1 && !dedup[p.id].sections.includes(sec1))
                     dedup[p.id].sections.push(sec1);
-                }
-                if (sec2 && !dedup[p.id].sections.includes(sec2)) {
+                if (sec2 && !dedup[p.id].sections.includes(sec2))
                     dedup[p.id].sections.push(sec2);
-                }
             });
 
             setParentsList(
                 Object.values(dedup).sort((a, b) => a.name.localeCompare(b.name))
             );
         })();
-    }, [groupId]);
+    }, [groupId, mode]);
 
-    // filter by section (including linking_section) and by name substring
-    const displayedParents = parentsList.filter(p =>
-        (!sectionFilter || p.sections.includes(sectionFilter)) &&
-        p.name.toLowerCase().includes(nameFilter.toLowerCase())
+    /* ──────────────────────────────────────────────────────────────────────── */
+    /* 3. Derived lists & helpers                                              */
+    /* ──────────────────────────────────────────────────────────────────────── */
+    const displayedParents = parentsList.filter(
+        p =>
+            (!sectionFilter || p.sections.includes(sectionFilter)) &&
+            p.name.toLowerCase().includes(nameFilter.toLowerCase())
     );
 
     const toggleParent = id =>
@@ -96,11 +153,9 @@ export default function MessageParentsPage({ groupId }) {
         );
 
     const handleSelectAll = () => {
-        if (selectedParents.length === displayedParents.length) {
+        if (selectedParents.length === displayedParents.length)
             setSelectedParents([]);
-        } else {
-            setSelectedParents(displayedParents.map(p => p.id));
-        }
+        else setSelectedParents(displayedParents.map(p => p.id));
     };
 
     const handleSend = async () => {
@@ -130,6 +185,8 @@ export default function MessageParentsPage({ groupId }) {
                 )
             );
             alert('Messages sent successfully!');
+            setMessage('');
+            setSelectedParents([]);
         } catch (err) {
             console.error('SMS send error:', err);
             alert(`Error sending SMS: ${err.message}`);
@@ -138,23 +195,76 @@ export default function MessageParentsPage({ groupId }) {
         }
     };
 
+    /* ──────────────────────────────────────────────────────────────────────── */
+    /* 4. Render by mode                                                       */
+    /* ──────────────────────────────────────────────────────────────────────── */
+    if (mode === 'loading') return null; // or a spinner
+
+    if (mode === 'off')
+        return (
+            <PageWrapper>
+                <PageTitle>
+                    <MessageCircle
+                        size={25}
+                        style={{ marginRight: 8, verticalAlign: 'middle' }}
+                    />
+                    Send SMS to Parents
+                </PageTitle>
+                <p style={{ color: '#b52d2d', fontSize: '1.1rem' }}>
+                    SMS messaging is currently <strong>disabled</strong> for this group.
+                    Please ask your Group Leader to enable it in Settings.
+                </p>
+            </PageWrapper>
+        );
+
+    if (mode === 'nodetails')
+        return (
+            <PageWrapper>
+                <PageTitle>
+                    <MessageCircle
+                        size={25}
+                        style={{ marginRight: 8, verticalAlign: 'middle' }}
+                    />
+                    Send SMS to Parents
+                </PageTitle>
+                <p style={{ color: '#b52d2d', fontSize: '1.1rem' }}>
+                    SMS is enabled, but the Twilio configuration is incomplete. Add your
+                    <em> Account SID</em>, <em>Auth Token</em>, and
+                    <em> Messaging Service SID</em> in Settings.
+                </p>
+            </PageWrapper>
+        );
+
+    /* mode === 'ready' → full UI */
     return (
         <PageWrapper>
             <PageTitle>
-                <MessageCircle size={25} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+                <MessageCircle
+                    size={25}
+                    style={{ marginRight: 8, verticalAlign: 'middle' }}
+                />
                 Send SMS to Parents
             </PageTitle>
 
             <section id="sms-page-instructions">
                 <p>
-                    <strong>Send a text message to parents.</strong> Filter by section or name, tick recipients,
-                    type your message, then click <code>Send</code> to deliver via SMS.
+                    <strong>Send a text message to parents.</strong> Filter by section or
+                    name, tick recipients, type your message, then click&nbsp;
+                    <code>Send</code> to deliver via SMS.
                 </p>
             </section>
 
-            <div style={{ margin: '1rem 0', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            {/* Section filter */}
+            <div
+                style={{
+                    margin: '1rem 0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                }}
+            >
                 <label>
-                    Section:
+                    Section:&nbsp;
                     <CompactSelect
                         value={sectionFilter}
                         onChange={e => setSectionFilter(e.target.value)}
@@ -164,7 +274,9 @@ export default function MessageParentsPage({ groupId }) {
                         {sections
                             .sort((a, b) => a.order - b.order)
                             .map(({ code, label }) => (
-                                <option key={code} value={code}>{label}</option>
+                                <option key={code} value={code}>
+                                    {label}
+                                </option>
                             ))}
                     </CompactSelect>
                 </label>
@@ -191,7 +303,9 @@ export default function MessageParentsPage({ groupId }) {
                         disabled={sending || !message || !selectedParents.length}
                         style={{ marginTop: '0.5rem' }}
                     >
-                        {sending ? 'Sending…' : `Send to ${selectedParents.length} Parent(s)`}
+                        {sending
+                            ? 'Sending…'
+                            : `Send to ${selectedParents.length} Parent(s)`}
                     </PrimaryButton>
                 </div>
 
@@ -213,18 +327,29 @@ export default function MessageParentsPage({ groupId }) {
                     />
 
                     <div style={{ marginBottom: '0.5rem' }}>
-                        <PrimaryButton onClick={handleSelectAll} style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}>
-                            {selectedParents.length === displayedParents.length ? 'Deselect All' : 'Select All'}
+                        <PrimaryButton
+                            onClick={handleSelectAll}
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem' }}
+                        >
+                            {selectedParents.length === displayedParents.length
+                                ? 'Deselect All'
+                                : 'Select All'}
                         </PrimaryButton>
                     </div>
 
-                    {loading ? (
+                    {loadingParents ? (
                         <p>Loading parents…</p>
                     ) : (
                         <ul style={{ listStyle: 'none', padding: 0 }}>
                             {displayedParents.map(parent => (
                                 <li key={parent.id} style={{ marginBottom: '0.5rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <label
+                                        style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                        }}
+                                    >
                                         <input
                                             type="checkbox"
                                             checked={selectedParents.includes(parent.id)}
@@ -236,7 +361,9 @@ export default function MessageParentsPage({ groupId }) {
                                     </label>
                                 </li>
                             ))}
-                            {displayedParents.length === 0 && <p>No matching parents found.</p>}
+                            {displayedParents.length === 0 && (
+                                <p>No matching parents found.</p>
+                            )}
                         </ul>
                     )}
                 </div>
