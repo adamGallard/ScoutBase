@@ -1,12 +1,14 @@
-﻿import { useState } from 'react';
+﻿// src/components/admin/common/Sidebar.jsx
+import { useState } from 'react';
 import {
     FileText, UserPlus, Users, BarChart2, ChevronRight, ChevronDown, Mail,
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
-    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield, Megaphone,
-    FolderSymlink, FileCheck2, CalendarClock, MessageCircle, MessageSquare, Settings
+    LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
+    Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
+    MessageSquare, Settings,
 } from 'lucide-react';
 
-import { can } from "@/utils/roleUtils";
+import { can } from '@/utils/roleUtils';
 
 const btnStyle = {
     background: 'none',
@@ -25,116 +27,93 @@ const btnStyle = {
 
 export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
     const [collapsed, setCollapsed] = useState(false);
-    const [reportsExpanded, setReportsExpanded] = useState(false);
     const [expandedSections, setExpandedSections] = useState(new Set());
 
-    const toggleSection = (key) => {
-        setExpandedSections(prev => {
-            const updated = new Set(prev);
-            updated.has(key) ? updated.delete(key) : updated.add(key);
-            return updated;
-        });
-    };
+    const allow = perm => can(userInfo?.role, perm, { actingAsGroupId, actingAsAdmin });
 
+    const toggleSection = key =>
+        setExpandedSections(prev => {
+            const s = new Set(prev);
+            s.has(key) ? s.delete(key) : s.add(key);
+            return s;
+        });
+
+    /** ------------ NAV DEFINITIONS ------------ **/
     const navItems = [
         { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
 
-        // 👥 People
-        can(userInfo?.role, 'viewYouthParentTabs', { actingAsGroupId, actingAsAdmin }) && {
+        /* 👥  People  (parents, youth, patrols) */
+        (allow('parentCRUD') || allow('youthCRUD') || allow('patrolCRUD')) && {
             key: 'people',
             label: 'People',
             icon: <Users size={16} />,
             expandable: true,
             children: [
-                { key: 'add-parent', label: 'Parents', icon: <UserPlus size={16} /> },
-                { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
-                { key: 'patrol-management', label: 'Patrols', icon: <Flag size={16} /> }
-            ]
+                allow('parentCRUD') && { key: 'add-parent', label: 'Parents', icon: <UserPlus size={16} /> },
+                allow('youthCRUD') && { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
+                allow('patrolCRUD') && { key: 'patrol-management', label: 'Patrols', icon: <Flag size={16} /> },
+            ].filter(Boolean),
         },
 
-        // 📊 Reports
-        can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
+        /* 📊  Reports */
+        (allow('reportAttendanceDaily') || allow('reportYouthBySection')) && {
             key: 'reports',
             label: 'Reports',
             icon: <BarChart2 size={16} />,
             expandable: true,
             children: [
-                { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
-				{ key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
-                { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
-                { key: 'report-parent-engagement', label: 'Parent Engagement', icon: <Users size={16} /> },
-                { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
-                { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
-                { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
-                { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
-                { key: 'report-full-export', label: 'Full Export', icon: <Download size={16} /> },
-                { key: 'report-data-quality', label: 'Data Quality', icon: <FileCheck2 size={16} /> }
-            ]
+                allow('reportAttendanceDaily') && { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
+                allow('reportAttendancePeriod') && { key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
+                allow('inspection') && { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
+                allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
+                allow('reportYouthBySection') && { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
+                allow('reportAge') && { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
+                allow('reportLinkingHistory') && { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
+                allow('reportFullExport') && { key: 'report-full-export', label: 'Full Export', icon: <Download size={16} /> },
+                allow('reportDataQuality') && { key: 'report-data-quality', label: 'Data Quality', icon: <FileCheck2 size={16} /> },
+            ].filter(Boolean),
         },
 
-        // Messaging
-        can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
-            key: 'Messages-group',
+        /* 💬  Messaging */
+        (allow('noticeCRUD') || allow('smsSend') || allow('emailSend')) && {
+            key: 'messages-group',
             label: 'Messages',
             icon: <MessageSquare size={16} />,
             expandable: true,
             children: [
-                { key: 'notices', label: 'Notices', icon: <Megaphone size={16} /> },
-                { key: 'message-sms', label: 'SMS', icon: <MessageCircle size={16} /> },
-                { key: 'message-email', label: 'Email', icon: <Mail size={16} /> }
-            ]
-        },
-                
-
-        can(userInfo?.role, 'viewReports', { actingAsGroupId, actingAsAdmin }) && {
-            key: 'qr-code',
-            label: 'QR Code',
-            icon: <QrCode size={16} />
+                allow('noticeCRUD') && { key: 'notices', label: 'Notices', icon: <Megaphone size={16} /> },
+                allow('smsSend') && { key: 'message-sms', label: 'SMS', icon: <MessageCircle size={16} /> },
+                allow('emailSend') && { key: 'message-email', label: 'Email', icon: <Mail size={16} /> },
+            ].filter(Boolean),
         },
 
+        /* QR‑Code Check‑in/out */
+        allow('qrCheckin') && { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> },
 
-        // 🔐 Admin Tools
+        /* 🔐  Admin Tools */
         {
             key: 'admin',
             label: 'Admin Tools',
             icon: <Shield size={16} />,
             expandable: true,
             children: [
-                // 👤 All roles that can manage users (Group Leaders and up)
-                can(userInfo?.role, 'manageUsers', { actingAsGroupId, actingAsAdmin }) && {
-                    key: 'user-management',
-                    label: 'Users',
-                    icon: <User size={16} />
-                },
-                can(userInfo?.role, 'manageUsers', { actingAsGroupId, actingAsAdmin }) && {
-                    key: 'settings',
-                    label: 'Group Settings',
-                    icon: <Settings size={16} />
-                },
+                /* Users / Settings (GL + up) */
+                allow('userAdmin') && { key: 'user-management', label: 'Users', icon: <User size={16} /> },
+                allow('settings') && { key: 'settings', label: 'Group Settings', icon: <Settings size={16} /> },
 
-                can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
-                    key: 'parent-header-links',
-                    label: 'Parent Links',
-                    icon: <FolderSymlink size={16} />
-                },
+                /* Parent Links editable if group settings perm */
+                allow('settings') && { key: 'parent-header-links', label: 'Parent Links', icon: <FolderSymlink size={16} /> },
 
-
-                // 🗺 Only roles with full access (Super Admin)
-                can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
-                    key: 'group-management',
-                    label: 'Groups',
-                    icon: <MapPin size={16} />
-                },
-                can(userInfo?.role, 'manageGroupsAndUsers', { actingAsGroupId, actingAsAdmin }) && {
-                    key: 'audit-log',
-                    label: 'Audit Log',
-                    icon: <FileText size={16} />
-                }
-            ].filter(Boolean) // 🧼 removes any false/null values
+                /* Governance (Super Admin only) */
+                allow('groupAdmin') && { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
+                allow('auditLog') && { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> },
+            ].filter(Boolean),
         },
 
-        { key: 'logout', label: 'Logout', icon: <LogOut size={16} /> }
+        { key: 'logout', label: 'Logout', icon: <LogOut size={16} /> },
     ].filter(Boolean);
+
+    /** ------------ RENDER ------------ **/
     return (
         <div
             style={{
@@ -153,25 +132,25 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             </button>
 
             <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
-                {navItems.map((item) => (
+                {navItems.map(item => (
                     <li key={item.key} style={{ width: '100%' }}>
                         <button
                             onClick={() => {
-                                if (item.expandable) {
-                                    toggleSection(item.key);
-                                } else {
-                                    onNavigate(item.key);
-                                }
+                                if (item.expandable) toggleSection(item.key);
+                                else onNavigate(item.key);
                             }}
                             style={btnStyle}
                         >
                             <span>{item.icon}</span>
                             {!collapsed && <span>{item.label}</span>}
                             {!collapsed && item.expandable && (
-                                expandedSections.has(item.key) ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                                expandedSections.has(item.key)
+                                    ? <ChevronDown size={16} />
+                                    : <ChevronRight size={16} />
                             )}
                         </button>
 
+                        {/* Child list */}
                         {!collapsed && item.expandable && expandedSections.has(item.key) && (
                             <ul style={{ listStyle: 'none', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                                 {item.children.map(child => (
@@ -190,4 +169,3 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
         </div>
     );
 }
-

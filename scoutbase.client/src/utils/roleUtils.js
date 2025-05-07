@@ -1,75 +1,155 @@
-// src/utils/roleUtils.js
-export const roles = ['Super Admin', 'Group Leader', 'Section Leader', 'Section User'];
+﻿// src/utils/roleUtils.js
+/* ────────────────────────────────────────────────────────── */
+/* 1. Role list                                              */
+/* ────────────────────────────────────────────────────────── */
+export const roles = [
+    'Super Admin',
+    'Group Leader',
+    'Section Leader',
+    'Section User',
+];
 
+/* ────────────────────────────────────────────────────────── */
+/* 2. Permission keys per role                               */
+/*    (Super Admin gets ops via “Act as” toggle.)            */
+/* ────────────────────────────────────────────────────────── */
 const rolePermissions = {
-    'Super Admin': ['manageGroupsAndUsers', 'setupSystem', 'manageUsers'],
-    'Group Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance', 'manageUsers'],
-    'Section Leader': ['viewYouthParentTabs', 'viewReports', 'accessAttendance'],
-    'Section User': ['viewReports']
+    /* governance only */
+    'Super Admin': ['groupAdmin', 'userAdmin', 'auditLog'],
+
+    /* group level */
+    'Group Leader': [
+        'dashboard',
+        'attendanceEdit',
+        'reportAttendancePeriod',
+        'reportAttendanceDaily',
+        'youthCRUD',
+        'parentCRUD',
+        'parentLinks',
+        'qrCheckin',
+        'patrolCRUD',
+        'inspection',
+        'noticeCRUD',
+        'emailSend',
+        'smsSend',
+        'reportParentEmails',
+        'reportYouthBySection',
+        'reportAge',
+        'reportLinkingHistory',
+        'reportFullExport',
+        'reportDataQuality',
+        'settings',
+        'userAdmin',
+        'auditLog',
+    ],
+
+    /* section level */
+    'Section Leader': [
+        'dashboard',
+        'attendanceEdit',
+        'youthCRUD',
+        'parentCRUD',
+        'parentLinks',
+        'qrCheckin',
+        'patrolCRUD',
+        'inspection',
+        'noticeCRUD',
+        'emailSend',
+        'smsSend',
+        'reportParentEmails',
+        'reportYouthBySection',
+        'reportAge',
+        'reportLinkingHistory',
+        'reportDataQuality',
+        'reportAttendanceDaily',
+    ],
+
+    /* view‑only */
+    'Section User': [
+        'dashboard',
+        'qrCheckin',
+        'reportYouthBySection',
+    ],
 };
 
-export const hasSectionAccess = (userInfo) => {
-    return ['Section Leader', 'Section User'].includes(userInfo.role);
-};
+/* ────────────────────────────────────────────────────────── */
+/* 3. Generic “can” helper                                    */
+/* ────────────────────────────────────────────────────────── */
+export const hasSectionAccess = userInfo =>
+    ['Section Leader', 'Section User'].includes(userInfo.role);
 
-export const can = (role, permission, options = {}) => {
-    const { actingAsGroupId, actingAsAdmin, userSection, targetSection } = options;
+export const can = (
+    role,
+    permission,
+    { actingAsGroupId, actingAsAdmin, userSection, targetSection } = {}
+) => {
+    /* 3‑a native */
+    const allowed = rolePermissions[role]?.includes(permission) || false;
 
-    const permissions = rolePermissions[role] || [];
-    const hasPermission = permissions.includes(permission);
-
-    // Section Leader restriction to their section
-    if (role === 'Section Leader' && hasPermission && permission !== 'viewReports') {
-        if (!targetSection || userSection === targetSection) {
-            return true;
-        }
-        return false;
+    /* 3‑b Section Leader limited to own section */
+    if (
+        role === 'Section Leader' &&
+        allowed &&
+        ![
+            'reportParentEmails',
+            'reportYouthBySection',
+            'reportAge',
+            'reportLinkingHistory',
+            'reportDataQuality',
+            'reportAttendanceDaily',
+        ].includes(permission)
+    ) {
+        return !targetSection || userSection === targetSection;
     }
 
-    // Allow SuperAdmin to act as admin if toggled
+    /* 3‑c Super Admin acting as Group Leader */
     if (
         role === 'Super Admin' &&
         actingAsGroupId &&
         actingAsAdmin &&
-        ['viewYouthParentTabs', 'accessAttendance', 'viewReports'].includes(permission)
+        rolePermissions['Group Leader'].includes(permission)
     ) {
         return true;
     }
 
-    return hasPermission;
-};
-export const normalizeRole = (role) => {
-    if (!role) return '';
-    return role.toLowerCase().replace(/\s+/g, '_'); // "Super Admin" -> "super_admin"
+    return allowed;
 };
 
-export const canEditUser = (currentUser, targetUser) => {
-    if (currentUser.role === 'Super Admin') return true;
-    if (currentUser.role === 'Group Leader') return targetUser.role !== 'Super Admin';
-    if (currentUser.role === 'Section Leader') {
-        return targetUser.role === 'Section Leader' && targetUser.section === currentUser.section;
-    }
-    return false;
+/* ────────────────────────────────────────────────────────── */
+/* 4. Hierarchy helpers                                       */
+/* ────────────────────────────────────────────────────────── */
+const roleOrder = [
+    'Section User',
+    'Section Leader',
+    'Group Leader',
+    'Super Admin',
+];
+
+const higherThan = (a, b) => roleOrder.indexOf(a) > roleOrder.indexOf(b);
+
+/* ────────────────────────────────────────────────────────── */
+/* 5. CRUD helpers for user admin                             */
+/* ────────────────────────────────────────────────────────── */
+export const canEditUser = (currentUser, targetUser) =>
+    higherThan(currentUser.role, targetUser.role);
+
+export const canDeleteUser = (currentUser, targetUser) =>
+    higherThan(currentUser.role, targetUser.role);
+
+export const getAssignableRoles = currentUser => {
+    const currentIdx = roleOrder.indexOf(currentUser.role);
+    return roles.filter(r => roleOrder.indexOf(r) < currentIdx);
 };
 
-export const canDeleteUser = (currentUser, targetUser) => {
-    if (targetUser.role === 'Super Admin') return false;
-    if (currentUser.role === 'Super Admin') return true;
-    if (currentUser.role === 'Group Leader') return targetUser.role !== 'Group Leader' && targetUser.role !== 'Super Admin';
-    return false;
-};
-
-export const getAssignableRoles = (currentUser) => {
-    if (currentUser.role === 'Super Admin') return roles;
-    if (currentUser.role === 'Group Leader') return roles.filter(r => r !== 'Super Admin');
-    if (currentUser.role === 'Section Leader') return ['Section Leader', 'Section User'];
-    return [];
-};
+/* ────────────────────────────────────────────────────────── */
+/* 6. Misc                                                    */
+/* ────────────────────────────────────────────────────────── */
+export const normalizeRole = role =>
+    role ? role.toLowerCase().replace(/\s+/g, '_') : '';
 
 export const canViewSection = (userInfo, section) => {
-    if (userInfo.role === 'Super Admin' || userInfo.role === 'Group Leader') return true;
-    if (userInfo.role === 'Section Leader' || userInfo.role === 'Section User') {
+    if (['Super Admin', 'Group Leader'].includes(userInfo.role)) return true;
+    if (['Section Leader', 'Section User'].includes(userInfo.role))
         return section === userInfo.section;
-    }
     return false;
 };

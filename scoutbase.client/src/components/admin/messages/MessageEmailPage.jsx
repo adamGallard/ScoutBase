@@ -22,7 +22,7 @@ const quillFormats = [
     'color', 'background', 'align', 'link', 'image'
 ];
 
-export default function MessageParentsEmailPage({ groupId }) {
+export default function MessageParentsEmailPage({ groupId, userInfo }) {
     const [sectionFilter, setSectionFilter] = useState('');
     const [parentsList, setParentsList] = useState([]);
     const [selectedParents, setSelectedParents] = useState([]);
@@ -84,7 +84,10 @@ export default function MessageParentsEmailPage({ groupId }) {
                 .eq('is_primary', true)
                 .eq('parent.group_id', groupId);
 
-            if (sectionFilter) query = query.eq('youth.section', sectionFilter);
+            // Filter by section if the user is a Section Leader
+            if (userInfo?.role === 'Section Leader' && userInfo?.section) {
+                query = query.or(`youth.section.eq.${userInfo.section},youth.linking_section.eq.${userInfo.section}`);
+            }
 
             const { data, error } = await query.order('name', { foreignTable: 'parent', ascending: true });
 
@@ -128,6 +131,10 @@ export default function MessageParentsEmailPage({ groupId }) {
         setSelectedParents(prev =>
             prev.length === displayedParents.length ? [] : displayedParents.map(p => p.id)
         );
+
+    const handleSectionFilterChange = (e) => {
+        setSectionFilter(e.target.value);
+    };
 
     // Handle file selection
     const handleFileChange = e => {
@@ -243,8 +250,28 @@ export default function MessageParentsEmailPage({ groupId }) {
                     Emailing is disabled for this group. Please contact your group leader for assistance.
                 </div>
             )}
-
-
+            {/* Section Filter Dropdown */}
+            <div style={{ marginBottom: '1rem' }}>
+                <label style={{ marginRight: 8 }}>
+                    Select Section:&nbsp;
+                    <select
+                        value={sectionFilter}
+                        onChange={handleSectionFilterChange}
+                        style={{ padding: '0.25rem 0.5rem' }}
+                    >
+                        <option value="">All Sections</option>
+                    {sections
+                        .slice()
+                        .sort((a, b) => a.order - b.order)
+                        .map(({ code, label }) => (
+                            <option key={code} value={code}>
+                                {label}
+                            </option>
+                        ))
+                    }
+                    </select>
+                    </label>
+            </div>
 
             {/* Render the email sending form only if mode is not 'none' */}
             {mode !== 'none' && (

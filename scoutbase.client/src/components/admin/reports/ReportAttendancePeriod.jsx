@@ -7,10 +7,14 @@ import { AdminTable, PageTitle, PrimaryButton } from '@/components/common/Shared
 import { downloadCSV } from '@/utils/exportUtils';
 import { CalendarClock } from 'lucide-react';
 
-export default function AttendancePeriodReport({ groupId }) {
+export default function AttendancePeriodReport({ groupId, userInfo }) {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [section, setSection] = useState('');  // section code
+   // Section Leaders are forced to their own section
+   const effectiveSection = userInfo?.role === 'Section Leader'
+              ? userInfo.section
+          : section;
     const [stage, setStage] = useState('');  // stage code
     const [data, setData] = useState([]);
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
@@ -34,8 +38,8 @@ export default function AttendancePeriodReport({ groupId }) {
             .select('id, name, section, membership_stage')
             .eq('group_id', groupId);
 
-            if (section) {
-                  qry = qry.eq('section', section);
+        if (effectiveSection) {
+              qry = qry.eq('section', effectiveSection);
                 }
             if (stage) {
                  // if the user picked a specific stage, filter to that
@@ -163,20 +167,16 @@ export default function AttendancePeriodReport({ groupId }) {
                         onChange={e => setEndDate(e.target.value)}
                     />
                 </label>
-                <label>
-                    Section:{' '}
-                    <select value={section} onChange={e => setSection(e.target.value)}>
-                        <option value="">All</option>
-                        {sections
-                            .slice()
-                            .sort((a, b) => a.order - b.order)
-                            .map(s => (
-                                <option key={s.code} value={s.code}>
-                                    {s.label}
-                                </option>
-                            ))}
-                    </select>
-                </label>
+                {userInfo.role !== 'Section Leader' ? (
+                      <label>
+                            Section:{' '}
+                            <select value={section} onChange={e => setSection(e.target.value)}>
+                                  …
+                               </select>
+                          </label>
+                    ) : (
+                      <input type="hidden" value={userInfo.section} />
+                    )}
                 <label>
                     Stage:{' '}
                     <select value={stage} onChange={e => setStage(e.target.value)}>

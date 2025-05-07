@@ -1,6 +1,7 @@
-﻿import { useEffect, useState, useRef } from 'react';
+﻿// src/hooks/useTerrainUser.jsx
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { logAuditEvent } from "@/helpers/auditHelper";
+import { logAuditEvent } from '@/helpers/auditHelper';
 
 export function useTerrainUser() {
     const [userInfo, setUserInfo] = useState(null);
@@ -8,11 +9,11 @@ export function useTerrainUser() {
     const [error, setError] = useState('');
     const hasLoggedAudit = useRef(false);
 
+    /* 1️⃣  fetch once on mount  */
     useEffect(() => {
-        const fetchUserInfo = async () => {
+        (async () => {
             const idToken = localStorage.getItem('scoutbase-terrain-idtoken');
             const terrainUserId = localStorage.getItem('scoutbase-terrain-userid');
-
             if (!idToken || !terrainUserId) {
                 setError('Missing authentication tokens');
                 setLoading(false);
@@ -20,73 +21,69 @@ export function useTerrainUser() {
             }
 
             try {
-                const response = await fetch('https://members.terrain.scouts.com.au/profiles', {
-                    headers: { Authorization: idToken }
+                // Terrain profile (name)
+                const resp = await fetch('https://members.terrain.scouts.com.au/profiles', {
+                    headers: { Authorization: idToken },
                 });
+                const profile = (await resp.json())?.profiles?.[0];
+                const name = profile?.member?.name;
+                if (!name) throw new Error('No valid profile');
 
-                const profileData = await response.json();
-                const profile = profileData?.profiles?.[0];
-
-                if (!profile || !profile.member?.name) {
-                    setError('No valid profile info found');
-                    setLoading(false);
-                    return;
-                }
-
-                const { name } = profile.member;
-
-                const { data: userRecord, error: userError } = await supabase
+                // ScoutBase user row
+                const { data: row, error: dbErr } = await supabase
                     .from('users')
                     .select('id, group_id, role, section')
                     .eq('terrain_user_id', terrainUserId)
                     .single();
 
-                if (userError || !userRecord) {
-                    console.error('User lookup failed:', userError || 'No user found');
-                    setError('User not found in ScoutBase database');
-                } else {
-                    const fullUserInfo = {
-                        id: userRecord.id,
-                        name,
-                        group_id: userRecord.group_id,
-                        role: userRecord.role,
-                        section: userRecord.section
-                    };
+                if (dbErr || !row) throw new Error('User not found in database');
 
-                    setUserInfo(fullUserInfo);
+                // Build userInfo
+                const u = { id: row.id, name, group_id: row.group_id, role: row.role, section: row.section };
+                setUserInfo(u);
 
-                    const sessionAuditKey = `scoutbase-login-audit-${terrainUserId}`;
-
-                    // 🚫 Avoid multiple logs in dev/strict mode
-                    if (
-                        !sessionStorage.getItem(sessionAuditKey) &&
-                        !hasLoggedAudit.current
-                    ) {
-                        hasLoggedAudit.current = true;
-                        sessionStorage.setItem(sessionAuditKey, 'true');
-
-                        // Delay log to suppress duplicate in React Strict Mode
-                        setTimeout(() => {
-                            logAuditEvent({
-                                userId: userRecord.id,
-                                groupId: userRecord.group_id,
-                                role: userRecord.role,
-                                action: 'admin_login',
-                                targetType: 'system'
-                            });
-                        }, 250);
-                    }
+                /* audit once‑per‑session */
+                const auditKey = `scoutbase-login-audit-${terrainUserId}`;
+                if (!sessionStorage.getItem(auditKey) && !hasLoggedAudit.current) {
+                    hasLoggedAudit.current = true;
+                    sessionStorage.setItem(auditKey, 'true');
+                    setTimeout(() =>
+                        logAuditEvent({
+                            userId: row.id,
+                            groupId: row.group_id,
+                            role: row.role,
+                            action: 'admin_login',
+                            targetType: 'system',
+                        }), 250);
                 }
             } catch (err) {
-                console.error('Error fetching Terrain profile:', err);
-                setError('Could not get user profile');
+                console.error(err);
+                setError(err.message);
             }
-
             setLoading(false);
-        };
-
-        fetchUserInfo();
+        })();
     }, []);
+
+    /* 2️⃣  realtime subscription → live‑update role, group, section */
+    useEffect(() => {
+        if (!userInfo) return;                       // wait until we know id
+        const channel = supabase.channel('user-role-watch')
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'users',
+                    filter: `id=eq.${userInfo.id}`,
+                },
+                payload => {
+                    const { role, group_id, section } = payload.new;
+                    setUserInfo(prev => ({ ...prev, role, group_id, section }));
+                },
+            )
+            .subscribe();
+        return () => channel.unsubscribe();
+    }, [userInfo?.id]);
 
     return { userInfo, loading, error };
 }
