@@ -27,6 +27,7 @@ const rolePermissions = {
         'parentCRUD',
         'parentLinks',
         'qrCheckin',
+		'oasCRUD', 
         'patrolCRUD',
         'inspection',
         'noticeCRUD',

@@ -45,7 +45,7 @@ export function getLinkingThreshold(sectionCode) {
     return thresholdMap[sectionCode] || null;
 }
 
-export function getLinkingStatus(dob, sectionCode, membershipStage) {
+ export function getLinkingStatus(dob, sectionCode, membershipStage) {
     const limit = thresholdMap[sectionCode];
     if (limit == null) return '';
 
@@ -67,4 +67,8 @@ export function getLinkingStatus(dob, sectionCode, membershipStage) {
         return 'Approaching';
     }
     return '';
+}
+export function getISODateInTZ(tz) {
+    // returns "YYYY-MM-DD" in the requested zone (works in every browser)
+    return new Date().toLocaleDateString('en-CA', { timeZone: tz }); // en-CA => ISO style
 }

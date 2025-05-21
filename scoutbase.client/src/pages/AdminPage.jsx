@@ -56,6 +56,7 @@ import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
+import ReportOAS from '../components/admin/reports/RefOAS';
 
 
 // ───────────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ const PAGE_DEFINITIONS = {
     'report-youth-by-section': { component: ReportYouthBySection, permission: 'reportYouthBySection', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'report-age': { component: ReportAge, permission: 'reportAge', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'audit-log': { component: AuditLogViewer, permission: 'auditLog', passProps: (c) => ({ activeGroupId: c.activeGroupId }) },
+    'oas-ref': { component: ReportOAS, permission: 'oasCRUD', passProps: (c) => ({ groupId: c.userInfo.group_id }) }, 
     'qr-code': { component: GroupQRCode, permission: 'qrCheckin', passProps: (c) => ({ groupStub: c.group?.slug }) },
     'patrol-management': { component: PatrolManagementView, permission: 'patrolCRUD', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
     'inspection': { component: InspectionPage, permission: 'inspection', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },

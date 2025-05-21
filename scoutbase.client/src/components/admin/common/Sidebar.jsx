@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings,
+    MessageSquare, Settings, BookOpen,Tent
 } from 'lucide-react';
 
 import { can } from '@/utils/roleUtils';
@@ -87,9 +87,17 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             ].filter(Boolean),
         },
 
-        /* QR‑Code Check‑in/out */
-        allow('qrCheckin') && { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> },
-
+        /* 📚  Resources */
+        {
+            key: 'Ref-group',
+            label: 'Reference',
+            icon: <BookOpen size={16} />,
+            expandable: true,
+            children: [
+                allow('qrCheckin') && { key: 'qr-code', label: 'QR Code', icon: <QrCode size={16} /> },
+                allow('oasCRUD') && { key: 'oas-ref', label: 'OAS', icon: <Tent size={16} /> },
+            ].filter(Boolean),
+        },
         /* 🔐  Admin Tools */
         {
             key: 'admin',

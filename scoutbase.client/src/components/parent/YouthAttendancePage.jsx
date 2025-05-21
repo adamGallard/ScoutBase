@@ -19,6 +19,7 @@ import {
 import { sections } from '@/components/common/Lookups.js';
 import { supabase } from '@/lib/supabaseClient';
 import { useIsMobile } from '@/hooks/useIsMobile'
+import { getISODateInTZ } from '@/utils/dateUtils'
 
 const codeToSectionLabel = code =>
 	sections.find(s => s.code === code)?.label ?? code;
@@ -67,9 +68,8 @@ export default function YouthAttendancePage() {
 	// Handle sign-in/out action
 	const handleSign = async (memberId, data) => {
 		// 1) Write to attendance table
-		const now = new Date();
-		const timestamp = now.toISOString();
-		const event_date = timestamp.split('T')[0];
+		const timestamp = new Date().toISOString();            // keep full UTC stamp
+		const event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
 		const { error: insertError } = await supabase
 			.from('attendance')
 			.insert([{
