@@ -1,5 +1,7 @@
 import styled from 'styled-components';
 
+// Existing constants remain untouched
+
 export const PageWrapper = styled.div`
   min-height: 98vh;
   background-color: #f9fafb;
@@ -7,9 +9,8 @@ export const PageWrapper = styled.div`
   font-family: sans-serif;
   display: flex;
   flex-direction: column;
-  marginBottom: '1rem',
+  margin-bottom: 1rem;
 `;
-
 
 export const Header = styled.header`
   display: flex;
@@ -18,6 +19,205 @@ export const Header = styled.header`
   padding: 1.5rem 2rem;
   border-bottom: 1px solid #e5e7eb;
 `;
+
+export const PrimaryButton = styled.button.withConfig({
+    shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isMobile',
+})`
+  font-size: ${({ isMobile }) => (isMobile ? '1rem' : '0.875rem')};
+  padding: ${({ isMobile }) => (isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem')};
+  background-color: #0F5BA4;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out, transform 0.1s;
+margin: 0.25rem 0.5rem;
+
+  &:hover {
+    background-color: #0c4a87;
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    background-color: #94a3b8;
+    cursor: not-allowed;
+  }
+`;
+
+export const ToggleSwitchWrapper = styled.label`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  .toggle-switch {
+    position: relative;
+    width: 50px;
+    height: 24px;
+  }
+
+  .toggle-switch input {
+    display: none;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    border-radius: 24px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: background-color 0.2s ease;
+  }
+
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 2px;
+    bottom: 2px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+  }
+
+  input:checked + .toggle-slider {
+    background-color: #0F5BA4;
+  }
+
+  input:checked + .toggle-slider::before {
+    transform: translateX(26px);
+  }
+`;
+
+// Additions for the Settings Page:
+
+export const SettingsTable = styled.table`
+  width: 100%;
+  margin-bottom: 2rem;
+  border-collapse: collapse;
+`;
+
+export const SettingsTableTh = styled.th`
+  padding: 1rem;
+  background-color: #f4f4f4;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+`;
+
+export const SettingsTableThTd = styled.td`
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  text-align: left;
+  font-size: 0.95rem;
+`;
+
+export const Label = styled.label`
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+`;
+
+export const InputText = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+`;
+
+export const ErrorMessage = styled.div`
+  color: red;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+`;
+
+export const CompactInputGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+`;
+
+export const CompactInput = styled.input`
+  width: 200px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+`;
+
+export const CompactSelect = styled.select`
+  width: 200px;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: white;
+  color: #111827;
+
+  &:focus {
+    outline: none;
+    border-color: #0F5BA4;
+    box-shadow: 0 0 0 1px #0F5BA4;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+`;
+
+// Keep existing styles (Header, Footer, AdminTable, etc.) intact
+export const AdminTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+
+  th, td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-align: left;
+    font-size: 0.95rem;
+  }
+
+  th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  tr:hover {
+    background-color: #f3f4f6;
+  }
+
+  td {
+    color: #111827;
+  }
+`;
+
+
+export const PageTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #0F5BA4;
+  line-height: 1.2;
+`;
+
+
 export const HeaderBar = styled.header`
   display: flex;
   justify-content: space-between;
@@ -141,106 +341,8 @@ export const Footer = styled.footer`
   border-top: 1px solid #e5e7eb;
 `;
 
-export const AdminTable = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  margin-bottom: 2rem;
-
-  th, td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
-    text-align: left;
-    font-size: 0.95rem;
-  }
-
-  th {
-    background-color: #f9fafb;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  tr:hover {
-    background-color: #f3f4f6;
-  }
-
-  td {
-    color: #111827;
-  }
-`;
 import isPropValid from '@emotion/is-prop-valid';
 
-export const PrimaryButton = styled.button.withConfig({
-    shouldForwardProp: (prop) => isPropValid(prop) && prop !== 'isMobile',
-})`
-  font-size: ${({ isMobile }) => (isMobile ? '1rem' : '0.875rem')};
-  padding: ${({ isMobile }) => (isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem')};
-  background-color: #0F5BA4;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease-in-out, transform 0.1s;
-margin: 0.25rem 0.5rem;
-
-  &:hover {
-    background-color: #0c4a87;
-    transform: translateY(-1px);
-  }
-
-  &:disabled {
-    background-color: #94a3b8;
-    cursor: not-allowed;
-  }
-`;
-
-export const ToggleSwitchWrapper = styled.label`
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  cursor: pointer;
-
-  .toggle-switch {
-    position: relative;
-    width: 50px;
-    height: 24px;
-  }
-
-  .toggle-switch input {
-    display: none;
-  }
-
-  .toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    background-color: #ccc;
-    border-radius: 24px;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    transition: background-color 0.2s ease;
-  }
-
-  .toggle-slider::before {
-    content: '';
-    position: absolute;
-    height: 20px;
-    width: 20px;
-    left: 2px;
-    bottom: 2px;
-    background-color: white;
-    border-radius: 50%;
-    transition: transform 0.3s ease;
-  }
-
-  input:checked + .toggle-slider {
-    background-color: #0F5BA4;
-  }
-
-  input:checked + .toggle-slider::before {
-    transform: translateX(26px);
-  }
-`;
 
 export const AdminDropdownContainer = styled.div`
   position: relative;
@@ -273,12 +375,6 @@ export const AdminDropdownToggle = styled.button`
   }
 `;
 
-export const Label = styled.label`
-  font-size: 0.875rem;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-`;
-
 export const StyledSelect = styled.select`
   width: 100%;
   padding: 0.5rem;
@@ -307,13 +403,6 @@ export const AdminWarningLabel = styled.div`
   font-weight: 600;
   padding: 0.5rem 0.75rem;
   border-radius: 9999px;
-`;
-export const PageTitle = styled.h2`
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 1rem;
-  color: #0F5BA4;
-  line-height: 1.2;
 `;
 
 export const ModalOverlay = styled.div`
@@ -476,48 +565,6 @@ export const AdminInput = styled.input`
     cursor: not-allowed;
   }
 `;
-
-export const CompactInputGroup = styled.div`
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  flex-wrap: wrap;
-`;
-
-export const CompactInput = styled.input`
-  width: 200px;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-
-  &:focus {
-    outline: none;
-    border-color: #0F5BA4;
-    box-shadow: 0 0 0 1px #0F5BA4;
-  }
-`;
-export const CompactSelect = styled.select`
-  width: 200px;
-  padding: 0.5rem;
-  font-size: 0.875rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  color: #111827;
-
-  &:focus {
-    outline: none;
-    border-color: #0F5BA4;
-    box-shadow: 0 0 0 1px #0F5BA4;
-  }
-
-  &:disabled {
-    background-color: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-  }
-`;
 export const ButtonRowRight = styled.div`
   display: flex;
   justify-content: flex-end;
@@ -640,14 +687,14 @@ export const SecondaryButton = styled.button`
   font-size: 1rem;
 `;
 
-    /** Container for the Active / Archived tabs */
-    export const TabList = styled.div`
+/** Container for the Active / Archived tabs */
+export const TabList = styled.div`
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1rem;
 `;
 
-    /** Individual tab button */
+/** Individual tab button */
 export const TabButton = styled.button`
     flex: 1;
   padding: 0.75rem;
@@ -657,3 +704,5 @@ export const TabButton = styled.button`
   font-size: 1rem;
   color: ${({ isActive }) => (isActive ? '#0F5BA4' : '#333')};
 `;
+
+

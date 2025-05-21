@@ -7,6 +7,10 @@ import { supabase } from '@/lib/supabaseClient';
 import { useTerrainUser } from '@/hooks/useTerrainUser';
 import { checkTokenValidity } from '@/helpers/authHelper';
 
+// ✅ Security & Role Management
+import { can } from '@/utils/roleUtils';               // ⬅️  new import
+import { useActingGroup } from '@/hooks/useActingGroup';
+
 
 // ✅ Layout Components
 import AdminHeader from '@/components/admin/common/AdminHeader';
@@ -39,22 +43,94 @@ import PatrolManagementView from '@/components/admin/patrolManagement/PatrolMana
 import AdminNoticeForm from '@/components/admin/messages/AdminNoticeForm'; 
 import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
 import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
-import MessageEmailPage from '@//components/admin/messages/MessageEmailPage';
+import MessageEmailPage from '@/components/admin/messages/MessageEmailPage';
+import SettingsPage from '@/components/admin/SettingsPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
 import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySection';
 import ReportAge from '@/components/admin/reports/ReportAge';
-import { useActingGroup } from "@/hooks/useActingGroup";
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
 import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
+import ReportOAS from '../components/admin/reports/RefOAS';
 
+
+// ───────────────────────────────────────────────────────────
+// 1. ONE registry of pages → permission keys
+//    Add rows here instead of inside the switch‑case.
+// ───────────────────────────────────────────────────────────
+const PAGE_DEFINITIONS = {
+    'report-attendance': {
+        component: ReportAttendanceView,
+        permission: 'reportAttendanceDaily',   // add to roleUtils
+        passProps: (ctx) => ({
+            activeGroupId: ctx.activeGroupId,
+            selectedDate: ctx.selectedDate,
+            sectionFilter: ctx.sectionFilter,
+            onDateChange: ctx.setSelectedDate,
+            onSectionChange: ctx.setSectionFilter,
+            userInfo: ctx.userInfo,
+        }),
+    },
+    'report-attendance-period': {
+        component: ReportAttendancePeriod,
+        permission: 'reportAttendancePeriod',  // add to roleUtils
+        passProps: (ctx) => ({
+            groupId: ctx.activeGroupId,
+            userInfo: ctx.userInfo,
+        }),
+    },
+    'add-parent': {
+        component: ParentView,
+        permission: 'parentCRUD',
+        passProps: (ctx) => ({
+            groupId: ctx.activeGroupId,
+            userInfo: ctx.userInfo,
+            onOpenPinModal: ctx.openPinModal,
+            onOpenLinkModal: ctx.openLinkModal,
+        }),
+    },
+    'message-sms': { component: MessageSMSPage, permission: 'smsSend', passProps: (c) => ({ groupId: c.activeGroupId }) },
+    'message-email': { component: MessageEmailPage, permission: 'emailSend', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'add-youth': { component: YouthView, permission: 'youthCRUD', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'user-management': { component: UserManagementView, permission: 'userAdmin', passProps: (c) => ({ activeGroupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'group-management': { component: GroupManagementView, permission: 'groupAdmin' },
+    'reports': { component: Reports, permission: 'reportParentEmails' /* just to gate the menu page */ },
+    'report-parent-emails': { component: ReportParentEmails, permission: 'reportParentEmails', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'report-youth-by-section': { component: ReportYouthBySection, permission: 'reportYouthBySection', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
+    'report-age': { component: ReportAge, permission: 'reportAge', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
+    'audit-log': { component: AuditLogViewer, permission: 'auditLog', passProps: (c) => ({ activeGroupId: c.activeGroupId }) },
+    'oas-ref': { component: ReportOAS, permission: 'oasCRUD', passProps: (c) => ({ groupId: c.userInfo.group_id }) }, 
+    'qr-code': { component: GroupQRCode, permission: 'qrCheckin', passProps: (c) => ({ groupStub: c.group?.slug }) },
+    'patrol-management': { component: PatrolManagementView, permission: 'patrolCRUD', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'inspection': { component: InspectionPage, permission: 'inspection', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'notices': { component: AdminNoticeForm, permission: 'noticeCRUD', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
+    'parent-header-links': { component: ParentHeaderLinks, permission: 'settings', passProps: (c) => ({ groupId: c.activeGroupId }) },
+    'report-transitions': { component: ReportTransitionHistory, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
+    'report-data-quality': { component: ReportDataQuality, permission: 'reportDataQuality', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
+    'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
+    // add more pages here…
+};
+
+// ───────────────────────────────────────────────────────────
+// 2. Helper that wraps roleUtils.can with acting‑as flags
+// ───────────────────────────────────────────────────────────
+const hasAccess = (user, perm, actingAsAdmin, actingAsGroupId, targetSection) =>
+    can(user.role, perm, {
+        actingAsAdmin,
+        actingAsGroupId,
+        userSection: user.section,
+        targetSection,
+    });
+
+// ───────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+    /* … all your existing state & hooks, unchanged … */
     const [groups, setGroups] = useState([]);
     const [activeGroupId, setActiveGroupId] = useState(null);
     const [showPinModal, setShowPinModal] = useState(false);
@@ -76,7 +152,7 @@ export default function AdminPage() {
     };
     useEffect(() => {
         if (!checkTokenValidity()) {
-			navigate('/Logout');
+            navigate('/Logout');
         }
     }, []);
 
@@ -115,90 +191,59 @@ export default function AdminPage() {
 
     const group = groups.find((g) => g.id === userInfo?.group_id);
 
-    const renderContent = () => {
-
-        if (userLoading || !userInfo) return <p>Loading user info...</p>;
-        if (!activeGroupId) return <p>Loading group data...</p>;
-
-        switch (subPath) {
-            case 'report-attendance':
-                return (
-                    <ReportAttendanceView
-                        activeGroupId={activeGroupId}
-                        selectedDate={selectedDate}
-                        sectionFilter={sectionFilter}
-                        onDateChange={setSelectedDate}
-                        onSectionChange={setSectionFilter}
-                        userInfo={userInfo}
-                    />
-                );
-            case 'report-attendance-period':
-                return <ReportAttendancePeriod groupId={activeGroupId} userInfo={userInfo} />;
-
-
-            case 'add-parent':
-                return (
-                    <ParentView
-                        groupId={activeGroupId} 
-                        userInfo={userInfo}
-                        onOpenPinModal={(id) => {
-                            setPinParentId(id);
-                            setShowPinModal(true);
-                        }}
-                        onOpenLinkModal={(id) => {
-                            setSelectedParentId(id);
-                            setLinkModalOpen(true);
-                        }}
-                    />
-                );
-            case 'message-sms':
-                return <MessageSMSPage groupId={activeGroupId} />;
-            case 'message-email':
-                return <MessageEmailPage groupId={activeGroupId} />;
-            case 'add-youth':
-                return <YouthView groupId={userInfo.group_id} userInfo={userInfo} />;
-            case 'user-management':
-                return <UserManagementView activeGroupId={activeGroupId} userInfo={userInfo} />;
-            case 'group-management':
-                return <GroupManagementView />;
-            case 'reports':
-                return <Reports />;
-            case 'report-parent-emails':
-                return <ReportParentEmails groupId={userInfo.group_id} />;
-            case 'report-youth-by-section':
-                return <ReportYouthBySection groupId={userInfo.group_id} />;
-            case 'report-age':
-                return <ReportAge groupId={userInfo.group_id} />;
-            case 'audit-log':
-                return <AuditLogViewer activeGroupId={activeGroupId} />;
-            case 'qr-code':
-                return <GroupQRCode groupStub={group?.slug} />;
-            case 'patrol-management':
-                return <PatrolManagementView groupId={activeGroupId} userInfo={userInfo} />;
-            case 'inspection':
-                return <InspectionPage groupId={activeGroupId} userInfo={userInfo} />;
-            case 'logout':
-                return handleLogout();
-            case 'notices':
-                return <AdminNoticeForm groupId={activeGroupId} userInfo={userInfo} />;
-            case 'parent-header-links':
-                return <ParentHeaderLinks groupId={activeGroupId} />;
-            case 'report-transitions':  
-                return <ReportTransitionHistory groupId={userInfo.group_id} userInfo={userInfo} />;
-            case 'report-data-quality':
-				return <ReportDataQuality groupId={userInfo.group_id} userInfo={userInfo} />;
-            default:
-                if (userInfo?.role === 'Super Admin') {
-                    return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
-                }
-                if (userInfo?.role === 'Group Leader') return <AdminDashboard userInfo={userInfo} />;
-				if (userInfo?.role === 'Section Leader') return <AdminDashboard userInfo={userInfo} />;
-                if (userInfo?.role === 'Section User') return <UserDashboard userInfo={userInfo} />;
-                return <p>Access denied</p>;
-        }
-
+    // keep these callbacks so registry rows can reference them
+    const openPinModal = (id) => {
+        setPinParentId(id);
+        setShowPinModal(true);
+    };
+    const openLinkModal = (id) => {
+        setSelectedParentId(id);
+        setLinkModalOpen(true);
     };
 
+    /* ------------  renderContent now only ≈20 lines  ------------ */
+    const renderContent = () => {
+        if (userLoading || !userInfo) return <p>Loading user info…</p>;
+        if (!activeGroupId) return <p>Loading group data…</p>;
+
+        // 1. Dashboard fall‑throughs first
+        if (!subPath || subPath === 'admindashboard') {
+            if (userInfo.role === 'Super Admin')
+                return <SuperAdminDashboard key={`${actingAsAdmin}-${activeGroupId}`} />;
+            if (userInfo.role === 'Group Leader' || userInfo.role === 'Section Leader')
+                return <AdminDashboard userInfo={userInfo} />;
+            if (userInfo.role === 'Section User')
+                return <UserDashboard userInfo={userInfo} />;
+        }
+
+        // 2. Look up route in registry
+        const def = PAGE_DEFINITIONS[subPath];
+        if (!def) return <p>Page not found</p>;
+
+        // 3. Permission check
+        const targetSection =
+            ['youthCRUD', 'parentCRUD', 'parentLinks', 'patrolCRUD'].includes(def.permission)
+                     ? sectionFilter || userInfo.section
+                     : null;
+        
+             if (!hasAccess(userInfo, def.permission, actingAsAdmin, actingAsGroupId, targetSection))
+            return <p>Access denied</p>;
+
+        // 4. Render
+        const Comp = def.component;
+        const extra = def.passProps ? def.passProps({
+            activeGroupId,
+            selectedDate,
+            sectionFilter,
+            setSelectedDate,
+            setSectionFilter,
+            userInfo,
+            openPinModal,
+            openLinkModal,
+            group,
+        }) : {};
+        return <Comp {...extra} />;
+    };
 
 
     return (
@@ -239,13 +284,13 @@ export default function AdminPage() {
                     
 
                 <div style={{ display: 'flex', flex: 1 }}>
-                    <Sidebar onNavigate={(path) => navigate(`/admin/${path}`)}
+                    <Sidebar
+                        onNavigate={(path) => navigate(`/admin/${path}`)}
                         userInfo={userInfo}
                         actingAsGroupId={actingAsGroupId}
-                        actingAsAdmin={actingAsAdmin} />
-
+                        actingAsAdmin={actingAsAdmin}
+                    />
                     <Content style={{ flex: 1, padding: '1.5rem', overflowY: 'auto', minHeight: 0 }}>
-
                         {renderContent()}
                     </Content>
                 </div>

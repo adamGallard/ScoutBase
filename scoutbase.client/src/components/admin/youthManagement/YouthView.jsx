@@ -119,6 +119,7 @@ export default function YouthView({ groupId, userInfo }) {
             .eq('group_id', groupId)
             .order('name');
 
+        console.log(userInfo?.role);
         //  Filter by section if the user is a Section Leader
         if (userInfo?.role === 'Section Leader' && userInfo?.section) {
             query = query.or(`section.eq.${userInfo.section},linking_section.eq.${userInfo.section}`);
