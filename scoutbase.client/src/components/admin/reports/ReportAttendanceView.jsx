@@ -1,6 +1,6 @@
-﻿import { useEffect, useState, useCallback } from 'react';
+﻿import { useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { RefreshCcw, Download, CalendarCheck } from 'lucide-react';
+import { RefreshCcw, Download, CalendarCheck, ChevronUp, ChevronDown } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
@@ -25,6 +25,19 @@ export default function AttendanceView({
     const [localSectionFilter, setLocalSectionFilter] = useState(userInfo?.section ?? '');
 
     const effectiveSectionFilter = isScopedToSection ? userInfo?.section : localSectionFilter;
+
+    const [sortField, setSortField] = useState('');
+    const [sortDirection, setSortDirection] = useState('asc');
+
+    const handleSort = (field) => {
+        if (sortField === field) {
+            setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
+        } else {
+            setSortField(field);
+            setSortDirection('asc');
+        }
+    };
+
 
     const fetchYouthList = useCallback(async () => {
         if (!activeGroupId || !selectedDate) return;
@@ -84,7 +97,27 @@ export default function AttendanceView({
 
         setFilteredAttendance(filtered);
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
- 
+
+    const sortedAttendance = useMemo(() => {
+        if (!sortField) return filteredAttendance;
+
+        return [...filteredAttendance].sort((a, b) => {
+            const getValue = (obj, field) => {
+                if (field === 'name') return obj.youth.name.toLowerCase();
+                if (field === 'section') return obj.youth.section?.toLowerCase();
+                if (field === 'signIn') return obj.signIn?.timestamp || '';
+                if (field === 'signOut') return obj.signOut?.timestamp || '';
+                return '';
+            };
+
+            const aVal = getValue(a, sortField);
+            const bVal = getValue(b, sortField);
+
+            if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+    }, [filteredAttendance, sortField, sortDirection]);
 
     // on mount & whenever group/date/section change:
     useEffect(() => {
@@ -94,6 +127,7 @@ export default function AttendanceView({
             return;     // wait for the new date before fetching
         }
 
+       
         // 2) once we have both a group and a date, fetch everything
         if (activeGroupId) {
             fetchYouthList();
@@ -310,28 +344,35 @@ export default function AttendanceView({
                 <AdminTable>
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Section</th>
-                            <th>Signed In</th>
-                            <th>Comments</th>
-                            <th>Signed Out</th>
-                            <th>Comments</th>
+                            {[
+                                { field: 'name', label: 'Name' },
+                                { field: 'section', label: 'Section' },
+                                { field: 'signIn', label: 'Signed In' },
+                                { field: 'signInComment', label: 'Comments' },
+                                { field: 'signOut', label: 'Signed Out' },
+                                { field: 'signOutComment', label: 'Comments' }
+                            ].map(({ field, label }) => (
+                                <th key={field} onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
+                                    {label}
+                                    {sortField === field &&
+                                        (sortDirection === 'asc'
+                                            ? <ChevronUp size={16} style={{ marginLeft: '4px' }} />
+                                            : <ChevronDown size={16} style={{ marginLeft: '4px' }} />)}
+                                </th>
+                            ))}
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredAttendance.map(({ youth, signIn, signOut }) => {
-
-                            return (
-                                <tr key={youth.id}>
-                                    <td>{youth.name}</td>
-                                    <td>{codeToLabel(youth.section)}</td>
-                                    <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
-                                    <td>{signIn?.comment || ''}</td>
-                                    <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
-                                    <td>{signOut?.comment || ''}</td>
-                                </tr>
-                            );
-                        })}
+                        {sortedAttendance.map(({ youth, signIn, signOut }) => (
+                            <tr key={youth.id}>
+                                <td>{youth.name}</td>
+                                <td>{codeToLabel(youth.section)}</td>
+                                <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
+                                <td>{signIn?.comment || ''}</td>
+                                <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
+                                <td>{signOut?.comment || ''}</td>
+                            </tr>
+                        ))}
                     </tbody>
                     <tfoot>
                         <tr style={{ fontWeight: 'bold' }}>
