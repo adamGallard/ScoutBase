@@ -6,7 +6,7 @@ import {
     PageWrapper, Main, Content, PageTitle, PrimaryButton, AdminTable
 } from '@/components/common/SharedStyles';
 import { sections } from '@/components/common/Lookups.js';
-import OrderPreviewModal from '@/components/Admin/OrderPreviewModal'; // created below
+import OrderPreviewModal from '@/components/admin/OrderPreviewModal'; // created below
 
 /* -------------------- helpers -------------------- */
 
