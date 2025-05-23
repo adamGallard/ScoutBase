@@ -38,8 +38,22 @@ export function useTerrainUser() {
 
                 if (dbErr || !row) throw new Error('User not found in database');
 
-                // Build userInfo
-                const u = { id: row.id, name, group_id: row.group_id, role: row.role, section: row.section };
+                /* 🔍 lookup the group’s friendly name */
+                                const { data: grp, error: grpErr } = await supabase
+                                        .from('groups')
+                                        .select('name')
+                                        .eq('id', row.group_id)
+                                        .single();
+                
+                                    // Build userInfo (now includes group_name)
+                                    const u = {
+ id: row.id,
+                                   name,
+                                        group_id   : row.group_id,
+                                            group_name : grp?.name ?? 'Scout Group',
+                                               role       : row.role,
+                                                    section    : row.section
+                                                    };
                 setUserInfo(u);
 
                 /* audit once‑per‑session */

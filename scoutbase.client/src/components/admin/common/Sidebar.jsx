@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen,Tent
+    MessageSquare, Settings, BookOpen, Tent, Award
 } from 'lucide-react';
 
 import { can } from '@/utils/roleUtils';
@@ -65,6 +65,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('reportAttendanceDaily') && { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
                 allow('reportAttendancePeriod') && { key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
                 allow('inspection') && { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
+                allow('badgeOrder') && { key: 'badge-order', label: 'Badge Order', icon: <Award size={16} /> }, 
                 allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
                 allow('reportYouthBySection') && { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 allow('reportAge') && { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },

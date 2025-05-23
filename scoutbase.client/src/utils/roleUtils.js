@@ -42,6 +42,7 @@ const rolePermissions = {
         'settings',
         'userAdmin',
         'auditLog',
+        'badgeOrder',
     ],
 
     /* section level */
@@ -63,6 +64,7 @@ const rolePermissions = {
         'reportLinkingHistory',
         'reportDataQuality',
         'reportAttendanceDaily',
+        'badgeOrder',
     ],
 
     /* view‑only */
