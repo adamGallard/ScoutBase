@@ -6,7 +6,7 @@ import { downloadCSV } from '@/utils/exportUtils';
 import { PrimaryButton, PageTitle, StyledTable } from '@/components/common/SharedStyles';
 import { FolderKanban } from 'lucide-react';
 import { formatDate } from '@/utils/dateUtils.js';
-import { sections, stages } from '@/components/common/Lookups.js';
+import { sections, sectionMap, stages, stageMap } from '@/components/common/Lookups';
 
 // Build dropdown options: blank code for all, then sorted sections
 const sectionOptions = [
@@ -14,6 +14,10 @@ const sectionOptions = [
     ...sections.slice().sort((a, b) => a.order - b.order)
 ];
 
+const stageOptions = [
+    { code: '', label: 'All Stages' },
+    ...stages.slice().sort((a, b) => a.order - b.order)
+];
 // Helpers to map codes to human labels
 const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label || code;
@@ -24,13 +28,15 @@ export default function ReportYouthBySection({ groupId }) {
     const [youth, setYouth] = useState([]);
     const [selectedSection, setSelectedSection] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [selectedStage, setSelectedStage] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
             const { data, error } = await supabase
                 .from('youth')
                 .select('id, name, dob, section, member_number, membership_stage, rank, patrols ( name )')
-                .eq('group_id', groupId);
+                .eq('group_id', groupId)
+                .neq('membership_stage', 'retired');  
 
             if (!error && data) {
                 const enriched = data.map(y => ({
@@ -45,10 +51,21 @@ export default function ReportYouthBySection({ groupId }) {
     }, [groupId]);
 
     // Filter by code
-    const filteredYouth = useMemo(
-        () => (selectedSection === '' ? youth : youth.filter(y => y.section === selectedSection)),
-        [youth, selectedSection]
-    );
+    const filteredYouth = useMemo(() => {
+        let rows = youth;
+    
+         // section filter
+          if (selectedSection !== '') {
+                rows = rows.filter(y => y.section === selectedSection);
+              }
+    
+          // stage filter
+          if (selectedStage !== '') {
+                rows = rows.filter(y => String(y.membership_stage) === selectedStage);
+              }
+   
+          return rows;
+    }, [youth, selectedSection, selectedStage]);
 
     // Sorting logic
     const sortedYouth = useMemo(() => {
@@ -110,7 +127,20 @@ export default function ReportYouthBySection({ groupId }) {
                         </option>
                     ))}
                 </select>
+				<span style={{ margin: '0 1rem' }}></span>
+  <label>Select Stage:</label>
+  <select
+    value={selectedStage}
+    onChange={e => setSelectedStage(e.target.value)}
+    style={{ padding:'0.5rem', borderRadius:6, border:'1px solid #ccc' }}
+  >
+    {stageOptions.map(({ code,label }) => (
+      <option key={code} value={code}>{label}</option>
+    ))}
+  </select>
+
             </div>
+
 
             <PrimaryButton onClick={handleDownload} style={{ marginBottom: '1rem' }}>
                 Download CSV

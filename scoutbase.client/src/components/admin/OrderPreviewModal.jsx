@@ -1,14 +1,15 @@
-// components/BadgeOrdering/OrderPreviewModal.js
+﻿// components/BadgeOrdering/OrderPreviewModal.js
 import { Mail, X } from 'lucide-react';
 
-export default function OrderPreviewModal({
-    emailBody,                // full formatted body string (already contains header + bullets)
-    groupName = 'Scout Group',
-    leaderName = 'Scout Leader',
-    recipientEmail = '281595@scoutsqld.com.au',
-    section = 'All Sections',
-    onClose
-}) {
+ export default function OrderPreviewModal({
+    emailBody,
+         groupName = 'Scout Group',
+             leaderName = 'Scout Leader',
+                 recipientEmail = '281595@scoutsqld.com.au',
+                     section = 'All Sections',
+                         onConfirm,           // ⭐ NEW
+                         onClose
+                     }) {
     /* ----- compose subject & mailto link ----- */
     const subject = `Badge Order - ${groupName} - ${section}`;
     const body = `${emailBody}\n\nYours in Scouting,\n${leaderName}\n`;
@@ -41,15 +42,24 @@ export default function OrderPreviewModal({
                         <X size={16} />Cancel
                     </button>
 
-                    <a href={mailto} target="_blank" rel="noreferrer">
-                        <button style={{
-                            background: '#2563eb', color: '#fff',
-                            padding: '0.5rem 1rem', borderRadius: 6,
-                            display: 'flex', alignItems: 'center', gap: 4
-                        }}>
-                            <Mail size={16} /> Send Email
-                        </button>
-                    </a>
+                                        <button
+                        onClick={async () => {
+                                                    /* 1 ▸ write rows to badge_orders */
+                                                        if (onConfirm) await onConfirm();
+                            /* 2 ▸ hide the modal right away */
+                             if (onClose) onClose();          // ← add this line
+
+                            /* 3 ▸ open mail client */
+                                                        window.location.href = mailto;
+                        }}
+                                            style={{
+ background:'#2563eb', color:'#fff',
+                                                padding:'0.5rem 1rem', borderRadius:6,
+                                                display:'flex', alignItems:'center', gap:4
+                        }}
+                    >
+                                            <Mail size={16} /> Submit &amp; Email
+                                        </button>
                 </div>
             </div>
         </div>
