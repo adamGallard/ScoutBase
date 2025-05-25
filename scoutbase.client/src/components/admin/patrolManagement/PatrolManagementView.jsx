@@ -1,5 +1,5 @@
 ﻿// src/components/admin/PatrolManagementView.jsx
-import { useEffect, useState } from 'react';
+import React,{ useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { Pencil, Trash, Plus, Flag, Link as LinkIcon, Download } from 'lucide-react';
 import {
@@ -33,6 +33,46 @@ export default function PatrolManagementView({ groupId, userInfo }) {
     const [addError, setAddError] = useState('');
     // find the code for the "Retired" stage so we can filter it out
     const retiredStageCode = stages.find(s => s.label === 'Retired')?.code;
+    const [openPatrols, setOpenPatrols] = useState({}); // { patrolId: true }
+    const [membersById, setMembersById] = useState({}); // { patrolId: [youth…] }
+
+
+    async function loadMembers(patrolId) {
+        // already cached?
+        if (membersById[patrolId]) return;
+
+        const { data, error } = await supabase
+            .from('youth')
+            .select('id, name, rank, membership_stage')
+            .eq('patrol_id', patrolId)
+            .eq('group_id', groupId)
+            .neq('membership_stage', 'retired');          // hide retired
+
+        if (error) {
+            console.error('members fetch', error);
+            return;
+        }
+
+        /* ---------- sort: PL → APL → everyone else (A-Z) ---------- */
+        const priority = { PL: 0, APL: 1 };          // lower = earlier
+        data.sort((a, b) => {
+            const aPri = priority[a.rank] ?? 2;
+            const bPri = priority[b.rank] ?? 2;
+            if (aPri !== bPri) return aPri - bPri;      // PL before APL before rest
+            return a.name.localeCompare(b.name);        // tie-break by name
+        });
+
+        setMembersById(m => ({ ...m, [patrolId]: data }));
+    }
+
+    function togglePatrol(patrolId) {
+        setOpenPatrols(o => {
+            const next = { ...o, [patrolId]: !o[patrolId] };
+            // if we just opened it, lazily load members
+            if (next[patrolId]) loadMembers(patrolId);
+            return next;
+        });
+    }
 
     const fetchPatrols = async () => {
         const { data, error } = await supabase
@@ -190,41 +230,49 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {patrols.map((p) => (
-                        <tr key={p.id}>
-                            <td>{p.name}</td>
-                            <td>{p.youth_count ?? 0}</td>
-                            <td>{sectionMap[p.section]?.label || p.section}</td>
-                            <td style={{ display: 'flex', gap: '0.5rem' }}>
-                                {editingId === p.id ? (
-                                    <>
-                                        <button onClick={() => updatePatrol(p.id)}>Save</button>
-                                        <button onClick={() => setEditingId(null)}>Cancel</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <button
-                                            onClick={() => setLinkingPatrol(p)}
-                                            title="Link youth to patrol"
-                                        >
-                                            <LinkIcon size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setEditingId(p.id);
-                                                setEditName(p.name);
-                                            }}
-                                            title="Edit name"
-                                        >
-                                            <Pencil size={16} />
-                                        </button>
-                                        <button onClick={() => deletePatrol(p.id)} title="Delete">
-                                            <Trash size={16} />
-                                        </button>
-                                    </>
-                                )}
-                            </td>
-                        </tr>
+                    {patrols.map(p => (
+                        /* one fragment per patrol ------------------------------------- */
+                        <React.Fragment key={p.id}>
+                            {/* ── parent row ───────────────────────────────────────────── */}
+                            <tr>
+                                <td
+                                    onClick={() => togglePatrol(p.id)}
+                                    style={{ cursor: 'pointer' }}
+                                >
+                                    {openPatrols[p.id] ? '▼ ' : '▶ '}
+                                    {p.name}
+                                </td>
+                                <td>{p.youth_count ?? 0}</td>
+                                <td>{sectionMap[p.section]?.label || p.section}</td>
+                                <td style={{ display: 'flex', gap: '.5rem' }}>
+                                    {/* … existing action buttons … */}
+                                </td>
+                            </tr>
+
+                            {/* ── expandable members row (only if open) ────────────────── */}
+                            {openPatrols[p.id] && (
+                                <tr key={`${p.id}-members`}>
+                                    <td colSpan={4} style={{ paddingLeft: '2rem', background: '#fafafa' }}>
+                                        {membersById[p.id]
+                                            ? (
+                                                membersById[p.id].length
+                                                    ? (
+                                                        <ul style={{ margin: 0 }}>
+                                                            {membersById[p.id].map(m => (
+                                                                <li key={m.id}>
+                                                                    {m.name}{m.rank ? ` – ${m.rank}` : ''}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )
+                                                    : <i>No members in this patrol.</i>
+                                            )
+                                            : <i>Loading…</i>
+                                        }
+                                    </td>
+                                </tr>
+                            )}
+                        </React.Fragment>
                     ))}
                 </tbody>
             </AdminTable>
