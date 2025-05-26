@@ -105,21 +105,29 @@ export default function BadgeOrderView({ groupId, userInfo }) {
             const memberIds = [...new Set(siaRows.map(r => r.memberId))];
             for (const mId of memberIds) {
                 const achievements = await getSIAAchievementsForMember(token, mId);
-                const lookup = Object.fromEntries(achievements.map(a => [a.id, a]));
+
+                // build a lookup keyed by the submission ID
+                const bySubmissionId = Object.fromEntries(
+                    achievements
+                        .map(a => [a.latest_submission?.submission_id, a])
+                        .filter(([subId]) => !!subId)
+                );
+
+                // attach projectName + dates
                 siaRows
                     .filter(r => r.memberId === mId)
                     .forEach(r => {
-                        const ach = lookup[r.badgeId];
-                        if (!ach) return;
-                        r.projectName = ach.answers?.project_name?.trim() || ach.answers?.project_title?.trim() || "";
-                        r.approvedDate = ach.status_updated || "";
-                        r.approvedBy = ach.approval?.actioned_by?.[0]
-                            ? `${ach.approval.actioned_by[0].member_first_name} ${ach.approval.actioned_by[0].member_last_name}`
-                            : "";
+                        const ach = bySubmissionId[r.submissionId];
+                        if (!ach) return;              // nothing to map
+                        r.projectName = (ach.answers?.project_name || ach.answers?.project_title || "").trim();
+                        r.approvedDate = ach.date_awarded || ach.status_updated || "";
+                        // Terrain’s SIA endpoint doesn’t include who_actioned_by in answers,
+                        // so drop the `approvedBy` mapping unless you fetch from a different call.
                     });
             }
 
             setPending(results);
+
         } catch (err) {
             console.error("Badge fetch failed:", err);
         } finally {
@@ -131,8 +139,8 @@ export default function BadgeOrderView({ groupId, userInfo }) {
     const fetchOrders = useCallback(async () => {
         if (!groupId) return;
         const rows = await getOrderedBadgesForGroup(groupId);
-        console.log("raw orders:", rows);
-        if (rows.length) console.log("keys on an order:", Object.keys(rows[0]));
+      // console.log("raw orders:", rows);
+       // if (rows.length) console.log("keys on an order:", Object.keys(rows[0]));
         setOrders(rows);
     }, [groupId]);
 
@@ -154,7 +162,7 @@ export default function BadgeOrderView({ groupId, userInfo }) {
     /* ─────────────── derived buckets ─────────────── */
 	//console.log("Orders:", orders);
     const readyRows = orders.filter(r => r.status === "ready_to_order");
-	console.log("Ready rows:", readyRows);
+	//console.log("Ready rows:", readyRows);
     const orderedRows = orders.filter(r => r.status === "ordered");
 	    /* Pending list to display (filter out those already copied) */
     const pendingFiltered = pending
@@ -307,7 +315,7 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                                                onChange={e => selectAll(pagedPending, "submissionId", e.target.checked)}
              />
                                           </th>
-                            <th>Youth</th><th>Section</th><th>Badge</th><th>Project</th><th>Status</th><th>Approved by</th><th>Approved on</th><th>Submitted</th>
+                            <th>Youth</th><th>Section</th><th>Badge</th><th>Project</th><th>Terrain Status</th><th>Approved by</th><th>Approved on</th><th>Submitted</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -325,12 +333,12 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                     <h3 style={{ marginTop: "2rem" }}>Step 2 – Badges ready to order (GL)</h3>
                     <AdminTable>
                         <thead>
-                            <tr>                <input
+                            <tr> <th>               <input
                   type="checkbox"
                                                  checked={allReadySelected}
                                                   onChange={e => selectAll(readyRows, "id", e.target.checked)}
                 />
-                                <th />
+                                </th>
                                 <th>Youth</th><th>Section</th><th>Badge</th><th>Project</th><th>Requested</th>
                             </tr>
                         </thead>
@@ -352,18 +360,20 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                     <h3 style={{ marginTop: "2rem" }}>Step 3 – Ordered badges (mark awarded)</h3>
                     <AdminTable>
                         <thead>
-                            <tr> <input
-                  type="checkbox"
-                                                  checked={allOrderedSelected}
-                                                  onChange={e => selectAll(orderedRows, "id", e.target.checked)}
-                />
-                                <th />
-                                <th>Youth</th><th>Section</th><th>Badge</th><th>Project</th><th>Ordered</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {orderedRows.map(r => <Row key={r.id} row={r} idKey="id" />)}
-                        </tbody>
+                            <tr><th>
+							                           <input
+								type="checkbox"
+								checked={allOrderedSelected}
+								onChange={e => selectAll(orderedRows, "id", e.target.checked)}
+							/>
+								</th>
+                                <th>Youth</th>
+                                <th>Section</th><th>Badge</th><th>Project</th><th>Status</th><th>Ordered</th>
+							</tr>
+						</thead>
+						<tbody>
+							{orderedRows.map(r => <Row key={r.id} row={r} idKey="id" />)}
+						</tbody>
                     </AdminTable>
                     {(isSL || isGL) && (
                         <div style={{ margin: "0.5rem 0" }}>
@@ -380,7 +390,8 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                                    <thead>
                                          <tr>
                                                <th>Youth</th>
-                                               <th>Badge</th>
+                                <th>Badge</th>
+                                               <th>Project</th>
                                               <th>Status</th>
                                               <th>Ordered</th>
                                                <th>Awarded</th>
@@ -390,7 +401,8 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                                          {history.map(r => (
                                                <tr key={r.id}>
                                                      <td>{r.youth_name}</td>
-                                                     <td>{formatBadge(r.badge_type, r.badge_meta)}</td>
+                                                 <td>{formatBadge(r.badge_type, r.badge_meta)}</td>
+                                                 <td>{r.project_name}</td>
                                                      <td>{r.status.replace(/_/g, ' ')}</td>
                                                      <td>{r.ordered_date && new Date(r.ordered_date).toLocaleDateString()}</td>
                                                      <td>{r.awarded_date && new Date(r.awarded_date).toLocaleDateString()}</td>

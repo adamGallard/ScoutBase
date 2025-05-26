@@ -30,6 +30,7 @@ export async function getPendingAwardSubmissions(token, unitId) {
 }
 
 const siaCache = new Map();
+
 export async function getSIAAchievementsForMember(token, memberId) {
     if (siaCache.has(memberId)) return siaCache.get(memberId);
 
@@ -107,6 +108,7 @@ export async function getOrderedBadgesForGroup(groupId) {
       status,
       ordered_date,
       awarded_date,
+      project_name,
       youth:youth_id ( name )
     `)
         .eq('group_id', groupId)
@@ -163,6 +165,7 @@ export async function getBadgeHistoryForGroup(groupId) {
       awarded_date,
       badge_type,
       badge_meta,
+      project_name,
       youth:youth_id ( name )
     `)
         .eq('group_id', groupId)
@@ -182,6 +185,7 @@ export async function getBadgesForYouth(youthId) {
         .select(`
       badge_type,
       badge_meta,
+      project_name,
       awarded_date
     `)
         .eq('youth_id', youthId)
