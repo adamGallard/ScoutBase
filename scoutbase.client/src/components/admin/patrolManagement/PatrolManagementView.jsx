@@ -245,7 +245,33 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                                 <td>{p.youth_count ?? 0}</td>
                                 <td>{sectionMap[p.section]?.label || p.section}</td>
                                 <td style={{ display: 'flex', gap: '.5rem' }}>
-                                    {/* … existing action buttons … */}
+                                    {editingId === p.id ? (
+                                        <>
+                                            <button onClick={() => updatePatrol(p.id)}>Save</button>
+                                            <button onClick={() => setEditingId(null)}>Cancel</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button
+                                                onClick={() => setLinkingPatrol(p)}
+                                                title="Link youth to patrol"
+                                            >
+                                                <LinkIcon size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setEditingId(p.id);
+                                                    setEditName(p.name);
+                                                }}
+                                                title="Edit name"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button onClick={() => deletePatrol(p.id)} title="Delete">
+                                                <Trash size={16} />
+                                            </button>
+                                        </>
+                                    )}
                                 </td>
                             </tr>
 
@@ -274,6 +300,7 @@ export default function PatrolManagementView({ groupId, userInfo }) {
                             )}
                         </React.Fragment>
                     ))}
+
                 </tbody>
             </AdminTable>
 
