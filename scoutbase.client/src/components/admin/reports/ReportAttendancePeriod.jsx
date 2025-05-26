@@ -171,7 +171,16 @@ export default function AttendancePeriodReport({ groupId, userInfo }) {
                       <label>
                             Section:{' '}
                             <select value={section} onChange={e => setSection(e.target.value)}>
-                                  …
+                                <option value=''>All Sections</option>
+                                 {sections
+                                       .slice()
+                                       .sort((a, b) => a.order - b.order)
+                                       .map(s => (
+                                             <option key={s.code} value={s.code}>
+                                                   {s.label}
+                                                 </option>
+                                           ))
+                                     }
                                </select>
                           </label>
                     ) : (

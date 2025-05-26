@@ -45,6 +45,7 @@ import ParentHeaderLinks from '@/components/admin/ParentHeaderLinks';
 import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
 import MessageEmailPage from '@/components/admin/messages/MessageEmailPage';
 import SettingsPage from '@/components/admin/SettingsPage';
+import BadgeOrder from '@/components/admin/BadgeOrder';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -57,6 +58,7 @@ import ReportTransitionHistory from '@/components/admin/reports/ReportTransition
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
 import ReportOAS from '../components/admin/reports/RefOAS';
+import BadgeOrderView from '../components/admin/BadgeOrder';
 
 
 // ───────────────────────────────────────────────────────────
@@ -113,6 +115,8 @@ const PAGE_DEFINITIONS = {
     'report-transitions': { component: ReportTransitionHistory, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'report-data-quality': { component: ReportDataQuality, permission: 'reportDataQuality', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
+    'badge-order': { component: BadgeOrder, permission: 'badgeOrder', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
+
     // add more pages here…
 };
 
