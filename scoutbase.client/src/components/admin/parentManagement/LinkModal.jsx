@@ -15,6 +15,9 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const [parentName, setParentName] = useState('');
     const itemsPerPage = 8;
     const [relationshipMap, setRelationshipMap] = useState({});
+    const relationshipOptions = ['Mother', 'Father', 'Friend', 'Other'];
+    const [otherSelectedMap, setOtherSelectedMap] = useState({});
+
 
     useEffect(() => {
         if (parentId) {
@@ -39,7 +42,10 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
             .select('youth (id, name, section), is_primary, relationship')
             .eq('parent_id', parentId);
         if (data) {
-            setLinkedYouth(data.map(l => ({ ...l.youth, is_primary: l.is_primary, relationship: l.relationship })));
+            const sorted = data
+                .map(l => ({ ...l.youth, is_primary: l.is_primary, relationship: l.relationship }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+            setLinkedYouth(sorted);
         }
     };
 
@@ -93,7 +99,8 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
 
     const unlinkedYouth = availableYouth
         .filter(y => !linkedYouth.some(l => l.id === y.id))
-        .filter(y => y.name.toLowerCase().includes(search.toLowerCase()));
+        .filter(y => y.name.toLowerCase().includes(search.toLowerCase()))
+        .sort((a, b) => a.name.localeCompare(b.name));
 
     const paginatedYouth = unlinkedYouth.slice(
         (currentPage - 1) * itemsPerPage,
@@ -134,26 +141,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                             </span>
 
                             {/* 2. Relationship textbox */}
-                            <input
-                                type="text"
-                                placeholder="Relationship"
-                                style={{ width: '200px' }}         // enforce same width
-                                value={youth.relationship}
-                                onChange={e => {
-                                    setLinkedYouth(linkedYouth.map(l =>
-                                        l.id === youth.id
-                                            ? { ...l, relationship: e.target.value }
-                                            : l
-                                    ));
-                                }}
-                                onBlur={async () => {
-                                    await supabase
-                                        .from('parent_youth')
-                                        .update({ relationship: youth.relationship })
-                                        .eq('parent_id', parentId)
-                                        .eq('youth_id', youth.id);
-                                }}
-                            />
+                            <span style={{ width: '200px' }}>{youth.relationship}</span>
 
                             {/* 3. Primary checkbox */}
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -188,7 +176,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                 <ul style={{ textAlign: 'left', marginBottom: '0.2rem' }}>
                     {paginatedYouth.map(youth => {
                         const rel = (relationshipMap[youth.id] || '').trim();
-                        const canAdd = rel.length > 0;
+                        const canAdd = rel.length > 0 && rel !== 'placeholder';
 
                         return (
                             <li
@@ -202,18 +190,63 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                                 }}
                             >
                                 <span>{youth.name} ({codeToSectionLabel(youth.section)})</span>
-                                <input
-                                    type="text"
-                                    placeholder="Relationship"
-                                    style={{ width: '200px' }}
-                                    value={relationshipMap[youth.id] ?? ''}
-                                    onChange={e =>
-                                        setRelationshipMap({
-                                            ...relationshipMap,
-                                            [youth.id]: e.target.value
-                                        })
-                                    }
-                                />
+
+                                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <select
+                                        value={
+                                            relationshipMap[youth.id] === undefined
+                                                ? 'placeholder'
+                                                : otherSelectedMap[youth.id]
+                                                    ? 'Other'
+                                                    : relationshipMap[youth.id]
+                                        }
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+
+                                            if (val === 'Other') {
+                                                setOtherSelectedMap({
+                                                    ...otherSelectedMap,
+                                                    [youth.id]: true
+                                                });
+                                                setRelationshipMap({
+                                                    ...relationshipMap,
+                                                    [youth.id]: ''
+                                                });
+                                            } else {
+                                                setOtherSelectedMap({
+                                                    ...otherSelectedMap,
+                                                    [youth.id]: false
+                                                });
+                                                setRelationshipMap({
+                                                    ...relationshipMap,
+                                                    [youth.id]: val
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <option value="placeholder" disabled>Select relationship</option>
+                                        {relationshipOptions.map(opt => (
+                                            <option key={opt} value={opt}>
+                                                {opt}
+                                            </option>
+                                        ))}
+                                    </select>
+
+                                    {otherSelectedMap[youth.id] && (
+                                        <input
+                                            type="text"
+                                            placeholder="Enter relationship"
+                                            value={relationshipMap[youth.id] ?? ''}
+                                            onChange={e =>
+                                                setRelationshipMap({
+                                                    ...relationshipMap,
+                                                    [youth.id]: e.target.value
+                                                })
+                                            }
+                                        />
+                                    )}
+                                </div>
+
                                 <button
                                     onClick={() => addLink(youth.id, rel)}
                                     disabled={!canAdd}
