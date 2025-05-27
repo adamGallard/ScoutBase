@@ -19,13 +19,9 @@ import YouthDetailsModal from './YouthDetailsModal';
 import ImportYouthModal from './ImportYouthModal';
 import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 import { logAuditEvent } from '@/helpers/auditHelper';
-import { sections, stages } from '@/components/common/Lookups.js';
+import { sections, stages, codeToStageLabel, codeToSectionLabel } from '@/components/common/Lookups.js';
 
 // Helpers to map code → label
-const codeToSectionLabel = code =>
-	sections.find(s => s.code === code)?.label ?? code;
-const codeToStageLabel = code =>
-	stages.find(s => s.code === code)?.label ?? code;
 const sectionLabelToCode = val => {
 	if (!val) return '';
 	// try matching code first
@@ -118,7 +114,7 @@ export default function YouthView({ groupId, userInfo }) {
 	const fetchYouth = useCallback(async () => {
 		let query = supabase
 			.from('youth')
-			.select('id, name, dob, section,linking_section, membership_stage')
+			.select('id, name, dob, section,linking_section, membership_stage, member_number')
 			.eq('group_id', groupId)
 			.order('name');
 
