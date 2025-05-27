@@ -1,329 +1,308 @@
 ﻿import { supabase } from '../lib/supabaseClient';
 import { sections, sectionMap, stageMap } from '@/components/common/Lookups.js';
 
-
-
+/**
+ * Maps Terrain's section string to our label.
+ */
 function mapTerrainSection(raw) {
-      if (!raw) return '';
-      const lc = raw.toLowerCase();
-      // try to match code (e.g. "joeys", "cubs") or singular prefix ("joey","cub")
-          let found = sections.find(
-                s => s.code === lc || s.code.startsWith(lc)
-              );
-     if (found) return found.label;
-      // fallback to matching label exactly
-          found = sections.find(s => s.label.toLowerCase() === lc);
-      return found ? found.label : raw;
-    }
+    if (!raw) return '';
+    const lc = raw.toLowerCase();
+    let found = sections.find(s => s.code === lc || s.code.startsWith(lc));
+    if (found) return found.label;
+    found = sections.find(s => s.label.toLowerCase() === lc);
+    return found ? found.label : raw;
+}
 
 /**
  * Fetches youth members from Terrain for each unit
  */
 export async function getYouthFromTerrain(token, units) {
     const allYouth = [];
-
     for (const unit of units) {
-        const response = await fetch(`https://members.terrain.scouts.com.au/units/${unit.unitId}/members`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (!response.ok) {
-            console.error(`Failed to fetch members for unit ${unit.unitId}`, await response.text());
+        const resp = await fetch(
+            `https://members.terrain.scouts.com.au/units/${unit.unitId}/members`,
+            { method: 'GET', headers: { Authorization: `Bearer ${token}` } }
+        );
+        if (!resp.ok) {
+            console.error(`Failed to fetch members for unit ${unit.unitId}`, await resp.text());
             continue;
         }
-
-        const body = await response.json();
+        const body = await resp.json();
         const members = Array.isArray(body.results) ? body.results : [];
-
-        const youthInUnit = members
+        const youth = members
             .filter(m => m.unit?.duty === 'member')
             .map(m => ({
                 terrain_id: m.id,
                 name: `${m.first_name} ${m.last_name}`,
                 dob: m.date_of_birth,
-                section: mapTerrainSection(m.unit?.section),
+                section: mapTerrainSection(m.unit?.section).toLowerCase(),
                 member_number: m.member_number,
-                status: m.status,
+                status: m.status
             }));
-
-        allYouth.push(...youthInUnit);
+        allYouth.push(...youth);
     }
-
     return allYouth;
 }
 
 /**
- * Compares Terrain data with local DB to determine adds and updates
+ * Fetches the user's Terrain profiles (units)
  */
-
-export async function getTerrainSyncPreview(token, groupId, units) {
-
-    console.log('🔁 Starting sync preview for group:', groupId);
-    const terrainYouth = await getYouthFromTerrain(token, units);
-    console.log(`📥 Received ${terrainYouth.length} youth from Terrain`);
-
-    // Check for duplicate member numbers in Terrain
-    const seen = new Set();
-    terrainYouth.forEach(y => {
-        if (seen.has(y.member_number)) {
-            console.warn(`⚠️ Duplicate member number in Terrain: ${y.name} (${y.member_number})`);
-        } else {
-            seen.add(y.member_number);
-        }
+export async function getTerrainProfiles(token) {
+    const resp = await fetch('https://members.terrain.scouts.com.au/profiles', {
+        method: 'GET', headers: { Authorization: `Bearer ${token}` }
     });
+    if (!resp.ok) throw new Error('Failed to fetch profile info');
+    const data = await resp.json();
+    return data.profiles.map(p => ({
+        unitId: p.unit.id,
+        unitName: p.unit.name,
+        section: p.unit.section
+    }));
+}
 
-    const { data: existingYouth, error } = await supabase
+/** Helpers for sync preview **/
+async function fetchExistingYouth(groupId) {
+    const { data, error } = await supabase
         .from('youth')
         .select('id, terrain_id, name, dob, section, member_number')
         .eq('group_id', groupId);
+    if (error) throw error;
+    return data;
+}
 
-    const { data: transitions } = await supabase
+async function fetchLatestTransitions() {
+    const { data, error } = await supabase
         .from('youth_transitions')
         .select('youth_id, transition_type, section, transition_date')
         .order('transition_date', { ascending: false });
+    if (error) throw error;
 
-    if (error) {
-        console.error('❌ Failed to fetch youth:', error.message);
-        return { toAdd: [], toUpdate: [], missingFromTerrain: [] };
-    }
-
-    const transitionMap = {};
-    (transitions || []).forEach(t => {
-        if (!transitionMap[t.youth_id]) {
-            transitionMap[t.youth_id] = t;
-        }
+    // Group transitions by youth_id
+    const grouped = {};
+    data.forEach(t => {
+        if (!grouped[t.youth_id]) grouped[t.youth_id] = [];
+        grouped[t.youth_id].push(t);
     });
 
-    const existing = existingYouth || [];
-    const toAdd = [];
-    const toUpdate = [];
-    const matchedMemberNumbers = new Set();
+    // Pick latest per youth: sort by date desc, then section rank, then stage rank
+    const map = {};
+    Object.entries(grouped).forEach(([youthId, transitions]) => {
+        transitions.sort((a, b) => {
+            const da = new Date(a.transition_date);
+            const db = new Date(b.transition_date);
+            if (db - da) return db - da; // later date first
+            const oa = sectionMap[a.section]?.order ?? -1;
+            const ob = sectionMap[b.section]?.order ?? -1;
+            if (ob - oa) return ob - oa;     // higher section rank first
+            const sa = stageMap[a.transition_type]?.order ?? -1;
+            const sb = stageMap[b.transition_type]?.order ?? -1;
+            return sb - sa;                 // higher stage rank first
+        });
+        map[youthId] = transitions[0];
+    });
 
-    for (const terrainY of terrainYouth) {
-        terrainY.section = terrainY.section.toLowerCase();
-        const isActive = terrainY.status === 'active';
-
-        const match = existing.find(y =>
-            y.member_number?.trim() === terrainY.member_number
-        ) || existing.find(y =>
-            y.name?.trim().toLowerCase() === terrainY.name?.trim().toLowerCase() &&
-            y.dob === terrainY.dob
-        );
-
-        if (!match) {
-            toAdd.push({
-                ...terrainY,
-                transition_type: isActive ? 'member' : 'retired'
-            });
-            continue;
-        }
-
-        matchedMemberNumbers.add(match.member_number);
-
-        const transition = transitionMap[match.id];
-
-        if (!transition) {
-            console.warn(`⚠️ No transition found for youth ID ${match.id} (${match.name})`);
-        }
-        const currentSectionRaw = transition?.section ?? match.section ?? '';
-        const currentSection = typeof currentSectionRaw === 'string' ? currentSectionRaw.toLowerCase() : '';
-       
-        const currentSectionRank = sectionMap[currentSection]?.order ?? -1;
-        const newSectionRank = sectionMap[terrainY.section]?.order ?? -1;
-
-
-
-        const currentStageRaw = transition?.transition_type ?? 'member';
-        const currentStage = typeof currentStageRaw === 'string' ? currentStageRaw.toLowerCase() : 'member';
-
-        const currentStageRank = stageMap[currentStage]?.order ?? -1;
-        const newStageRank = isActive ? stageMap['member'].order : stageMap['retired'].order;
-
-
-        if (!currentSectionRaw || !currentStageRaw) {
-            console.warn(`⚠️ Invalid data for youth ${match.name} (${match.id}) – section: ${currentSectionRaw}, stage: ${currentStageRaw}`);
-            continue; // or default to safe values
-        }
-
-
-        const fieldChanges = {};
-        if (match.name !== terrainY.name) fieldChanges.name = { from: match.name, to: terrainY.name };
-        if (match.dob !== terrainY.dob) fieldChanges.dob = { from: match.dob, to: terrainY.dob };
-        if (match.section.toLowerCase() !== terrainY.section) fieldChanges.section = { from: match.section, to: terrainY.section };
-        if (match.member_number !== terrainY.member_number) fieldChanges.member_number = { from: match.member_number, to: terrainY.member_number };
-        if (match.terrain_id !== terrainY.terrain_id) fieldChanges.terrain_id = { from: match.terrain_id, to: terrainY.terrain_id };
-
-        // RULE 3: Skip if current stage is retired
-        if (currentStage === 'retired') {
-            console.log(`⛔ Skipping ${match.name} – already retired`);
-            continue;
-        }
-
-        // RULE 4: Skip if section in Terrain < Scoutbase
-        if (newSectionRank < currentSectionRank) {
-            console.log(`↩️ Skipping ${match.name} – section regressed (${currentSection} → ${terrainY.section})`);
-            continue;
-        }
-
-        // RULE 5: Skip if stage in Terrain < Scoutbase
-        if (newStageRank < currentStageRank) {
-            console.log(`⏩ Skipping ${match.name} – stage regressed (${currentStage} → member)`);
-            continue;
-        }
-
-        // RULE 1: If section advanced, apply linking
-        if (newSectionRank > currentSectionRank) {
-            toUpdate.push({
-                ...terrainY,
-                id: match.id,
-                transition_type: 'linking',
-                fieldChanges
-            });
-            continue;
-        }
-
-        // RULE 2: If section same, and stage increased (e.g. have_a_go → member), apply member
-        if (newSectionRank === currentSectionRank && currentStage === 'have_a_go' && isActive) {
-            toUpdate.push({
-                ...terrainY,
-                id: match.id,
-                transition_type: 'member',
-                fieldChanges: {
-                    ...fieldChanges,
-                    transition_type: { from: currentStage, to: 'member' }
-                }
-            });
-            continue;
-        }
-
-        // RULE 6: If no transition, but fieldChanges exist (e.g. terrain_id), update with default stage
-        if (Object.keys(fieldChanges).length > 0) {
-            const transition_type = transition ? null : (isActive ? 'member' : 'retired');
-            toUpdate.push({
-                ...terrainY,
-                id: match.id,
-                transition_type,
-                fieldChanges: {
-                    ...fieldChanges,
-                    ...(transition_type ? { transition_type: { from: '(none)', to: transition_type } } : {})
-                }
-            });
-        }
-    }
-
-    // RULE 8: Find Scoutbase youth missing from Terrain
-    const missingFromTerrain = existing.filter(y => !matchedMemberNumbers.has(y.member_number));
-
-	console.log(`🔍 Sync preview complete: ${toAdd} to add, ${toUpdate} to update, ${missingFromTerrain} missing from Terrain`);
-    return { toAdd, toUpdate, missingFromTerrain };
+    return map;
 }
 
 
+function decideSyncAction({ sectionDelta, stageDelta, isRetired,isLinking,hasFields }) {
+
+
+    if (isRetired) {
+      //  console.log(`→ SKIP (already retired)`);
+     //   console.groupEnd();
+        return { type: 'SKIP', reason: 'already retired' };
+    }
+    // If they’re mid-linking, ignore Terrain still showing the old section
+      if (sectionDelta < 0 && isLinking) {
+      //     console.log(`→ SKIP (linking in progress, ignore section regression)`);
+      //      console.groupEnd();
+            return { type: 'SKIP', reason: 'linking in progress' };
+          }
+    
+         if (sectionDelta < 0) {
+          //      console.log(`→ SKIP (section regressed)`);
+          //      console.groupEnd();
+                return { type: 'SKIP', reason: 'section regressed' };
+    }
+
+    if (sectionDelta === 0 && stageDelta > 0) {
+       // console.log(`→ TRANSITION_AND_FIELDS (member) – stage advanced`);
+//console.groupEnd();
+        return { type: 'TRANSITION_AND_FIELDS', transition: 'member', reason: 'stage advanced' };
+    }
+    if (sectionDelta < 0) {
+      //  console.log(`→ SKIP (section regressed)`);
+       // console.groupEnd();
+        return { type: 'SKIP', reason: 'section regressed' };
+    }
+    if (hasFields) {
+     //   console.log(`→ UPDATE_FIELDS (field changes only)`);
+      //  console.groupEnd();
+        return { type: 'UPDATE_FIELDS', reason: 'field changes only' };
+    }
+    if (stageDelta < 0) {
+     //   console.log(`→ SKIP (stage regressed)`);
+//console.groupEnd();
+        return { type: 'SKIP', reason: 'stage regressed' };
+    }
+//console.log(`→ SKIP (no changes)`);
+   // console.groupEnd();
+    return { type: 'SKIP', reason: 'no changes' };
+}
+
+function computeDiffs(match, terrainRec, transition) {
+    const sectionRank = Object.fromEntries(
+        Object.entries(sectionMap).map(([k, v]) => [k, v.order])
+    );
+    const stageRank = Object.fromEntries(
+        Object.entries(stageMap).map(([k, v]) => [k, v.order])
+    );
+    const curTrans = transition || {};
+    const curSecRank = sectionRank[(curTrans.section || match.section).toLowerCase()] ?? -1;
+    const newSecRank = sectionRank[terrainRec.section] ?? -1;
+    const curStageRank = stageRank[(curTrans.transition_type || 'member').toLowerCase()] ?? -1;
+    const newStageRank = terrainRec.status === 'active' ? stageRank['member'] : stageRank['retired'];
+    
+
+    const fieldChanges = {};
+    // Build detailed fieldChanges
+    const isLinking = (curTrans.transition_type || '').toLowerCase() === 'linking';
+
+    if (match.name !== terrainRec.name) {
+        fieldChanges.name = { from: match.name, to: terrainRec.name };
+    }
+    if (match.dob !== terrainRec.dob) {
+        fieldChanges.dob = { from: match.dob, to: terrainRec.dob };
+    }
+	//console.log(isLinking, curTrans, match.section, terrainRec.section);
+    if (!isLinking && match.section.toLowerCase() !== terrainRec.section) {
+        fieldChanges.section = { from: match.section, to: terrainRec.section };
+    }
+    if ((match.member_number || '') !== (terrainRec.member_number || '')) {
+            fieldChanges.member_number = { from: match.member_number, to: terrainRec.member_number };
+     }
+    if ((match.terrain_id || '') !== (terrainRec.terrain_id || '')) {
+        fieldChanges.terrain_id = { from: match.terrain_id, to: terrainRec.terrain_id };
+    }
+    const hasFields = Object.keys(fieldChanges).length > 0;
+
+     return {
+        sectionDelta: newSecRank - curSecRank,
+        stageDelta: newStageRank - curStageRank,
+        isRetired: curTrans.transition_type === 'retired',
+        hasFields,
+        isLinking,
+        fieldChanges
+    };
+}
+
+function findMatch(rec, existing) {
+    const byId = existing.find(y => y.terrain_id?.trim() === rec.terrain_id);
+    const byNum = existing.find(y => y.member_number?.trim() === rec.member_number);
+    if (byId || byNum) return byId || byNum;
+    return existing.find(y => {
+        const n1 = y.name.trim().toLowerCase();
+        const n2 = rec.name.trim().toLowerCase();
+        const d1 = new Date(y.dob).toISOString().split('T')[0];
+        const d2 = new Date(rec.dob).toISOString().split('T')[0];
+        return n1 === n2 && d1 === d2;
+    });
+}
+
 /**
- * Applies the sync results to Supabase
+ * Previews what will be added or updated without writing to DB
  */
-export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
-    let added = 0;
-    let updated = 0;
+export async function getTerrainSyncPreview(token, groupId, units) {
+    const terrain = await getYouthFromTerrain(token, units);
+    const existing = await fetchExistingYouth(groupId);
+    const transitions = await fetchLatestTransitions();
 
-    for (const youth of toAdd) {
-        const { data, error: insertError } = await supabase
-            .from('youth')
-            .insert({
-                name: youth.name,
-                dob: youth.dob,
-                section: youth.section,
-                member_number: youth.member_number,
-                terrain_id: youth.terrain_id,
-                group_id: groupId
-            })
-            .select('id')
-            .single();
+    const toAdd = [];
+    const toUpdate = [];
 
-        if (insertError || !data?.id) {
-            console.error('❌ Failed to insert youth:', youth.name, insertError);
+    for (const rec of terrain) {
+        const match = findMatch(rec, existing);
+        if (!match) {
+            toAdd.push({ ...rec, transition_type: rec.status === 'active' ? 'member' : 'retired' });
             continue;
         }
+        const diffs = computeDiffs(match, rec, transitions[match.id]);
+        const decision = decideSyncAction(diffs);
+        if (decision.type === 'SKIP') continue;
+        const previewPayload = {
+            ...rec,
+            id: match.id,
+            transition_type: decision.transition,
+            fieldChanges: diffs.fieldChanges,
+            reason: decision.reason
+        };
+        console.log('📝 Preview payload for modal:', previewPayload);
+        toUpdate.push(previewPayload);
+    }
 
+    return { toAdd, toUpdate };
+}
+
+/**
+ * Applies the sync to Supabase (only changed fields)
+ */
+export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
+    let added = 0, updated = 0;
+    // Inserts
+    for (const y of toAdd) {
+        const { data, error } = await supabase.from('youth').insert({
+            name: y.name,
+            dob: y.dob,
+            section: y.section,
+            member_number: y.member_number,
+            terrain_id: y.terrain_id,
+            group_id: groupId
+        }).select('id').single();
+        if (!data?.id || error) continue;
         await supabase.from('youth_transitions').insert({
             youth_id: data.id,
-            transition_type: youth.transition_type.toLowerCase(),
+            transition_type: y.transition_type.toLowerCase(),
             transition_date: new Date().toISOString().split('T')[0],
-            section: youth.section,
+            section: y.section,
             notes: 'Imported from Terrain'
         });
-
-        console.log('✅ Added youth:', youth.name);
         added++;
     }
 
-    for (const youth of toUpdate) {
-        const { error: updateError } = await supabase
-            .from('youth')
-            .update({
-                name: youth.name,
-                dob: youth.dob,
-                section: youth.section,
-                member_number: youth.member_number,
-                terrain_id: youth.terrain_id
-            })
-            .eq('id', youth.id);
+    // Updates with only changed fields
+    for (const y of toUpdate) {
+        const updateData = {};
 
-        if (updateError) {
-            console.error('❌ Update failed for:', youth.name, updateError);
-            continue;
+
+        if (y.fieldChanges.name) updateData.name = y.name;
+        if (y.fieldChanges.dob) updateData.dob = y.dob;
+        if (y.fieldChanges.member_number) updateData.member_number = y.member_number;
+        if (y.fieldChanges.terrain_id) updateData.terrain_id = y.terrain_id;
+
+        if (Object.keys(updateData).length) {
+            await supabase.from('youth')
+                .update(updateData)
+                .eq('id', y.id);
         }
 
-        console.log('✅ Updated youth:', youth.name, 'Changes:', youth.fieldChanges);
+           // if section changed, schedule it as a 'linking' transition
+              if (y.fieldChanges.section) {
+                  y.transition_type = 'linking';
+                   }
 
-        // ✅ Only insert a transition if we have one
-        if (youth.transition_type) {
-            const { error: transitionError } = await supabase
-                .from('youth_transitions')
-                .insert({
-                    youth_id: youth.id,
-                    transition_type: youth.transition_type.toLowerCase(),
-                    transition_date: new Date().toISOString().split('T')[0],
-                    section: youth.section,
-                    notes: 'Imported from Terrain'
-                });
-
-            if (transitionError) {
-                console.error('❌ Transition insert failed for:', youth.name, transitionError.message);
-            } else {
-                console.log('✅ Transition recorded for:', youth.name);
-            }
+        if (y.transition_type) {
+            await supabase.from('youth_transitions').insert({
+                youth_id: y.id,
+                transition_type: y.transition_type.toLowerCase(),
+                transition_date: new Date().toISOString().split('T')[0],
+                section: y.section,
+                notes: 'Imported from Terrain'
+            });
         }
 
         updated++;
     }
 
     return { added, updated };
-}
-
-/**
- * Fetch units the user has access to via Terrain profile
- */
-export async function getTerrainProfiles(token) {
-    const response = await fetch('https://members.terrain.scouts.com.au/profiles', {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error('Failed to fetch profile info');
-    }
-
-    const data = await response.json();
-
-    return data.profiles.map(p => ({
-        unitId: p.unit.id,
-        unitName: p.unit.name,
-        section: p.unit.section
-    }));
 }

@@ -6,7 +6,7 @@ import { downloadCSV } from '@/utils/exportUtils';
 import { PrimaryButton, PageTitle, StyledTable } from '@/components/common/SharedStyles';
 import { FolderKanban } from 'lucide-react';
 import { formatDate } from '@/utils/dateUtils.js';
-import { sections, sectionMap, stages, stageMap } from '@/components/common/Lookups';
+import { sections, sectionMap, stages, stageMap, codeToSectionLabel, codeToStageLabel } from '@/components/common/Lookups';
 
 // Build dropdown options: blank code for all, then sorted sections
 const sectionOptions = [
@@ -19,10 +19,6 @@ const stageOptions = [
     ...stages.slice().sort((a, b) => a.order - b.order)
 ];
 // Helpers to map codes to human labels
-const codeToSectionLabel = code =>
-    sections.find(s => s.code === code)?.label || code;
-const codeToStageLabel = code =>
-    stages.find(s => s.code === code)?.label || code;
 
 export default function ReportYouthBySection({ groupId }) {
     const [youth, setYouth] = useState([]);
@@ -150,6 +146,7 @@ export default function ReportYouthBySection({ groupId }) {
                 <StyledTable style={{ marginTop: '1rem', cursor: 'pointer' }}>
                     <thead>
                         <tr>
+							<th onClick={() => requestSort('member_number')}>Member Number{getSortIndicator('member_number')}</th>
                             <th onClick={() => requestSort('name')}>Name{getSortIndicator('name')}</th>
                             <th onClick={() => requestSort('section')}>Section{getSortIndicator('section')}</th>
                             <th onClick={() => requestSort('membership_stage')}>Stage{getSortIndicator('membership_stage')}</th>
@@ -161,6 +158,7 @@ export default function ReportYouthBySection({ groupId }) {
                     <tbody>
                         {sortedYouth.map(y => (
                             <tr key={y.id}>
+                                <td>{y.member_number}</td>
                                 <td>{y.name}</td>
                                 <td>{codeToSectionLabel(y.section)}</td>
                                 <td>{codeToStageLabel(y.membership_stage)}</td>
