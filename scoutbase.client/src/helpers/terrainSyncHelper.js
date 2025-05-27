@@ -130,17 +130,24 @@ export async function getTerrainSyncPreview(token, groupId, units) {
         }
         const currentSectionRaw = transition?.section ?? match.section ?? '';
         const currentSection = typeof currentSectionRaw === 'string' ? currentSectionRaw.toLowerCase() : '';
-        if (!currentSectionRaw || typeof currentSectionRaw !== 'string') {
-            console.warn(`⚠️ currentSection missing or invalid for youth ${match.name} (${match.id})`);
-        }
-        const currentSectionRank = sectionMap[currentSection]?.order ?? 0;
-        const newSectionRank = sectionMap[terrainY.section]?.order ?? 0;
+       
+        const currentSectionRank = sectionMap[currentSection]?.order ?? -1;
+        const newSectionRank = sectionMap[terrainY.section]?.order ?? -1;
+
+
 
         const currentStageRaw = transition?.transition_type ?? 'member';
         const currentStage = typeof currentStageRaw === 'string' ? currentStageRaw.toLowerCase() : 'member';
 
-        const currentStageRank = stageMap[currentStage]?.order ?? 0;
-        const newStageRank = isActive ? stageMap['member']?.order : stageMap['retired']?.order;
+        const currentStageRank = stageMap[currentStage]?.order ?? -1;
+        const newStageRank = isActive ? stageMap['member'].order : stageMap['retired'].order;
+
+
+        if (!currentSectionRaw || !currentStageRaw) {
+            console.warn(`⚠️ Invalid data for youth ${match.name} (${match.id}) – section: ${currentSectionRaw}, stage: ${currentStageRaw}`);
+            continue; // or default to safe values
+        }
+
 
         const fieldChanges = {};
         if (match.name !== terrainY.name) fieldChanges.name = { from: match.name, to: terrainY.name };
@@ -270,20 +277,25 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
             continue;
         }
 
-        const { error: transitionError } = await supabase
-            .from('youth_transitions')
-            .insert({
-                youth_id: youth.id,
-                transition_type: youth.transition_type.toLowerCase(),
-                transition_date: new Date().toISOString().split('T')[0],
-                section: youth.section,
-                notes: 'Imported from Terrain'
-            });
+        console.log('✅ Updated youth:', youth.name, 'Changes:', youth.fieldChanges);
 
-        if (transitionError) {
-            console.error('❌ Transition insert failed for:', youth.name, transitionError.message);
-        } else {
-            console.log('✅ Transition recorded for:', youth.name);
+        // ✅ Only insert a transition if we have one
+        if (youth.transition_type) {
+            const { error: transitionError } = await supabase
+                .from('youth_transitions')
+                .insert({
+                    youth_id: youth.id,
+                    transition_type: youth.transition_type.toLowerCase(),
+                    transition_date: new Date().toISOString().split('T')[0],
+                    section: youth.section,
+                    notes: 'Imported from Terrain'
+                });
+
+            if (transitionError) {
+                console.error('❌ Transition insert failed for:', youth.name, transitionError.message);
+            } else {
+                console.log('✅ Transition recorded for:', youth.name);
+            }
         }
 
         updated++;
