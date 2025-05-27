@@ -1,11 +1,7 @@
 ﻿import { supabase } from '../lib/supabaseClient';
-import { sections } from '@/components/common/Lookups.js';
+import { sections, sectionMap, stageMap } from '@/components/common/Lookups.js';
 
-    // build a label→order map from your lookup
-    const sectionOrder = sections.reduce((acc, s) => {
-          acc[s.label] = s.order;
-          return acc;
-        }, {});
+
 
 function mapTerrainSection(raw) {
       if (!raw) return '';
@@ -62,72 +58,162 @@ export async function getYouthFromTerrain(token, units) {
 /**
  * Compares Terrain data with local DB to determine adds and updates
  */
+
 export async function getTerrainSyncPreview(token, groupId, units) {
+
     console.log('🔁 Starting sync preview for group:', groupId);
     const terrainYouth = await getYouthFromTerrain(token, units);
     console.log(`📥 Received ${terrainYouth.length} youth from Terrain`);
+
+    // Check for duplicate member numbers in Terrain
+    const seen = new Set();
+    terrainYouth.forEach(y => {
+        if (seen.has(y.member_number)) {
+            console.warn(`⚠️ Duplicate member number in Terrain: ${y.name} (${y.member_number})`);
+        } else {
+            seen.add(y.member_number);
+        }
+    });
 
     const { data: existingYouth, error } = await supabase
         .from('youth')
         .select('id, terrain_id, name, dob, section, member_number')
         .eq('group_id', groupId);
 
+    const { data: transitions } = await supabase
+        .from('youth_transitions')
+        .select('youth_id, transition_type, section, transition_date')
+        .order('transition_date', { ascending: false });
+
     if (error) {
-        console.error('❌ Failed to fetch existing youth:', error.message);
-        return { toAdd: terrainYouth, toUpdate: [] };
+        console.error('❌ Failed to fetch youth:', error.message);
+        return { toAdd: [], toUpdate: [], missingFromTerrain: [] };
     }
+
+    const transitionMap = {};
+    (transitions || []).forEach(t => {
+        if (!transitionMap[t.youth_id]) {
+            transitionMap[t.youth_id] = t;
+        }
+    });
 
     const existing = existingYouth || [];
     const toAdd = [];
     const toUpdate = [];
+    const matchedMemberNumbers = new Set();
 
     for (const terrainY of terrainYouth) {
-                // the terrainY.section comes in as a raw string; normalize to your label
-                    terrainY.section = mapTerrainSection(terrainY.section);
-                           let match = existing.find(y =>
-                            y.member_number?.trim() === terrainY.member_number
-                        );
+        terrainY.section = terrainY.section.toLowerCase();
+        const isActive = terrainY.status === 'active';
 
-        if (!match) {
-            match = existing.find(y =>
-                y.name?.trim().toLowerCase() === terrainY.name?.trim().toLowerCase() &&
-                y.dob === terrainY.dob
-            );
-        }
+        const match = existing.find(y =>
+            y.member_number?.trim() === terrainY.member_number
+        ) || existing.find(y =>
+            y.name?.trim().toLowerCase() === terrainY.name?.trim().toLowerCase() &&
+            y.dob === terrainY.dob
+        );
 
         if (!match) {
             toAdd.push({
                 ...terrainY,
-                transition_type: terrainY.status === 'active' ? 'Invested' : 'Retired'
+                transition_type: isActive ? 'member' : 'retired'
             });
-        } else {
-            const hasChanges =
-                match.name !== terrainY.name ||
-                match.dob !== terrainY.dob ||
-                match.section !== terrainY.section;
+            continue;
+        }
 
-            if (hasChanges) {
-                const prevRank = sectionOrder[match.section] || 0;
-                const newRank = sectionOrder[terrainY.section] || 0;
+        matchedMemberNumbers.add(match.member_number);
 
-                if (prevRank && newRank && newRank < prevRank) {
-                    console.warn(`🚫 Skipping backwards transition for ${match.name}: ${match.section} → ${terrainY.section}`);
-                    continue;
+        const transition = transitionMap[match.id];
+
+        if (!transition) {
+            console.warn(`⚠️ No transition found for youth ID ${match.id} (${match.name})`);
+        }
+        const currentSectionRaw = transition?.section ?? match.section ?? '';
+        const currentSection = typeof currentSectionRaw === 'string' ? currentSectionRaw.toLowerCase() : '';
+        if (!currentSectionRaw || typeof currentSectionRaw !== 'string') {
+            console.warn(`⚠️ currentSection missing or invalid for youth ${match.name} (${match.id})`);
+        }
+        const currentSectionRank = sectionMap[currentSection]?.order ?? 0;
+        const newSectionRank = sectionMap[terrainY.section]?.order ?? 0;
+
+        const currentStageRaw = transition?.transition_type ?? 'member';
+        const currentStage = typeof currentStageRaw === 'string' ? currentStageRaw.toLowerCase() : 'member';
+
+        const currentStageRank = stageMap[currentStage]?.order ?? 0;
+        const newStageRank = isActive ? stageMap['member']?.order : stageMap['retired']?.order;
+
+        const fieldChanges = {};
+        if (match.name !== terrainY.name) fieldChanges.name = { from: match.name, to: terrainY.name };
+        if (match.dob !== terrainY.dob) fieldChanges.dob = { from: match.dob, to: terrainY.dob };
+        if (match.section.toLowerCase() !== terrainY.section) fieldChanges.section = { from: match.section, to: terrainY.section };
+        if (match.member_number !== terrainY.member_number) fieldChanges.member_number = { from: match.member_number, to: terrainY.member_number };
+        if (match.terrain_id !== terrainY.terrain_id) fieldChanges.terrain_id = { from: match.terrain_id, to: terrainY.terrain_id };
+
+        // RULE 3: Skip if current stage is retired
+        if (currentStage === 'retired') {
+            console.log(`⛔ Skipping ${match.name} – already retired`);
+            continue;
+        }
+
+        // RULE 4: Skip if section in Terrain < Scoutbase
+        if (newSectionRank < currentSectionRank) {
+            console.log(`↩️ Skipping ${match.name} – section regressed (${currentSection} → ${terrainY.section})`);
+            continue;
+        }
+
+        // RULE 5: Skip if stage in Terrain < Scoutbase
+        if (newStageRank < currentStageRank) {
+            console.log(`⏩ Skipping ${match.name} – stage regressed (${currentStage} → member)`);
+            continue;
+        }
+
+        // RULE 1: If section advanced, apply linking
+        if (newSectionRank > currentSectionRank) {
+            toUpdate.push({
+                ...terrainY,
+                id: match.id,
+                transition_type: 'linking',
+                fieldChanges
+            });
+            continue;
+        }
+
+        // RULE 2: If section same, and stage increased (e.g. have_a_go → member), apply member
+        if (newSectionRank === currentSectionRank && currentStage === 'have_a_go' && isActive) {
+            toUpdate.push({
+                ...terrainY,
+                id: match.id,
+                transition_type: 'member',
+                fieldChanges: {
+                    ...fieldChanges,
+                    transition_type: { from: currentStage, to: 'member' }
                 }
+            });
+            continue;
+        }
 
-                const transitionType = (newRank > prevRank) ? 'Linking' : 'Invested';
-
-                toUpdate.push({
-                    ...terrainY,
-                    id: match.id,
-                    transition_type: transitionType
-                });
-            }
+        // RULE 6: If no transition, but fieldChanges exist (e.g. terrain_id), update with default stage
+        if (Object.keys(fieldChanges).length > 0) {
+            const transition_type = transition ? null : (isActive ? 'member' : 'retired');
+            toUpdate.push({
+                ...terrainY,
+                id: match.id,
+                transition_type,
+                fieldChanges: {
+                    ...fieldChanges,
+                    ...(transition_type ? { transition_type: { from: '(none)', to: transition_type } } : {})
+                }
+            });
         }
     }
 
-    return { toAdd, toUpdate };
+    // RULE 8: Find Scoutbase youth missing from Terrain
+    const missingFromTerrain = existing.filter(y => !matchedMemberNumbers.has(y.member_number));
+
+	console.log(`🔍 Sync preview complete: ${toAdd} to add, ${toUpdate} to update, ${missingFromTerrain} missing from Terrain`);
+    return { toAdd, toUpdate, missingFromTerrain };
 }
+
 
 /**
  * Applies the sync results to Supabase
@@ -136,17 +222,6 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
     let added = 0;
     let updated = 0;
 
-    const { data: existingYouth, error } = await supabase
-        .from('youth')
-        .select('id, terrain_id, name, dob, section, member_number')
-        .eq('group_id', groupId);
-
-    if (error) {
-        console.error('❌ Failed to fetch existing youth:', error.message);
-        return { added, updated };
-    }
-
-    // Add new youth
     for (const youth of toAdd) {
         const { data, error: insertError } = await supabase
             .from('youth')
@@ -168,7 +243,7 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
 
         await supabase.from('youth_transitions').insert({
             youth_id: data.id,
-            transition_type: youth.transition_type,
+            transition_type: youth.transition_type.toLowerCase(),
             transition_date: new Date().toISOString().split('T')[0],
             section: youth.section,
             notes: 'Imported from Terrain'
@@ -178,7 +253,6 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
         added++;
     }
 
-    // Update existing youth
     for (const youth of toUpdate) {
         const { error: updateError } = await supabase
             .from('youth')
@@ -200,7 +274,7 @@ export async function syncYouthFromTerrain(groupId, toAdd, toUpdate) {
             .from('youth_transitions')
             .insert({
                 youth_id: youth.id,
-                transition_type: youth.transition_type,
+                transition_type: youth.transition_type.toLowerCase(),
                 transition_date: new Date().toISOString().split('T')[0],
                 section: youth.section,
                 notes: 'Imported from Terrain'
