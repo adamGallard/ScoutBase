@@ -12,6 +12,7 @@
   "dependencies": {
     "@headlessui/react": "^2.2.1",
     "@supabase/supabase-js": "^2.49.4",
+    "@vercel/analytics": "^1.5.0",
     "bcryptjs": "^3.0.2",
     "ical.js": "^2.1.0",
     "lucide-react": "^0.487.0",
