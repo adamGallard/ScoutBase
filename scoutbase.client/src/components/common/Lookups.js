@@ -32,3 +32,10 @@ export const sectionMap = sections.reduce((map, item) => {
 	map[item.code] = { label: item.label, color: item.color, order: item.order };
 	return map;
 }, {});
+
+
+export const codeToSectionLabel = code =>
+	sections.find(s => s.code === code)?.label ?? code;
+
+export const codeToStageLabel = code =>
+	stages.find(s => s.code === code)?.label ?? code;

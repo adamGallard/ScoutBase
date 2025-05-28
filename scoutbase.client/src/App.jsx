@@ -1,11 +1,11 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+﻿import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Privacy from './pages/Privacy';
 import Features from './pages/Features';
 import Logout from './pages/Logout';
 import About from './pages/About';
 import ContactPage from './pages/Contact';
-
+import { Analytics } from '@vercel/analytics/react';
 //Admin portal pages
 import AdminLogin from './pages/AdminLogin';
 import AdminPage from './pages/AdminPage';
@@ -17,6 +17,7 @@ import ParentRouteWrapper from './components/ParentRouteWrapper';
 export default function App() {
 	return (
 		<Router>
+			<>
 			<Routes>
 
 				{/* Public / Marketing */}
@@ -45,6 +46,8 @@ export default function App() {
 				{/* Fallback */}
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>
+			<Analytics /> {/* ✅ Placed here, outside Routes but inside Router */}
+		</>
 		</Router>
 	);
 }

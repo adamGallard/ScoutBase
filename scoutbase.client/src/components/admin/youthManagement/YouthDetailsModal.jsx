@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
+import { codeToStageLabel, codeToSectionLabel } from '@/components/common/Lookups.js';
+import { formatDate, getAgeWithMonths } from '@/utils/dateUtils.js';
 
 export default function YouthDetailsModal({ youth, onClose }) {
     const [parents, setParents] = useState([]);
@@ -32,9 +34,10 @@ export default function YouthDetailsModal({ youth, onClose }) {
                 <h3>Youth Details</h3>
 
                 <p><strong>Name:</strong> {youth.name}</p>
-                <p><strong>Date of Birth:</strong> {formatDate(youth.dob)}</p>
-                <p><strong>Section:</strong> {youth.section}</p>
-                <p><strong>Membership Stage:</strong> {youth.membership_stage}</p>
+                <p><strong>Date of Birth:</strong> {formatDate(youth.dob)} - {getAgeWithMonths(youth.dob)} </p>
+				<p><strong>Member Number:</strong> {youth.member_number}</p>
+                <p><strong>Section:</strong> {codeToSectionLabel(youth.section)}</p>
+                <p><strong>Membership Stage:</strong> {codeToStageLabel(youth.membership_stage)}</p>
                 {youth.rank && <p><strong>Rank:</strong> {youth.rank}</p>}
                 {youth.patrol_name && <p><strong>Patrol:</strong> {youth.patrol_name}</p>}
 
@@ -82,10 +85,4 @@ export default function YouthDetailsModal({ youth, onClose }) {
     );
 }
 
-// Format date helper
-const formatDate = (dob) => {
-    if (!dob) return '';
-    const date = new Date(dob);
-    return date.toLocaleDateString();
-};
 
