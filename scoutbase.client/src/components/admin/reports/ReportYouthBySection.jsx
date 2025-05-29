@@ -30,7 +30,7 @@ export default function ReportYouthBySection({ groupId }) {
         const fetchData = async () => {
             const { data, error } = await supabase
                 .from('youth')
-                .select('id, name, dob, section, member_number, membership_stage, rank, patrols ( name )')
+                .select('id, name, dob, section,linking_section, member_number, membership_stage, rank, patrols ( name )')
                 .eq('group_id', groupId)
                 .neq('membership_stage', 'retired');  
 
@@ -51,9 +51,9 @@ export default function ReportYouthBySection({ groupId }) {
         let rows = youth;
     
          // section filter
-          if (selectedSection !== '') {
-                rows = rows.filter(y => y.section === selectedSection);
-              }
+        if (selectedSection !== '') {
+            rows = rows.filter(y => y.section === selectedSection || y.linking_section === selectedSection);
+        }
     
           // stage filter
           if (selectedStage !== '') {
