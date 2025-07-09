@@ -194,3 +194,27 @@ export async function getBadgesForYouth(youthId) {
     if (error) throw error;
     return data;
 }
+
+export async function createManualBadgeOrder({ youthId, badgeId, userId, groupId, projectName, approvedDate }) {
+    const { data: badge, error } = await supabase
+        .from("badges_catalog")
+        .select("*")
+        .eq("id", badgeId)
+        .single();
+
+    if (error || !badge) throw error || new Error("Badge not found");
+
+    const badgeMeta = {}; // Optional: parse badge label/type into structured meta
+
+    return await supabase.from("badge_orders").insert({
+        youth_id: youthId,
+        badge_type: badge.type,
+        badge_meta: badgeMeta,
+        project_name: projectName,
+        approved_date: approvedDate,
+        group_id: groupId,
+        status: "ready_to_order",
+        requested_by: userId,
+        source: "manual"
+    });
+}

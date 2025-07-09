@@ -4,7 +4,7 @@ import {
     RefreshCcw,
     Award,
     CheckCircleIcon,
-    ArrowRightCircle
+	ArrowRightCircle, Plus
 } from "lucide-react";
 
 import { getTerrainProfiles } from "@/helpers/terrainSyncHelper";
@@ -26,6 +26,7 @@ import {
 } from "@/components/common/SharedStyles";
 import { sections } from "@/components/common/Lookups";
 import OrderPreviewModal from "@/components/admin/OrderPreviewModal";
+import ManualAddBadgeModal from "@/components/admin/ManualAddBadgeModal";
 
 /* ------------------------------------------------------------------ */
 // helper look‑ups
@@ -73,6 +74,7 @@ export default function BadgeOrderView({ groupId, userInfo }) {
     const itemsPerPage = 12;
     const [showPreview, setShowPreview] = useState(false);
     const [history, setHistory] = useState([]);  
+    const [showManualModal, setShowManualModal] = useState(false);
 
 
     const groupName = userInfo?.group_name ?? "Unknown";
@@ -323,10 +325,14 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                     </tbody>
                 </AdminTable>
             )}
-            <div style={{ margin: "0.5rem 0" }}>
-                <PrimaryButton onClick={addToOrder}><ArrowRightCircle size={16} style={{ marginRight: 4 }} /> Add to Order Queue</PrimaryButton>
+            <div style={{ display: "flex", gap: "1rem", margin: "0.5rem 0" }}>
+                <PrimaryButton onClick={addToOrder}>
+                    <ArrowRightCircle size={16} style={{ marginRight: 4 }} /> Add to Order Queue
+                </PrimaryButton>
+                <PrimaryButton onClick={() => { console.log("Manual Add button clicked"); setShowManualModal(true) }}>
+                    <Plus size={16} style={{ marginRight: 4 }} /> Manual Add
+                </PrimaryButton>
             </div>
-
             {/* STEP 2 ---------------------------------------------------------- */}
             {readyRows.length > 0 && (
                 <>
@@ -421,6 +427,14 @@ export default function BadgeOrderView({ groupId, userInfo }) {
                     section={sectionList}
                     onConfirm={handleConfirmOrder}
                     onClose={() => setShowPreview(false)}
+                />
+            )}
+            {showManualModal && (
+                <ManualAddBadgeModal
+                    groupId={groupId}
+                    userInfo={userInfo}
+                    onClose={() => setShowManualModal(false)}
+                    onSuccess={fetchOrders}
                 />
             )}
         </div>
