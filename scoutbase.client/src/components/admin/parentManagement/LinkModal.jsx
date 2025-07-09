@@ -60,8 +60,10 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     };
 
     const addLink = async (youthId, relationship) => {
+        // set primary only for mother or father
+        const is_primary = (relationship === 'Mother' || relationship === 'Father');
         await supabase.from('parent_youth').insert([
-            { parent_id: parentId, youth_id: youthId, group_id: groupId, relationship  }
+            { parent_id: parentId, youth_id: youthId, group_id: groupId, relationship, is_primary }
         ]);
         await logAuditEvent({
             userId: userInfo?.id,
@@ -70,7 +72,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
             action: 'Link',
             targetType: 'Parent-Youth',
             targetId: `${parentId}`,
-            metadata: `Linked youth ID ${youthId} to parent ID ${parentId} as "${relationship}`
+            metadata: `Linked youth ID ${youthId} to parent ID ${parentId} as "${relationship}" (primary: ${is_primary})`
         });
         loadLinkedYouth();
         setCurrentPage(1);
