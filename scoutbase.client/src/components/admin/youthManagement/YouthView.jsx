@@ -38,7 +38,7 @@ export default function YouthView({ groupId, userInfo }) {
 
 	const [addError, setAddError] = useState('');
 	const [youthList, setYouthList] = useState([]);
-	const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '' });
+	const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '', gender: '' });
 	const [editingYouthId, setEditingYouthId] = useState(null);
 	const [filter, setFilter] = useState('');
 	const [sectionFilter, setSectionFilter] = useState('');
@@ -114,7 +114,7 @@ export default function YouthView({ groupId, userInfo }) {
 	const fetchYouth = useCallback(async () => {
 		let query = supabase
 			.from('youth')
-			.select('id, name, dob, section,linking_section, membership_stage, member_number')
+			.select('id, name, gender, dob, section,linking_section, membership_stage, member_number')
 			.eq('group_id', groupId)
 			.order('name');
 
@@ -366,6 +366,7 @@ export default function YouthView({ groupId, userInfo }) {
 					<tr>
 						<th>Name</th>
 						<th>DOB</th>
+						<th>Gender</th>
 						<th>Section</th>
 						<th>Stage</th>
 						<th>Actions</th>
@@ -391,6 +392,24 @@ export default function YouthView({ groupId, userInfo }) {
 									/>
 								) : formatDate(y.dob)}
 							</td>
+							<td>
+								{editingYouthId === y.id ? (
+									<select
+										value={youthForm.gender || ''}
+										onChange={e => setYouthForm(f => ({ ...f, gender: e.target.value }))}
+										style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
+									>
+										<option value="">Gender...</option>
+										<option value="male">Male</option>
+										<option value="female">Female</option>
+										<option value="non-binary">Non-binary</option>
+										<option value="prefer not to say">Prefer not to say</option>
+									</select>
+								) : (
+									y.gender || '—'
+								)}
+							</td>
+
 							<td>
 								{editingYouthId === y.id ? (
 									<span>{youthForm.section}</span>
@@ -477,6 +496,20 @@ export default function YouthView({ groupId, userInfo }) {
 									value={youthForm.dob}
 									onChange={(e) => setYouthForm(f => ({ ...f, dob: e.target.value }))}
 								/>
+							</td>
+							<td>
+								{/* Add this: */}
+								<select
+									value={youthForm.gender || ''}
+									onChange={e => setYouthForm(f => ({ ...f, gender: e.target.value }))}
+									style={{ padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
+								>
+									<option value="">Gender...</option>
+									<option value="male">Male</option>
+									<option value="female">Female</option>
+									<option value="non-binary">Non-binary</option>
+									<option value="prefer not to say">Prefer not to say</option>
+								</select>
 							</td>
 							<td>
 
