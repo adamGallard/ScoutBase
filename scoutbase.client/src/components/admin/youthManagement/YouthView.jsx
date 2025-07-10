@@ -445,7 +445,7 @@ export default function YouthView({ groupId, userInfo }) {
 
 
 
-										{y.membership_stage === 'Retired' ? (
+										{y.membership_stage === 'retired' ? (
 											<button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth">
 												<Trash size={16} />
 											</button>
