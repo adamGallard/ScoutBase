@@ -7,6 +7,8 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
 import { sections, stages } from '@/components/common/Lookups.js';
 const codeToLabel = code => sections.find(s => s.code === code)?.label ?? code;
 import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date util
+import AttendanceModal from "@/components/admin/reports/AttendanceEditModal";
+// ...other imports
 
 ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
@@ -29,6 +31,25 @@ export default function AttendanceView({
     const [sortField, setSortField] = useState('');
     const [sortDirection, setSortDirection] = useState('asc');
 
+    const [showModal, setShowModal] = useState(false);
+    const [modalData, setModalData] = useState(null);
+
+    function handleEditAttendance(youth, signIn, signOut) {
+        setModalData({ youth, signIn, signOut });
+        setShowModal(true);
+    }
+
+    function handleAddAttendance() {
+        setModalData({ youth: null, signIn: null, signOut: null });
+        setShowModal(true);
+    }
+
+    function handleModalClose(saved) {
+        setShowModal(false);
+        setModalData(null);
+        if (saved) fetchAttendance(); // reload data if something was saved
+    }
+
     const handleSort = (field) => {
         if (sortField === field) {
             setSortDirection(prev => (prev === 'asc' ? 'desc' : 'asc'));
@@ -49,11 +70,11 @@ export default function AttendanceView({
 
         if (!error && data) {
             const filtered = data.filter(
-                          y =>
-                (!effectiveSectionFilter) ||
+                y =>
+                    (!effectiveSectionFilter) ||
                     y.section === effectiveSectionFilter ||
                     y.linking_section === effectiveSectionFilter
-                );
+            );
             setYouthList(filtered);
         }
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
@@ -87,13 +108,13 @@ export default function AttendanceView({
 
 
         const grouped = Object.values(byYouth);
-               const filtered = effectiveSectionFilter
-                     ? grouped.filter(
-                              r =>
-                   r.youth.section === effectiveSectionFilter ||
-                        r.youth.linking_section === effectiveSectionFilter
-                    )
-              : grouped;
+        const filtered = effectiveSectionFilter
+            ? grouped.filter(
+                r =>
+                    r.youth.section === effectiveSectionFilter ||
+                    r.youth.linking_section === effectiveSectionFilter
+            )
+            : grouped;
 
         setFilteredAttendance(filtered);
     }, [activeGroupId, selectedDate, effectiveSectionFilter]);
@@ -127,7 +148,7 @@ export default function AttendanceView({
             return;     // wait for the new date before fetching
         }
 
-       
+
         // 2) once we have both a group and a date, fetch everything
         if (activeGroupId) {
             fetchYouthList();
@@ -266,20 +287,20 @@ export default function AttendanceView({
                 {!isScopedToSection && (
                     <label>
                         Section:{' '}
-                                       <select
-                  value={localSectionFilter}
-                                          onChange={e => setLocalSectionFilter(e.target.value)}
-                >
-                                         <option value="">All</option>
-                                          {sections
-                                                .sort((a, b) => a.order - b.order)
-                                               .map(({ code, label }) => (
-                                                      <option key={code} value={code}>
-                                                            {label}
-                                                          </option>
-                                                   ))
-                                             }
-                                        </select>
+                        <select
+                            value={localSectionFilter}
+                            onChange={e => setLocalSectionFilter(e.target.value)}
+                        >
+                            <option value="">All</option>
+                            {sections
+                                .sort((a, b) => a.order - b.order)
+                                .map(({ code, label }) => (
+                                    <option key={code} value={code}>
+                                        {label}
+                                    </option>
+                                ))
+                            }
+                        </select>
                     </label>
                 )}
 
@@ -348,9 +369,9 @@ export default function AttendanceView({
                                 { field: 'name', label: 'Name' },
                                 { field: 'section', label: 'Section' },
                                 { field: 'signIn', label: 'Signed In' },
-                                { field: 'signInComment', label: 'Comments' },
+                                { field: 'signInComment', label: 'Sign in Comments' },
                                 { field: 'signOut', label: 'Signed Out' },
-                                { field: 'signOutComment', label: 'Comments' }
+                                { field: 'signOutComment', label: 'Sign out Comments' }
                             ].map(({ field, label }) => (
                                 <th key={field} onClick={() => handleSort(field)} style={{ cursor: 'pointer' }}>
                                     {label}
@@ -359,7 +380,9 @@ export default function AttendanceView({
                                             ? <ChevronUp size={16} style={{ marginLeft: '4px' }} />
                                             : <ChevronDown size={16} style={{ marginLeft: '4px' }} />)}
                                 </th>
+
                             ))}
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -371,6 +394,11 @@ export default function AttendanceView({
                                 <td>{signIn?.comment || ''}</td>
                                 <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
                                 <td>{signOut?.comment || ''}</td>
+                                <td>
+                                    <button onClick={() => handleEditAttendance(youth, signIn, signOut)}>
+                                        Edit
+                                    </button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -381,10 +409,26 @@ export default function AttendanceView({
                             <td></td>
                             <td>{totalSignedOut} signed out</td>
                             <td></td>
+                            <td>
+                                <button onClick={handleAddAttendance}>
+                                    Add Attendance
+                                </button>
+                            </td>
                         </tr>
                     </tfoot>
                 </AdminTable>
             </div>
+            {showModal && (
+                <AttendanceModal
+                    open={showModal}
+                    data={modalData}
+                    groupId={activeGroupId}
+                    date={selectedDate}
+                    leaderName={userInfo?.name}
+                    sectionFilter={effectiveSectionFilter}
+                    onClose={handleModalClose}
+                />
+            )}
         </div>
     );
 }
