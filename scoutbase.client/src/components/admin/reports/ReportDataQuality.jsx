@@ -100,6 +100,25 @@ export default function DataQualityPage({ groupId }) {
                 return !members.some(m => m.rank === 'PL') || !members.some(m => m.rank === 'APL');
             });
 
+            // 1. Build a map of youth by ID for easy lookup
+            const youthById = new Map(youthData.map(y => [y.id, y]));
+
+            // 2. Build a map: parentId -> [linked youth]
+            const parentToYouth = {};
+            pypData.forEach(link => {
+                if (!parentToYouth[link.parent_id]) parentToYouth[link.parent_id] = [];
+                parentToYouth[link.parent_id].push(youthById.get(link.youth_id));
+            });
+
+            // 3. Find parents where all linked youth are retired (or all links are null/missing)
+            const parentsAllYouthRetired = parentsData.filter(parent => {
+                const youthLinks = parentToYouth[parent.id] || [];
+                // If they have at least 1 youth AND all are retired
+                return youthLinks.length > 0 && youthLinks.every(
+                    y => y && y.membership_stage === retiredCode
+                );
+            });
+
             // Youth without any transitions
             const transitionedIds = new Set(transitionsData.map(t => t.youth_id));
             const noTransition = youthData.filter(y => !transitionedIds.has(y.id));
@@ -115,7 +134,8 @@ export default function DataQualityPage({ groupId }) {
                 patrolsWithoutYouth: patrolsNoYouth,
                 patrolsMissingLeaders: patrolsMissingPLAPL,
                 youthWithoutTransitions: noTransition,
-                parentsMissingContact: noContactParents
+                parentsMissingContact: noContactParents,
+                parentsAllYouthRetired // <--- new!
             });
         };
 
@@ -237,7 +257,15 @@ export default function DataQualityPage({ groupId }) {
               data={filteredReports.parentsMissingContact}
                 filename="parents_missing_contact"
                 fixPathBase="/admin/add-parent"
-            />
+          />
+
+          <ReportCard
+              title="Parents With All Linked Youth Retired"
+              description="These parents are only linked to youth who have left or are marked as retired."
+              data={filteredReports.parentsAllYouthRetired}
+              filename="parents_all_youth_retired"
+              fixPathBase="/admin/add-parent"
+          />
         </PageWrapper>
     );
 }
