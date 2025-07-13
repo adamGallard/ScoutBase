@@ -46,6 +46,7 @@ import MessageSMSPage from '@/components/admin/messages/MessageSMSPage';
 import MessageEmailPage from '@/components/admin/messages/MessageEmailPage';
 import SettingsPage from '@/components/admin/SettingsPage';
 import BadgeOrder from '@/components/admin/BadgeOrder';
+import RegistrationsPage from '@/components/admin/RegistrationsPage';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -94,6 +95,14 @@ const PAGE_DEFINITIONS = {
             userInfo: ctx.userInfo,
             onOpenPinModal: ctx.openPinModal,
             onOpenLinkModal: ctx.openLinkModal,
+        }),
+    },
+    'registrations': {
+        component: RegistrationsPage,
+        permission: 'parentCRUD', // or 'youthCRUD' if you want; or a custom permission!
+        passProps: (ctx) => ({
+            groupId: ctx.activeGroupId,
+            userInfo: ctx.userInfo,
         }),
     },
     'message-sms': { component: MessageSMSPage, permission: 'smsSend', passProps: (c) => ({ groupId: c.activeGroupId }) },

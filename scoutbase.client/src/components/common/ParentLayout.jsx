@@ -5,7 +5,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import LoggedInHeader from './LoggedInHeader';
 import FooterNav from './FooterNav';
-import { PageWrapper } from './SharedStyles';
+import { PageWrapperParent } from './SharedStyles';
 import UpdatePinModal from '@/components/UpdatePinModal';
 
 export default function ParentLayout({ children }) {
@@ -58,7 +58,7 @@ export default function ParentLayout({ children }) {
     }, [parent, groupId]);
 
     return (
-        <PageWrapper style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <PageWrapperParent style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
             <LoggedInHeader
                 parentName={parent?.name}
                 onUpdatePin={() => setShowUpdatePinModal(true)}
@@ -84,6 +84,6 @@ export default function ParentLayout({ children }) {
             )}
 
             <FooterNav noticeCount={noticeCount} />
-        </PageWrapper>
+        </PageWrapperParent>
     );
 }

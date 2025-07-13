@@ -1,52 +1,79 @@
 /* fixed bottom, full-width, safe-area aware */
 .footer-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 56px;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: #fff;
-    border-top: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-around;
     align-items: center;
+    background: #fff;
+    border-top: 1px solid #eee;
+    padding: 0.5rem 0 0.2rem 0;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 100;
 }
 
-/* each link fills equally, centered */
 .footer-nav-link {
-    flex: 1;
-    text-align: center;
-    color: #718096;
-    text-decoration: none;
     display: flex;
-    justify-content: center;
-}
-
-    .footer-nav-link.active {
-        color: #0F5BA4;
-    }
-
-/* wrapper for icon + optional badge */
-.icon-wrapper {
+    flex-direction: column;
+    align-items: center;
+    flex: 1 1 0;
+    color: #64748b;
+    text-decoration: none;
+    transition: color 0.18s;
+    padding: 0.25rem 0 0.1rem 0;
     position: relative;
 }
 
-/* small red badge in corner */
+    .footer-nav-link.active,
+    .footer-nav-link:focus {
+        color: #0f5ba4; /* Primary */
+    }
+
+    .footer-nav-link .icon-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .footer-nav-link.active .footer-icon {
+        transform: scale(1.25);
+        color: #0f5ba4; /* Highlight primary when active */
+    }
+
 .footer-nav-badge {
     position: absolute;
-    top: 0;
-    right: -4px;
-    background: #ef4444;
+    top: -4px;
+    right: -8px;
+    background: #f43f5e;
     color: #fff;
-    font-size: 0.6rem;
-    line-height: 1;
-    border-radius: 8px;
-    padding: 2px 4px;
+    border-radius: 50%;
+    font-size: 0.8em;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    text-align: center;
+    padding: 0 4px;
+    font-weight: bold;
+    box-shadow: 0 1px 4px #0002;
 }
 
-/* optional: hide any text labels for a purely icon-only nav */
-.footer-nav-link > span {
-    display: none;
+.footer-nav-label {
+    font-size: 0.8em;
+    margin-top: 2px;
+    letter-spacing: 0.01em;
+}
+
+.footer-nav-center {
+    margin: 0 1rem;
+}
+
+.footer-nav-link.active .footer-icon {
+    color: #0F5BA4;
+    transform: scale(1.25);
+}
+
+.footer-nav-link .footer-icon {
+    transition: transform 0.2s, color 0.2s;
 }

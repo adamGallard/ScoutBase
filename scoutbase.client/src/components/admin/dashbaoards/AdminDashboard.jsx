@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { Doughnut } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
+import { getTerrainProfiles } from "@/helpers/terrainSyncHelper";
+import { getPendingAwardSubmissions } from "@/helpers/terrainBadgesHelper";
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
@@ -40,11 +42,14 @@ export default function AdminDashboard() {
         unlinkedParents: 0,
         unlinkedYouth: 0,
         youthNoTransitions: 0,
-        parentsMissingContact: 0
+        parentsMissingContact: 0,
+        pendingFamiliesCount: 0
     });
 
     const isSectionLeader = userInfo?.role === "Section Leader";
     const isGroupLeader = userInfo?.role === "Group Leader";
+
+    const [pendingTerrainCount, setPendingTerrainCount] = useState(0);
 
     // Determine which sections to display
     const sectionsToShow = isSectionLeader && userInfo.section
@@ -57,6 +62,28 @@ export default function AdminDashboard() {
             setSelectedSection(sections[0].code);
         }
     }, [sections, selectedSection]);
+
+    useEffect(() => {
+    async function fetchTerrainPending() {
+        try {
+            const token = localStorage.getItem("scoutbase-terrain-idtoken");
+            if (!token) return;
+            const units = JSON.parse(
+                localStorage.getItem("scoutbase-terrain-units") ||
+                JSON.stringify(await getTerrainProfiles(token))
+            );
+            let results = [];
+            for (const u of units) {
+                const rows = await getPendingAwardSubmissions(token, u.unitId);
+                results = results.concat(rows.map(r => ({ ...r, section: u.section })));
+            }
+            setPendingTerrainCount(results.length);
+        } catch (e) {
+            setPendingTerrainCount(0); // fallback
+        }
+    }
+    fetchTerrainPending();
+}, []);
 
     // Fetch dynamic stats
     useEffect(() => {
@@ -77,6 +104,8 @@ export default function AdminDashboard() {
                     y.section === userInfo.section || y.linking_section === userInfo.section
                 );
             }
+            allYouth = allYouth.filter(y => (y.membership_stage || '').toLowerCase() !== 'retired');
+
             const youthIds = allYouth.map(y => y.id);
 
             // 2) Parent links
@@ -156,8 +185,53 @@ export default function AdminDashboard() {
 
             // 9) Parents missing contact
             const parentsMissingContact = parentsData.filter(p => !p.email && !p.phone);
+            // 10) Pending families count
+            let pendingFamiliesCount = 0;
+            {
+                const { count, error } = await supabase
+                    .from("pending_family")
+                    .select("id", { count: "exact", head: true })
+                    .eq("group_id", groupId)
+                    .eq("status", "pending");
+                pendingFamiliesCount = count || 0;
+            }
 
-            // 10) Update stats
+
+            // 11) Badge order process stats
+            let badgeOrderStats = {
+                readyToOrder: 0,
+                orderedNotReceived: 0,
+                totalOrders: 0,
+            };
+
+            {
+                const { data: badgeOrders = [], error: badgeOrderErr } = await supabase
+                    .from("badge_orders")
+                    .select("id, status, ordered_date, awarded_date, group_id")
+                    .eq("group_id", groupId);
+                if (badgeOrderErr) {
+                    console.error("Error fetching badge_orders:", badgeOrderErr);
+                } 
+                badgeOrderStats.totalOrders = badgeOrders.filter(
+                    b => b.status !== 'awarded'
+                ).length;
+
+                // Ready to Order: status = 'ready_to_order'
+                badgeOrderStats.readyToOrder = badgeOrders.filter(b => b.status === 'ready_to_order').length;
+
+                // Ordered but not yet received/awarded: status = 'ordered'
+                badgeOrderStats.orderedNotReceived = badgeOrders.filter(
+                    b => b.status === 'ordered'
+                ).length;
+                const now = new Date();
+                badgeOrderStats.overdueOrders = badgeOrders.filter(
+                    b => b.status === 'ordered' &&
+                        b.ordered_date &&
+                        (now - new Date(b.ordered_date)) / (1000 * 60 * 60 * 24) > 21
+                ).length;
+            };
+
+            // 12) Update stats
             setStats({
                 youthCount: allYouth.length,
                 parentCount: uniqueParentIds.size,
@@ -166,8 +240,11 @@ export default function AdminDashboard() {
                 unlinkedParents: unlinkedParents.length,
                 unlinkedYouth: unlinkedYouth.length,
                 youthNoTransitions: noTransitions.length,
-                parentsMissingContact: parentsMissingContact.length
+                parentsMissingContact: parentsMissingContact.length,
+                pendingFamiliesCount, // ← add this
+                badgeOrderStats,
             });
+            
         }
         fetchStats();
     }, [userInfo, isSectionLeader]);
@@ -228,7 +305,9 @@ export default function AdminDashboard() {
                                         {label}: {data.total}
                                     </strong>
                                     <ul style={{ marginLeft: "1.5rem" }}>
-                                        {stages.map(({ code: stgCode, label: stgLabel }) => (
+                                        {stages
+                                            .filter(({ code }) => code.toLowerCase() !== "retired")
+                                            .map(({ code: stgCode, label: stgLabel }) => (
                                             <li key={stgCode}>
                                                 {stgLabel}: {data[stgCode] || 0}
                                             </li>
@@ -247,6 +326,8 @@ export default function AdminDashboard() {
 
                 {/* Parents Panel */}
                 <div style={{ flex: "1 1 250px", background: "#fff", padding: "1rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Pending Family Registrations</h3>
+                    <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.pendingFamiliesCount}</p>
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Linked Parents</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentCount}</p>
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Unlinked Parents</h3>
@@ -254,7 +335,45 @@ export default function AdminDashboard() {
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Parents Missing Contact</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentsMissingContact}</p>
                 </div>
+                {/* Badge Orders Panel */}
+                <div style={{
+                    flex: "1 1 250px",
+                    background: "#fff",
+                    padding: "1rem",
+                    borderRadius: "8px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
+                }}>
 
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+                        Badge Orders
+                    </h3>
+
+                    <p>
+                        <b>Pending from Terrain:</b> {pendingTerrainCount}
+					</p>
+                    <p>
+                        <b>Ready to Order:</b> {stats.badgeOrderStats?.readyToOrder ?? 0}
+                    </p>
+                    <p>
+                        <b>Ordered (not received):</b> {stats.badgeOrderStats?.orderedNotReceived ?? 0}
+                    </p>
+
+                    {stats.badgeOrderStats?.overdueOrders > 0 && (
+                        <div style={{
+                            color: '#b91c1c',
+                            fontWeight: 'bold',
+                            margin: '0.5rem 0'
+                        }}>
+                            {stats.badgeOrderStats.overdueOrders} badge order(s) overdue!
+                        </div>
+                    )}
+                    <PrimaryButton
+                        style={{ marginTop: "1rem", width: "100%" }}
+                        onClick={() => navigate("/admin/badge-order")}
+                    >
+                        Manage Badge Orders
+                    </PrimaryButton>
+                </div>
                 {/* Attendance Pie */}
                 <div style={{ flex: "1 1 250px", background: "#fff", padding: "1rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                     {isGroupLeader && (

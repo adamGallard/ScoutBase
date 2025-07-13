@@ -1,4 +1,5 @@
 ﻿import { supabase } from '@/lib/supabaseClient';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function getPendingAwardSubmissions(token, unitId) {
     const response = await fetch(
@@ -193,4 +194,40 @@ export async function getBadgesForYouth(youthId) {
         .order('awarded_date', { ascending: false });
     if (error) throw error;
     return data;
+}
+
+export async function createManualBadgeOrder({
+    youthId,
+    badgeId,
+    userId,
+    groupId,
+    projectName,
+    approvedDate,
+    badgeList,
+    youthList,
+}) {
+    const badge = badgeList.find(b => b.id === badgeId);
+    const youth = youthList.find(y => y.id === youthId);
+
+    if (!badge || !youth) throw new Error("Badge or youth not found");
+
+    const row = {
+        submission_id: uuidv4(),
+        youth_id: youthId,
+        badge_type: badge.type,
+        badge_meta: { badge_id: badge.id, label: badge.label },
+        section: youth.section,
+        project_name: projectName || null,
+        approved_date: approvedDate || null,
+        ordered_by: userId,
+        group_id: groupId,
+        status: 'ready_to_order', 
+        // all other columns are nullable/auto
+    };
+
+    // Remove undefined fields for safety
+    Object.keys(row).forEach(k => (row[k] === undefined) && delete row[k]);
+
+    const { error } = await supabase.from("badge_orders").insert([row]);
+    if (error) throw error;
 }

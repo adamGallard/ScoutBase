@@ -1,11 +1,11 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus } from 'lucide-react';
+import { Pencil, Trash, Plus, Link, Key, Check, X,UserPlus,Hammer } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/helpers/auditHelper';
 import { useLocation, useNavigate } from 'react-router-dom';
-
+import EditParentSkillsModal from './EditParentSkillsModal';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
@@ -22,6 +22,8 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const location = useLocation();
     const [targetName, setTargetName] = useState(null);
     const [deletedMessage, setDeletedMessage] = useState('');
+    const [selectedParent, setSelectedParent] = useState(null);
+    const [showSkillsModal, setShowSkillsModal] = useState(false);
 
     const fetchParents = useCallback(async () => {
         const { data, error } = await supabase
@@ -200,6 +202,12 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
         setCurrentPage(1);
     }, [filter]);
 
+
+    const openSkillsModal = (parent) => {
+        setSelectedParent(parent);
+        setShowSkillsModal(true);
+    };
+
     return (
         <div className="content-box">
             <PageTitle>
@@ -333,6 +341,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                     <>
                                             <button onClick={() => { setEditingParentId(p.id); setFormData(p); }} title="Edit parent"><Pencil size={16} /></button>
                                             <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link size={16} /></button>
+                                            <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Hammer size={16} /></button>
                                             <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
                                             <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
                                     </>
@@ -403,6 +412,18 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                     Next
                 </button>
             </div>
+            {showSkillsModal && selectedParent && (
+                <EditParentSkillsModal
+                    parent={selectedParent}
+                    groupId={groupId}
+                    onClose={() => setShowSkillsModal(false)}
+                    onSave={(updatedParent) => {
+                        // update parent list with updated data if needed
+                        setShowSkillsModal(false);
+                    }}
+                />
+            )}
+
         </div>
     );
 }

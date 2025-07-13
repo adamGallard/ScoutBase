@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen, Tent, Award
+    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck
 } from 'lucide-react';
 
 import { can } from '@/utils/roleUtils';
@@ -45,10 +45,11 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
         /* 👥  People  (parents, youth, patrols) */
         (allow('parentCRUD') || allow('youthCRUD') || allow('patrolCRUD')) && {
             key: 'people',
-            label: 'People',
+            label: 'Members',
             icon: <Users size={16} />,
             expandable: true,
             children: [
+                (allow('parentCRUD') || allow('youthCRUD')) && { key: 'registrations', label: 'Registrations', icon: <ClipboardCheck size={16} /> },
                 allow('parentCRUD') && { key: 'add-parent', label: 'Parents', icon: <UserPlus size={16} /> },
                 allow('youthCRUD') && { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
                 allow('patrolCRUD') && { key: 'patrol-management', label: 'Patrols', icon: <Flag size={16} /> },

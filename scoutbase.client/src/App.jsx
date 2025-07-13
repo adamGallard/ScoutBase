@@ -13,7 +13,9 @@ import AdminPage from './pages/AdminPage';
 // Parent portal pages
 import ParentLogin from './pages/ParentLogin';
 import ParentPage from './pages/ParentPage';
+import FamilySignupPage from './pages/FamilySignupPage';
 import ParentRouteWrapper from './components/ParentRouteWrapper';
+
 export default function App() {
 	return (
 		<Router>
@@ -42,7 +44,7 @@ export default function App() {
 						</ParentRouteWrapper>
 					}
 				/>
-
+				<Route path="/signup" element={<FamilySignupPage />} />
 				{/* Fallback */}
 				<Route path="*" element={<Navigate to="/" replace />} />
 			</Routes>

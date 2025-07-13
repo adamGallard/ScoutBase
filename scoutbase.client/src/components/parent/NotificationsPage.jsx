@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
 import {
-    PageWrapper,
+    PageWrapperParent,
     PageTitle,
     SecondaryButton,
     TabList,
@@ -75,7 +75,7 @@ export default function NotificationsPage() {
     };
 
     return (
-        <PageWrapper style={{ padding: '1rem', paddingBottom: '56px' }}>
+        <PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
             <PageTitle><Bell /> Notices</PageTitle>
 
             <TabList style={{ marginBottom: '1rem' }}>
@@ -142,6 +142,6 @@ export default function NotificationsPage() {
             ) : (
                 <p>No archived notices.</p>
             ))}
-        </PageWrapper>
+        </PageWrapperParent>
     );
 }
