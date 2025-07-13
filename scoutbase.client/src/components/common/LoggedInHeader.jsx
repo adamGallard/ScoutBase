@@ -95,17 +95,7 @@ const CustomLinkButton = styled.a`
     background-color: #e5e7eb;
   }
 `;
-export default function LoggedInHeaderBar({ parentName, onUpdatePin, onLogout  }) {
-    const [mobileOpen, setMobileOpen] = useState(false);
-    const handleUpdatePin = () => {
-        console.log('🔑 Update PIN clicked');
-        onUpdatePin();
-    };
-
-    const handleLogout = () => {
-        console.log('🚪 Logout clicked');
-        onLogout();
-    };
+export default function LoggedInHeaderBar({ parentName }) {
     return (
         <HeaderBar>
             <TitleGroup>
@@ -114,28 +104,7 @@ export default function LoggedInHeaderBar({ parentName, onUpdatePin, onLogout  }
                 <span className="tagline">Welcome, {parentName}</span>
             </TitleGroup>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <Nav>
-                    
-                    <button type="button" onClick={handleUpdatePin}>Update PIN</button>
-                    <button type="button" onClick={handleLogout}>
-                        <LogOut size={16} style={{ marginRight: '4px' }} />
-                        Logout
-                    </button>
-                </Nav>
-
-                <MobileMenuButton type="button" onClick={() => setMobileOpen(prev => !prev)}>
-                    <HamburgerIcon><div /><div /><div /></HamburgerIcon>
-                </MobileMenuButton>
-
-                {mobileOpen && (
-                    <MobileDropdown>
-                                               
-                        <button type="button" onClick={handleUpdatePin}>Update PIN</button>
-                        <button type="button" onClick={handleLogout}>Logout</button>
-                    </MobileDropdown>
-                )}
-            </div>
+          
         </HeaderBar>
     );
 }

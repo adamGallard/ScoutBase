@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/lib/supabaseClient';
-import { PageWrapper, PageTitle } from '@/components/common/SharedStyles';
+import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { ExternalLink } from 'lucide-react';
 
 export default function LinksPage() {
@@ -31,7 +31,7 @@ export default function LinksPage() {
     }, [groupId]); // Re-fetch when groupId changes
 
     return (
-        <PageWrapper style={{ padding: '1rem', paddingBottom: '56px' }}>
+        <PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
             <PageTitle><ExternalLink /> Useful Links</PageTitle>
 
             {loading ? (
@@ -79,6 +79,6 @@ export default function LinksPage() {
                     {links.length === 0 && <p>No links available.</p>}
                 </ul>
             )}
-        </PageWrapper>
+        </PageWrapperParent>
     );
 }

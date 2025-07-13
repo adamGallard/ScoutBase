@@ -12,6 +12,15 @@ export const PageWrapper = styled.div`
   margin-bottom: 1rem;
 `;
 
+export const PageWrapperParent = styled.div`
+  background-color: #f9fafb;
+  color: #111827;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+`;
+
 export const Header = styled.header`
   display: flex;
   justify-content: space-between;
@@ -213,6 +222,7 @@ export const PageTitle = styled.h2`
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 1rem;
+  margin-top: 1rem;
   color: #0F5BA4;
   line-height: 1.2;
 `;

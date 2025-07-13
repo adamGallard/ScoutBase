@@ -1,18 +1,18 @@
 // src/components/common/FooterNav.jsx
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Bell, MessageCircle, Calendar, Link as LinkIcon } from 'lucide-react';
+import { Home, Bell, MessageCircle, Calendar, Link as LinkIcon, UserCircle, UserCheck } from 'lucide-react';
 import './FooterNav.css';
 
 export default function FooterNav({ noticeCount = 0, messageCount = 0 }) {
     const location = useLocation();
     const search = location.search;    // preserve ?group=…
     const items = [
-        { to: `/parent/signin${search}`, Icon: Home, label: 'Home' },
+        { to: `/parent/signin${search}`, Icon: UserCheck, label: 'Sign In/Out' },
         { to: `/parent/notifications${search}`, Icon: Bell, label: 'Notices', badge: noticeCount },
-      //  { to: `/parent/messages${search}`, Icon: MessageCircle, label: 'Messages', badge: messageCount },
         { to: `/parent/calendar${search}`, Icon: Calendar, label: 'Calendar' },
         { to: `/parent/links${search}`, Icon: LinkIcon, label: 'Links' },
+        { to: `/parent/profile${search}`, Icon: UserCircle, label: 'Profile' },
     ];
 
     return (
@@ -22,14 +22,21 @@ export default function FooterNav({ noticeCount = 0, messageCount = 0 }) {
                     key={to}
                     to={to}
                     state={location.state}          // if you’re using location.state for auth
-                    className="footer-nav-link"
+                    className={({ isActive }) =>
+                        `footer-nav-link${isActive ? ' active' : ''}`
+                    }
                     end={to === `/parent${location.pathname}`}
                     aria-label={label}
                 >
-                    <div className="icon-wrapper">
-                        <Icon size={24} />
-                        {badge > 0 && <span className="footer-nav-badge">{badge}</span>}
-                    </div>
+                    {({ isActive }) => (
+                        <div className="footer-nav-item">
+                            <div className="icon-wrapper">
+                                <Icon size={isActive ? 32 : 24} />
+                                {badge > 0 && <span className="footer-nav-badge">{badge}</span>}
+                            </div>
+                            <span className="footer-nav-label">{label}</span>
+                        </div>
+                    )}
                 </NavLink>
             ))}
         </footer>

@@ -9,7 +9,7 @@ import {
 import { logAuditEvent } from '@/helpers/auditHelper';
 import SignInForm from '@/components/SignInForm';
 import {
-	PageWrapper,
+	PageWrapperParent,
 	PageTitle,
 	Main,
 	Content,
@@ -109,7 +109,7 @@ export default function YouthAttendancePage() {
 	);
 
 	return (
-		<PageWrapper style={{ padding: '1rem', paddingBottom: '56px' }}>
+		<PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
 			<PageTitle style={{ marginBottom: '1rem' }}>
 				{parent?.name}
 			</PageTitle>
@@ -251,6 +251,6 @@ export default function YouthAttendancePage() {
 					latestStatus={latestStatusMap[selectedMember.id]}
 				/>
 			)}
-		</PageWrapper>
+		</PageWrapperParent>
 	);
 }

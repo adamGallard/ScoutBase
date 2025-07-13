@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import ParentCalendar from '@/components/parent/ParentCalendar';
-import { PageWrapper, PageTitle } from '@/components/common/SharedStyles';
+import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { Calendar } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient'
 import { useLocation } from 'react-router-dom';
@@ -41,9 +41,9 @@ export default function ParentCalendarPage() {
     }
 
     return (
-        <PageWrapper style={{ padding: '1rem', paddingBottom: '56px' }}>
+        <PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
             <PageTitle><Calendar /> Event Calendar</PageTitle>
             <ParentCalendar feedUrl={feedUrl} />
-        </PageWrapper>
+        </PageWrapperParent>
     );
 }
