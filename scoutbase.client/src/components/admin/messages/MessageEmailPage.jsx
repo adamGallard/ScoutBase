@@ -80,7 +80,7 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
         const fetchParentsList = async () => {
             let query = supabase
                 .from('parent_youth')
-                .select(`parent:parent_id(id, name, email, group_id), youth:youth_id(section)`)
+                .select(`parent:parent_id(id, name, email, group_id), youth:youth_id(name, section)`)
                 .eq('is_primary', true)
                 .eq('parent.group_id', groupId);
 
@@ -99,15 +99,23 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
             const dedup = {};
             data.forEach(r => {
                 const p = r.parent;
-                const sec = r.youth?.section ?? '';
+                if (!p || !p.id) return; // safety
                 if (!dedup[p.id]) {
-                    dedup[p.id] = { ...p, sections: sec ? [sec] : [] };
-                } else if (sec && !dedup[p.id].sections.includes(sec)) {
-                    dedup[p.id].sections.push(sec);
+                    dedup[p.id] = { ...p, youth: [] }; // Attach youth as an array of objects
+                }
+                // Add youth info if present
+                if (r.youth && r.youth.name) {
+                    // Prevent duplicates
+                    if (!dedup[p.id].youth.some(y => y.name === r.youth.name && y.section === r.youth.section)) {
+                        dedup[p.id].youth.push({
+                            name: r.youth.name,
+                            section: r.youth.section,
+                        });
+                    }
                 }
             });
-
             setParentsList(Object.values(dedup).sort((a, b) => a.name.localeCompare(b.name)));
+
         };
 
         fetchGroupSettings();
@@ -115,10 +123,22 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
     }, [groupId, sectionFilter]);
 
     // Filter displayed parents based on section filter and email filter
-    const displayedParents = parentsList.filter(p =>
-        (!sectionFilter || p.sections.includes(sectionFilter)) &&
-        p.email.toLowerCase().includes(emailFilter.toLowerCase())
-    );
+    const displayedParents = parentsList
+        .map(p => {
+            // Filter the youth list for this parent by section
+            const filteredYouth = (p.youth || []).filter(y => !sectionFilter || y.section === sectionFilter);
+            return { ...p, filteredYouth };
+        })
+        .filter(p => {
+            // Text filter (same as before, but use filteredYouth)
+            const filter = emailFilter.toLowerCase().trim();
+            if (!filter) return p.filteredYouth.length > 0;
+
+            const nameMatch = p.name.toLowerCase().includes(filter);
+            const emailMatch = p.email.toLowerCase().includes(filter);
+            const youthMatch = p.filteredYouth.some(y => y.name.toLowerCase().includes(filter));
+            return p.filteredYouth.length > 0 && (nameMatch || emailMatch || youthMatch);
+        });
 
     // Toggle parent selection
     const toggleParent = id =>
@@ -157,7 +177,7 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
 
         setMode(newMode);
     };
-
+   
 
     // Handle sending emails
     const handleSend = async () => {
@@ -250,28 +270,7 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
                     Emailing is disabled for this group. Please contact your group leader for assistance.
                 </div>
             )}
-            {/* Section Filter Dropdown */}
-            <div style={{ marginBottom: '1rem' }}>
-                <label style={{ marginRight: 8 }}>
-                    Select Section:&nbsp;
-                    <select
-                        value={sectionFilter}
-                        onChange={handleSectionFilterChange}
-                        style={{ padding: '0.25rem 0.5rem' }}
-                    >
-                        <option value="">All Sections</option>
-                    {sections
-                        .slice()
-                        .sort((a, b) => a.order - b.order)
-                        .map(({ code, label }) => (
-                            <option key={code} value={code}>
-                                {label}
-                            </option>
-                        ))
-                    }
-                    </select>
-                    </label>
-            </div>
+           
 
             {/* Render the email sending form only if mode is not 'none' */}
             {mode !== 'none' && (
@@ -336,16 +335,32 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
                             {sending ? 'Sending…' : `Send to ${selectedParents.length} Parent(s)`}
                         </PrimaryButton>
                     </div>
-
+                    {/* Section Filter Dropdown */}
                     <div style={{ flex: '1 1 60%', maxHeight: 600, overflowY: 'auto' }}>
-                        <input
-                            type="text"
-                            placeholder="Filter by name…"
-                            value={emailFilter}
-                            onChange={e => setEmailFilter(e.target.value)}
-                            style={{ width: '80%', padding: '0.5rem', marginBottom: '0.5rem', borderRadius: 4, border: '1px solid #ccc' }}
-                        />
-
+                        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', alignItems: 'center' }}>
+                            <input
+                                type="text"
+                                placeholder="Filter by Parent Name, Email or Youth…"
+                                value={emailFilter}
+                                onChange={e => setEmailFilter(e.target.value)}
+                                style={{ flex: 1, minWidth: 0, padding: '0.5rem', borderRadius: 4, border: '1px solid #ccc' }}
+                            />
+                            <select
+                                value={sectionFilter}
+                                onChange={handleSectionFilterChange}
+                                style={{ padding: '0.25rem 0.5rem' }}
+                            >
+                                <option value="">All Sections</option>
+                                {sections
+                                    .slice()
+                                    .sort((a, b) => a.order - b.order)
+                                    .map(({ code, label }) => (
+                                        <option key={code} value={code}>
+                                            {label}
+                                        </option>
+                                    ))}
+                            </select>
+                        </div>
                         <PrimaryButton
                             onClick={handleSelectAll}
                             style={{ padding: '0.25rem 0.5rem', fontSize: '0.9rem', marginBottom: '0.5rem' }}
@@ -356,28 +371,41 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
                         {loading ? (
                             <p>Loading parents…</p>
                         ) : (
-                            <ul style={{ listStyle: 'none', padding: 0 }}>
-                                {displayedParents.length ? (
-                                    displayedParents.map(p => (
-                                        <li key={p.id} style={{ marginBottom: 8 }}>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedParents.includes(p.id)}
-                                                    onChange={() => toggleParent(p.id)}
-                                                />
-                                                <span>{p.name} – {p.email}</span>
-                                            </label>
-                                        </li>
-                                    ))
-                                ) : (
-                                    <p>No matching parents.</p>
-                                )}
-                            </ul>
+                            displayedParents.length ? (
+                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '1rem', background: '#fff' }}>
+                                    <thead>
+                                        <tr style={{ background: '#f1f5f9' }}>
+                                            <th style={{ padding: 8, borderBottom: '1px solid #ddd' }}></th>
+                                            <th style={{ padding: 8, borderBottom: '1px solid #ddd' }}>Parent Name</th>
+                                            <th style={{ padding: 8, borderBottom: '1px solid #ddd' }}>Email</th>
+                                            <th style={{ padding: 8, borderBottom: '1px solid #ddd' }}>Youth(s)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {displayedParents.map(parent => (
+                                            <tr key={parent.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                                                <td style={{ padding: 8 }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedParents.includes(parent.id)}
+                                                        onChange={() => toggleParent(parent.id)}
+                                                    />
+                                                </td>
+                                                <td style={{ padding: 8 }}>{parent.name}</td>
+                                                <td style={{ padding: 8 }}>{parent.email}</td>
+                                                <td style={{ padding: 8 }}>
+                                                    {parent.filteredYouth.map(y => y.name).join(', ')}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p>No matching parents.</p>
+                            )
                         )}
                     </div>
                 </div>
-            )}
-        </div>
-    );
-}
+            )};
+		</div>
+)}
