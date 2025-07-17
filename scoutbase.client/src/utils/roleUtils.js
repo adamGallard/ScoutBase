@@ -43,6 +43,7 @@ const rolePermissions = {
         'userAdmin',
         'auditLog',
         'badgeOrder',
+        'reportYouthProjection',
     ],
 
     /* section level */
@@ -65,6 +66,8 @@ const rolePermissions = {
         'reportDataQuality',
         'reportAttendanceDaily',
         'badgeOrder',
+        'oasCRUD', 
+        'reportAttendancePeriod',
     ],
 
     /* view‑only */
