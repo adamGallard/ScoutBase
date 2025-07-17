@@ -1,9 +1,12 @@
-﻿import { useEffect, useState } from 'react';
+﻿// src/pages/admin/RegistrationsPage.jsx
+
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { PageTitle } from '@/components/common/SharedStyles';
 import { Check, X, ClipboardCheck, Edit2, Save } from 'lucide-react';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/helpers/auditHelper';
+// Inside your approval logic:
 
 const defaultPIN = '1258';
 
@@ -106,11 +109,11 @@ export default function RegistrationsPage({ groupId, userInfo }) {
             const { data } = await supabase
                 .from('pending_family')
                 .select(`
-                   *,
-                   pending_parent(*),
-                   pending_youth(*),
-                   pending_parent_youth(*)
-                `)
+           *,  
+          pending_parent(*),
+          pending_youth(*),
+          pending_parent_youth(*)
+        `)
                 .eq('group_id', groupId)
                 .eq('status', 'pending');
             if (data) {
@@ -183,8 +186,10 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                     pin_hash: hashedPIN
                 })))
                 .select();
+
             if (parentErr) throw new Error(parentErr.message);
 
+            // 2. Insert youth
             const { data: realYouths, error: youthErr } = await supabase
                 .from('youth')
                 .insert(approvedYouths.map(y => ({
@@ -195,8 +200,10 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                     group_id: fam.group_id
                 })))
                 .select();
+
             if (youthErr) throw new Error(youthErr.message);
 
+            // 3. Build a lookup: pending ID → new real ID
             const parentMap = {};
             approvedParents.forEach((p, i) => { parentMap[p.id] = realParents[i].id; });
             const youthMap = {};
@@ -207,12 +214,12 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                     parentMap[link.parent_id] && youthMap[link.youth_id]
                 )
                 .map(link => ({
-                    parent_id: parentMap[link.parent_id],
-                    youth_id: youthMap[link.youth_id],
-                    group_id: fam.group_id,
-                    is_primary: link.is_primary,
-                    relationship: link.relationship
-                }));
+                parent_id: parentMap[link.parent_id],
+                youth_id: youthMap[link.youth_id],
+                group_id: fam.group_id,
+                is_primary: link.is_primary,
+                relationship: link.relationship
+            }));
 
             if (relRows.length) {
                 const { error: linkErr } = await supabase.from('parent_youth').insert(relRows);
@@ -225,6 +232,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                 transition_type: 'have_a_go',
                 section: y.section
             }));
+
             const { error: transitionErr } = await supabase
                 .from('youth_transitions')
                 .insert(transitions);
@@ -239,6 +247,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
             await supabase.from('pending_youth').delete().eq('family_id', fam.id);
             await supabase.from('pending_family').delete().eq('id', fam.id);
 
+            // 6. Log the audit event
             await logAuditEvent({
                 userId: userInfo.id,
                 groupId: fam.group_id,
@@ -249,6 +258,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                 metadata: `Approved family. Parents: ${approvedParents.map(p => p.email).join(', ')}`
             });
 
+            // UI: Remove from list and show a message
             setPending(pending => pending.filter(f => f.id !== fam.id));
             alert('Family imported!');
         } catch (err) {
@@ -256,6 +266,15 @@ export default function RegistrationsPage({ groupId, userInfo }) {
         }
     };
 
+
+    const handleReject = async familyId => {
+        // 1. Delete all pending_ for this familyId
+        await supabase.from('pending_parent_youth').delete().eq('family_id', familyId);
+        await supabase.from('pending_parent').delete().eq('family_id', familyId);
+        await supabase.from('pending_youth').delete().eq('family_id', familyId);
+        await supabase.from('pending_family').delete().eq('id', familyId);
+        setPending(pending => pending.filter(fam => fam.id !== familyId));
+    };
 
     return (
         <div style={{ padding: 24 }}>
@@ -293,7 +312,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {fam.pending_parent.map(parent => (
+                            {fam.pending_parent.map(parent => (
                                         <PendingTableRow
                                             key={parent.id}
                                             person={parent}
@@ -305,7 +324,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                                             onReject={() => rejectItem(fam.id, 'parent', parent.id)}
                                             onSaveEdit={p => saveEdit(fam.id, 'parent', p)}
                                         />
-                                    ))}
+                            ))}
                                 </tbody>
                             </table>
                         </div>
@@ -323,7 +342,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {fam.pending_youth.map(youth => (
+                            {fam.pending_youth.map(youth => (
                                         <PendingTableRow
                                             key={youth.id}
                                             person={youth}
@@ -335,7 +354,7 @@ export default function RegistrationsPage({ groupId, userInfo }) {
                                             onReject={() => rejectItem(fam.id, 'youth', youth.id)}
                                             onSaveEdit={y => saveEdit(fam.id, 'youth', y)}
                                         />
-                                    ))}
+                            ))}
                                 </tbody>
                             </table>
                         </div>
