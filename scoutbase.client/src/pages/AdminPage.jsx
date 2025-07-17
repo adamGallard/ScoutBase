@@ -60,6 +60,7 @@ import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
 import ReportOAS from '../components/admin/reports/RefOAS';
 import BadgeOrderView from '../components/admin/BadgeOrder';
+import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
 
 
 // ───────────────────────────────────────────────────────────
@@ -125,6 +126,7 @@ const PAGE_DEFINITIONS = {
     'report-data-quality': { component: ReportDataQuality, permission: 'reportDataQuality', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'badge-order': { component: BadgeOrder, permission: 'badgeOrder', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
+    'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
 
     // add more pages here…
 };
