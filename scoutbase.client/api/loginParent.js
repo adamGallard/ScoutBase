@@ -12,7 +12,11 @@ const normalizeMobile = (input) => input.replace(/\D+/g, '');
 export default async function handler(req, res) {
     // Add CORS headers
     res.setHeader('Access-Control-Allow-Credentials', true);
-    res.setHeader('Access-Control-Allow-Origin', '*'); // or restrict to your frontend origin
+    const allowedOrigins = ['http://localhost:5173', 'https://dev.scoutbase.app'];
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
     res.setHeader(
         'Access-Control-Allow-Headers',
@@ -25,6 +29,7 @@ export default async function handler(req, res) {
     }
 
     const { identifier, enteredPin, groupId } = req.body;
+  
 
     if (!identifier || !enteredPin || !groupId) {
         return res.status(400).json({ error: 'Missing fields' });
@@ -33,6 +38,7 @@ export default async function handler(req, res) {
     const trimmed = identifier.trim();
     const isPhone = /^\d{8,}$/.test(trimmed.replace(/\s+/g, ''));
 
+    console.log('Incoming login:', { identifier, enteredPin, groupId });
     const { data: parents, error } = await supabase
         .from('parent')
         .select('id, name, phone, pin_hash, group_id')

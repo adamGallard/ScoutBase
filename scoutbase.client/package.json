@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start-api": "node api/server.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.1",
