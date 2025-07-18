@@ -38,6 +38,7 @@ export default function ParentLogin() {
     const [showForgottenPinModal, setShowForgottenPinModal] = useState(false);
     const [primaryLeaderEmail, setPrimaryLeaderEmail] = useState(null);
     const [forgottenPinName, setForgottenPinName] = useState('');
+    const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
     // load group from slug
     useEffect(() => {
@@ -65,7 +66,7 @@ export default function ParentLogin() {
         if (!groupId) return;
 
         try {
-            const res = await fetch('/api/loginParent', {
+            const res = await fetch(`${API_BASE}/api/loginParent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -81,7 +82,7 @@ export default function ParentLogin() {
                 return;
             }
 
-            await supabase.auth.setAuth(token);
+            await supabase.auth.setSession({ access_token: token, refresh_token: '' });
 
             navigate(
                 {
