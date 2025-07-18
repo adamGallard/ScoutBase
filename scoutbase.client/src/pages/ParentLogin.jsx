@@ -66,6 +66,7 @@ export default function ParentLogin() {
         if (!groupId) return;
 
         try {
+            console.log(API_BASE)
             const res = await fetch(`${API_BASE}/api/loginParent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
