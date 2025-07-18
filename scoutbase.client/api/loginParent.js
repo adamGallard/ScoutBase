@@ -70,5 +70,13 @@ export default async function handler(req, res) {
         expiresIn: '4h'
     });
 
-    return res.status(200).json({ token });
+    return res.status(200).json({
+        token,
+        parent: {
+            id: match.id,
+            name: match.name,
+            phone: match.phone,
+            group_id: match.group_id,
+        },
+    });
 }

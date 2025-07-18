@@ -5,10 +5,16 @@ export default function ParentRouteWrapper({ children }) {
     const location = useLocation();
     const { state } = location;
 
-    // if we don’t have a logged-in parent or a groupId, bounce back to login (preserving query)
-    if (!state?.parent?.id || !state?.groupId) {
+    // Fallback to sessionStorage if state is missing
+    const session = sessionStorage.getItem('parentInfo');
+    const sessionData = session ? JSON.parse(session) : null;
+
+    const parent = state?.parent || sessionData?.parent;
+    const groupId = state?.groupId || sessionData?.groupId;
+
+    if (!parent?.id || !groupId) {
         const qs = location.search || '';
-        return <Navigate to={`/parent-login${qs}`} replace />;
+        return <Navigate to={`/sign-in${qs}`} replace />;
     }
 
     return children;

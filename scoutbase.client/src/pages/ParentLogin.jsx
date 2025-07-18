@@ -66,7 +66,6 @@ export default function ParentLogin() {
         if (!groupId) return;
 
         try {
-            console.log(API_BASE)
             const res = await fetch(`${API_BASE}/api/loginParent`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -77,20 +76,28 @@ export default function ParentLogin() {
                 }),
             });
 
-            const { token, error: loginError } = await res.json();
-            if (!res.ok) {
+            const { token, parent, error: loginError } = await res.json();
+
+            if (!res.ok || !token || !parent) {
                 setError(loginError || 'Login failed');
                 return;
             }
 
+            // Supabase expects a refresh_token, even if it's an empty string
             await supabase.auth.setSession({ access_token: token, refresh_token: '' });
+
+            // Store parent info and groupId in sessionStorage so wrapper can access it
+            sessionStorage.setItem(
+                'parentInfo',
+                JSON.stringify({ parent, groupId })
+            );
 
             navigate(
                 {
                     pathname: '/parent',
                     search: `?group=${groupSlug}`,
-                },
-                { state: { groupId } }
+                }
+                // no state needed, since sessionStorage is used
             );
         } catch (err) {
             console.error('Login error:', err);
