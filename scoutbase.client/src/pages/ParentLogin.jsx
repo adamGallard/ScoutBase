@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { fetchGroupBySlug } from '@/helpers/groupHelper';
-import { verifyParentByIdentifierAndPin } from '@/helpers/authHelper';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import { supabase } from '@/lib/supabaseClient'; // <- ensure this is your client
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import Logo from '@/assets/scoutbase-logo.svg';
@@ -28,7 +28,7 @@ export default function ParentLogin() {
     const isMobile = useIsMobile();
 
     const [groupId, setGroupId] = useState(null);
-    const [groupName, setGroupName] = useState('');  // ← add groupName state
+    const [groupName, setGroupName] = useState('');
     const [loadingGroup, setLoadingGroup] = useState(true);
     const [groupNotFound, setGroupNotFound] = useState(false);
     const [error, setError] = useState('');
@@ -52,31 +52,48 @@ export default function ParentLogin() {
                 setGroupNotFound(true);
             } else {
                 setGroupId(data.id);
-                setGroupName(data.name);  // ← store the fetched name
+                setGroupName(data.name);
             }
             setLoadingGroup(false);
         })();
     }, [groupSlug]);
 
-
-    // handle submit
-    const handleSubmit = async e => {
+    // NEW: handle secure token-based login
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         if (!groupId) return;
-        const { success, parent, error: verifyError } =
-            await verifyParentByIdentifierAndPin(searchTerm, pin, groupId);
-        if (!success) {
-            setError(verifyError);
-            return;
+
+        try {
+            const res = await fetch('/api/loginParent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    identifier: searchTerm,
+                    enteredPin: pin,
+                    groupId,
+                }),
+            });
+
+            const { token, error: loginError } = await res.json();
+            if (!res.ok) {
+                setError(loginError || 'Login failed');
+                return;
+            }
+
+            await supabase.auth.setAuth(token);
+
+            navigate(
+                {
+                    pathname: '/parent',
+                    search: `?group=${groupSlug}`,
+                },
+                { state: { groupId } }
+            );
+        } catch (err) {
+            console.error('Login error:', err);
+            setError('Something went wrong. Please try again.');
         }
-        navigate(
-            {
-                pathname: '/parent',
-                search: `?group=${groupSlug}`,
-            },
-            { state: { parent, groupId } }
-        );
     };
 
     if (loadingGroup) {
@@ -84,8 +101,8 @@ export default function ParentLogin() {
             <PageWrapper>
                 <Header />
                 <Main style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
-                <Content style={{ padding: isMobile ? '1rem' : '2rem', textAlign: 'center' }}>
-                    <p>Loading group…</p>
+                    <Content style={{ padding: isMobile ? '1rem' : '2rem', textAlign: 'center' }}>
+                        <p>Loading group…</p>
                     </Content>
                 </Main>
                 <Footer />
@@ -99,11 +116,9 @@ export default function ParentLogin() {
                 <Header />
                 <Main style={{ display: 'flex', justifyContent: 'center', padding: '1rem' }}>
                     <Content style={{ maxWidth: '600px', margin: '0 auto' }}>
-
                         <LogoWrapper style={{ width: 150, height: 150 }}>
                             <img src={Logo} alt="ScoutBase Logo" style={{ width: 120, objectFit: 'contain' }} />
                         </LogoWrapper>
-
                         <h1>Group Not Found</h1>
                         <p>We couldn't find the Scout group you're looking for.</p>
                         <Link to="/">Return to Home</Link>
@@ -114,12 +129,9 @@ export default function ParentLogin() {
         );
     }
 
-
-
     return (
         <PageWrapper>
             <Header />
-
             <Content
                 style={{
                     maxWidth: isMobile ? '90%' : 600,
@@ -129,10 +141,9 @@ export default function ParentLogin() {
                     textAlign: 'center',
                 }}
             >
-                <LogoWrapper style={{width:150, height:150} }>
+                <LogoWrapper style={{ width: 150, height: 150 }}>
                     <img src={Logo} alt="ScoutBase Logo" style={{ width: 120, objectFit: 'contain' }} />
                 </LogoWrapper>
-
 
                 <h1 style={{ fontSize: '2rem', marginBottom: '0.25rem' }}>{groupName || 'Scout Group'}</h1>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1.25rem' }}>Sign In</h2>
@@ -151,7 +162,7 @@ export default function ParentLogin() {
                             width: '90%',
                             padding: isMobile ? '0.75rem' : '0.5rem',
                             fontSize: isMobile ? '1rem' : '0.875rem',
-                            marginBottom: '1rem'
+                            marginBottom: '1rem',
                         }}
                     />
                     <input
@@ -166,19 +177,27 @@ export default function ParentLogin() {
                             width: '90%',
                             padding: isMobile ? '0.75rem' : '0.5rem',
                             fontSize: isMobile ? '1rem' : '0.875rem',
-                            marginBottom: '1rem'
+                            marginBottom: '1rem',
                         }}
                     />
                     <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <PrimaryButton
-                            type="submit"
-                            isMobile={isMobile}
-                        >
+                        <PrimaryButton type="submit" isMobile={isMobile}>
                             Continue
                         </PrimaryButton>
                     </div>
-                    {error && <p style={{
-                        color: 'red', marginTop: '0.5rem', fontWeight: 'bold', textAlign: 'center', maxWidth: '100%' }}>{error}</p>}
+                    {error && (
+                        <p
+                            style={{
+                                color: 'red',
+                                marginTop: '0.5rem',
+                                fontWeight: 'bold',
+                                textAlign: 'center',
+                                maxWidth: '100%',
+                            }}
+                        >
+                            {error}
+                        </p>
+                    )}
 
                     <button
                         type="button"
@@ -191,12 +210,12 @@ export default function ParentLogin() {
                             padding: 0,
                             textDecoration: 'underline',
                             cursor: 'pointer',
-                            marginTop: '2rem'
+                            marginTop: '2rem',
                         }}
                     >
                         Forgotten your PIN?
                     </button>
-				</form>
+                </form>
             </Content>
             {showForgottenPinModal && (
                 <div
@@ -210,7 +229,7 @@ export default function ParentLogin() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        zIndex: 1000
+                        zIndex: 1000,
                     }}
                 >
                     <div
@@ -221,7 +240,7 @@ export default function ParentLogin() {
                             width: '90%',
                             maxWidth: '400px',
                             textAlign: 'center',
-                            fontFamily: 'sans-serif'
+                            fontFamily: 'sans-serif',
                         }}
                     >
                         <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Need Help with Your PIN?</h3>
@@ -243,19 +262,20 @@ export default function ParentLogin() {
                                 borderRadius: '6px',
                             }}
                         />
-
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                             <a
                                 href={
                                     primaryLeaderEmail && forgottenPinName
-                                        ? `mailto:${primaryLeaderEmail}?subject=Forgotten PIN - ${encodeURIComponent(forgottenPinName)}&body=Hi leader,%0D%0A%0D%0AI've forgotten my PIN. Could you help me reset it?%0D%0A%0D%0AThanks!`
+                                        ? `mailto:${primaryLeaderEmail}?subject=Forgotten PIN - ${encodeURIComponent(
+                                            forgottenPinName
+                                        )}&body=Hi leader,%0D%0A%0D%0AI've forgotten my PIN. Could you help me reset it?%0D%0A%0D%0AThanks!`
                                         : undefined
                                 }
                                 onClick={() => {
                                     if (forgottenPinName) {
                                         setTimeout(() => {
                                             setShowForgottenPinModal(false);
-                                        }, 500); // slight delay ensures mail client triggers
+                                        }, 500);
                                     }
                                 }}
                                 style={{
@@ -271,7 +291,6 @@ export default function ParentLogin() {
                             >
                                 Email Leader
                             </a>
-
                             <button
                                 onClick={() => setShowForgottenPinModal(false)}
                                 style={{
@@ -280,7 +299,7 @@ export default function ParentLogin() {
                                     borderRadius: '6px',
                                     fontWeight: 600,
                                     border: 'none',
-                                    cursor: 'pointer'
+                                    cursor: 'pointer',
                                 }}
                             >
                                 Cancel
