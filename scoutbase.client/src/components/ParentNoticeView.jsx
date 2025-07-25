@@ -1,5 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
+
+const supabase = getParentSupabaseClient();
 
 export default function ParentNoticeView({ groupId, parentId }) {
     const [notices, setNotices] = useState([]);

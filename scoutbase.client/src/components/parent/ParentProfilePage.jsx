@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Key, Edit2, UserCircle } from "lucide-react";
 import { PrimaryButton, ModalOverlay, ModalBox, ButtonRow, PageWrapperParent, PageTitle } from "@/components/common/SharedStyles";
-import { supabase } from "@/lib/supabaseClient";
-import { resetParentPin } from "@/helpers/authHelper"; // Adjust import path as needed
-
-export default function ParentProfilePage() {
-    const location = useLocation();
+import { getParentSupabaseClient } from "@/lib/parentSupabaseClient";
+const supabase = getParentSupabaseClient();
+import { resetParentPin } from "@/helpers/pinHelper";
+import { clearParentSession } from '@/helpers/authHelper';
+export default function ParentProfilePage({ parent, groupId }) {
     const navigate = useNavigate();
-    // Try to get parent & groupId from location state
-    const parentFromState = location.state?.parent;
-    const groupId = location.state?.groupId;
 
     // Local states
-    const [parent, setParent] = useState(parentFromState || null);
     const [editMode, setEditMode] = useState(false);
-    const [editValues, setEditValues] = useState(parentFromState || {});
-    const [loading, setLoading] = useState(!parentFromState);
+    const [editValues, setEditValues] = useState(parent || {});
+    const [loading, setLoading] = useState(!parent);
     const [showPinModal, setShowPinModal] = useState(false);
     const [pinSuccess, setPinSuccess] = useState(false);
 
@@ -25,18 +21,14 @@ export default function ParentProfilePage() {
         async function fetchParent(id) {
             setLoading(true);
             const { data } = await supabase.from("parent").select("*").eq("id", id).single();
-            setParent(data);
             setEditValues(data || {});
             setLoading(false);
         }
-        if (!parentFromState && location.state?.parentId) {
-            fetchParent(location.state.parentId);
-        } else if (parentFromState) {
-            setParent(parentFromState);
-            setEditValues(parentFromState);
-            setLoading(false);
+
+        if (parent?.id) {
+            fetchParent(parent.id);
         }
-    }, [parentFromState, location.state]);
+    }, [parent]);
 
     // Save profile changes
     async function handleSave() {
@@ -47,13 +39,15 @@ export default function ParentProfilePage() {
             .from("parent")
             .update(toUpdate)
             .eq("id", parent.id);
+
         console.log("Updating parent with payload:", toUpdate);
+
         if (!error) {
-            setParent({ ...parent, ...toUpdate });
             setEditMode(false);
         } else {
             alert("Failed to update profile.");
         }
+
         setLoading(false);
     }
     function filterEditableFields(obj) {
@@ -78,19 +72,25 @@ export default function ParentProfilePage() {
 
     // Pin change logic
     async function handleChangePin(newPin) {
-        // Example: save hashed pin, adjust logic for real use
         await supabase
             .from("parent")
             .update({ pin: newPin }) // hash if needed
-            .eq("id", parentId);
+            .eq("id", parent.id); // ✅ use actual parent prop
         alert("PIN changed!");
         setShowPinModal(false);
+        setPinSuccess(true); // Optional: show success message
     }
 
+    // inside the component
+    const location = useLocation();
+    const query = new URLSearchParams(location.search);
+    const groupSlug = query.get('group');
+
     function handleSignOut() {
-        // Your real sign-out/auth logic here
-        navigate("/parent/signin", { replace: true });
+        clearParentSession();
+        navigate(`/sign-in?group=${groupSlug}`, { replace: true });
     }
+
 
     if (loading) return <div>Loading...</div>;
     if (!parent) return <div>No profile found.</div>;
@@ -116,11 +116,11 @@ export default function ParentProfilePage() {
             
             {!editMode ? (
                 <>
-                    <ProfileRow label="Name" value={parent.name} />
-                    <ProfileRow label="Email" value={parent.email} />
-                    <ProfileRow label="Phone" value={parent.phone} />
-                    <ProfileRow label="Skills" value={parent.skills} />
-                    <ProfileRow label="Hobbies" value={parent.interests_hobbies} />
+                    <ProfileRow label="Name" value={editValues.name} />
+                    <ProfileRow label="Email" value={editValues.email} />
+                    <ProfileRow label="Phone" value={editValues.phone} />
+                    <ProfileRow label="Skills" value={editValues.skills} />
+                    <ProfileRow label="Hobbies" value={editValues.interests_hobbies} />
                     <div style={{ marginTop: 32, display: "flex", flexDirection: "column", gap: 12 }}>
                         <PrimaryButton onClick={() => setEditMode(true)}>
                             <Edit2 size={18} style={{ marginRight: 6 }} /> Edit Details

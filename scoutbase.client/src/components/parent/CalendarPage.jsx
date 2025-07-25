@@ -4,16 +4,14 @@ import React, { useState, useEffect } from 'react';
 import ParentCalendar from '@/components/parent/ParentCalendar';
 import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { Calendar } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient'
-import { useLocation } from 'react-router-dom';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient'
 
 
-export default function ParentCalendarPage() {
+const supabase = getParentSupabaseClient();
+export default function ParentCalendarPage({ groupId }) {
     // Vite injects env vars prefixed with VITE_ into import.meta.env
     const [feedUrl, setFeedUrl] = useState('');
     const [error, setError] = useState(null);
-    const { state } = useLocation();
-    const groupId = state?.groupId;
 
     useEffect(() => {
         async function fetchCalendarUrl() {
@@ -37,7 +35,7 @@ export default function ParentCalendarPage() {
     }, [groupId]); // Re-fetch when the groupId changes
 
     if (error) {
-        return <div>Error fetching calendar URL.</div>;
+        return <div>Error fetching calendar URL. Check with a Leader if the URL has been set.</div>;
     }
 
     return (

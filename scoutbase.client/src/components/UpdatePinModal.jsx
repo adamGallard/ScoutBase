@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import styled from 'styled-components';
-import { updateParentPin } from '@/helpers/authHelper';
 import { logAuditEvent } from "@/helpers/auditHelper";
 
 export default function UpdatePinModal({ isOpen, onClose, parentId, groupId }) {

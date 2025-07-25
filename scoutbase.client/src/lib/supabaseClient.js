@@ -1,6 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON;
+let supabaseClient = null;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export function getSupabaseClientWithToken(token) {
+    if (!supabaseClient) {
+        supabaseClient = createClient(
+            import.meta.env.VITE_SUPABASE_URL,
+            import.meta.env.VITE_SUPABASE_ANON
+        );
+    }
+    if (token) {
+        supabaseClient.auth.setAuth(token);
+    }
+    return supabaseClient;
+}
+export const supabase = getSupabaseClientWithToken();

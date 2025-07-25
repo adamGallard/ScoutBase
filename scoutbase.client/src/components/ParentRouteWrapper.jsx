@@ -1,18 +1,12 @@
 // src/components/common/ParentRouteWrapper.jsx
 import { Navigate, useLocation } from 'react-router-dom';
+import { getParentSession } from '@/helpers/authHelper';
 
 export default function ParentRouteWrapper({ children }) {
     const location = useLocation();
-    const { state } = location;
+    const { parent, groupId, token } = getParentSession();
 
-    // Fallback to sessionStorage if state is missing
-    const session = sessionStorage.getItem('parentInfo');
-    const sessionData = session ? JSON.parse(session) : null;
-
-    const parent = state?.parent || sessionData?.parent;
-    const groupId = state?.groupId || sessionData?.groupId;
-
-    if (!parent?.id || !groupId) {
+    if (!parent?.id || !groupId || !token) {
         const qs = location.search || '';
         return <Navigate to={`/sign-in${qs}`} replace />;
     }

@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { fetchGroupBySlug } from '@/helpers/groupHelper';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { supabase } from '@/lib/supabaseClient'; // <- ensure this is your client
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import Logo from '@/assets/scoutbase-logo.svg';
@@ -16,6 +15,7 @@ import {
     LogoWrapper,
     Main,
 } from '@/components/common/SharedStyles';
+import { setParentSession } from '@/helpers/authHelper';
 
 function useQuery() {
     return new URLSearchParams(useLocation().search);
@@ -60,6 +60,8 @@ export default function ParentLogin() {
     }, [groupSlug]);
 
     // NEW: handle secure token-based login
+
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -69,46 +71,29 @@ export default function ParentLogin() {
             const res = await fetch('/api/loginParent', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    identifier: searchTerm,
-                    enteredPin: pin,
-                    groupId,
-                }),
+                body: JSON.stringify({ identifier: searchTerm, enteredPin: pin, groupId }),
             });
-
             const data = await res.json();
-            console.log('Login response:', data);
-
             const { token, parent, error: loginError } = data;
 
             if (!res.ok || !token || !parent) {
                 setError(loginError || 'Login failed');
+                setPin(''); // 👈 clears incorrect PIN
                 return;
             }
 
-            // Supabase expects a refresh_token, even if it's an empty string
-            await supabase.auth.setSession({ access_token: token, refresh_token: '' });
+            setParentSession(token, parent, groupId);
 
-            console.log('setSession', supabase.auth.setSession);
-            // Store parent info and groupId in sessionStorage so wrapper can access it
-            sessionStorage.setItem(
-                'parentInfo',
-                JSON.stringify({ parent, groupId })
-            );
-
-            navigate(
-                {
-                    pathname: '/parent',
-                    search: `?group=${groupSlug}`,
-                },
-                { state: { groupId, parent } }
-                // no state needed, since sessionStorage is used
-            );
+            navigate({
+                pathname: '/parent',
+                search: `?group=${groupSlug}`,
+            });
         } catch (err) {
             console.error('Login error:', err);
             setError('Something went wrong. Please try again.');
         }
     };
+
 
     if (loadingGroup) {
         return (
@@ -184,6 +169,7 @@ export default function ParentLogin() {
                         inputMode="numeric"
                         pattern="[0-9]*"
                         placeholder="Enter 4-digit PIN"
+                        autoComplete="current-password"
                         value={pin}
                         maxLength={4}
                         onChange={(e) => setPin(e.target.value)}

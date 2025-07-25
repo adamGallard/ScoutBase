@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -10,9 +10,10 @@ const supabase = createClient(
 const normalizeMobile = (input) => input.replace(/\D+/g, '');
 
 export default async function handler(req, res) {
-    // Add CORS headers
+    console.log("🔔 loginParent API called");
+    // CORS
     res.setHeader('Access-Control-Allow-Credentials', true);
-    const allowedOrigins = ['http://localhost:5173', 'https://dev.scoutbase.app'];
+    const allowedOrigins = ['https://dev.scoutbase.app'];
     const origin = req.headers.origin;
     if (allowedOrigins.includes(origin)) {
         res.setHeader('Access-Control-Allow-Origin', origin);
@@ -23,57 +24,102 @@ export default async function handler(req, res) {
         'X-CSRF-Token, X-Requested-With, Accept, Content-Type, Authorization'
     );
 
-    // Handle preflight requests
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
+    if (req.method === 'OPTIONS') return res.status(200).end();
 
     const { identifier, enteredPin, groupId } = req.body;
-  
+
+
 
     if (!identifier || !enteredPin || !groupId) {
+
         return res.status(400).json({ error: 'Missing fields' });
     }
 
     const trimmed = identifier.trim();
     const isPhone = /^\d{8,}$/.test(trimmed.replace(/\s+/g, ''));
 
-    console.log('Incoming login:', { identifier, enteredPin, groupId });
+    // STEP 1: Fetch candidates
     const { data: parents, error } = await supabase
         .from('parent')
-        .select('id, name, phone, pin_hash, group_id')
+        .select('id, name, phone, pin_hash, group_id, failed_attempts, locked')
         .eq('group_id', groupId);
 
-    if (error || !parents || parents.length === 0) {
+    if (error) {
+
+        return res.status(500).json({ error: 'Database error' });
+    }
+
+    if (!parents || parents.length === 0) {
+
         return res.status(401).json({ error: 'Invalid name or PIN' });
     }
 
-    const match = parents.find(p => {
-        if (isPhone) {
-            return normalizeMobile(p.phone) === normalizeMobile(trimmed);
-        } else {
-            return p.name?.trim().toLowerCase() === trimmed.toLowerCase();
-        }
-    });
 
-    if (!match || !match.pin_hash) {
+
+    // STEP 2: Find matching parent
+    const match = parents.find(p =>
+        isPhone
+            ? normalizeMobile(p.phone) === normalizeMobile(trimmed)
+            : p.name?.trim().toLowerCase() === trimmed.toLowerCase()
+    );
+
+    if (!match) {
+
         return res.status(401).json({ error: 'Invalid name or PIN' });
     }
 
+
+    if (!match.pin_hash) {
+
+        return res.status(401).json({ error: 'Invalid name or PIN' });
+    }
+
+    if (match.locked) {
+
+        return res.status(403).json({
+            error: 'Account locked after 5 failed attempts. Please contact a leader.',
+        });
+    }
+
+    // STEP 3: Compare PIN
     const isValid = await bcrypt.compare(enteredPin, match.pin_hash);
+
     if (!isValid) {
-        return res.status(401).json({ error: 'Invalid name or PIN' });
+        const attempts = (match.failed_attempts || 0) + 1;
+        const locked = attempts >= 5;
+
+
+
+        const { error: updateError } = await supabase
+            .from('parent')
+            .update({ failed_attempts: attempts, locked })
+            .eq('id', match.id);
+
+        return res.status(401).json({
+            error: locked
+                ? 'Account locked after 5 failed attempts. Please contact a leader.'
+                : `Incorrect PIN. ${5 - attempts} attempt(s) left.`,
+        });
     }
+
+    // STEP 4: Successful login
+
+
+    const { error: resetError } = await supabase
+        .from('parent')
+        .update({ failed_attempts: 0 })
+        .eq('id', match.id);
+
 
     const payload = {
-        sub: match.id, // maps to auth.uid() in RLS
+        sub: match.id,
         role: 'authenticated',
         app_role: 'parent',
-        group_id: match.group_id
+        group_id: match.group_id,
     };
 
     const token = jwt.sign(payload, process.env.SUPABASE_JWT_SECRET, {
-        expiresIn: '4h'
+        expiresIn: '4h',
     });
 
     return res.status(200).json({

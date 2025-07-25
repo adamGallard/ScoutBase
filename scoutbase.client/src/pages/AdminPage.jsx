@@ -5,7 +5,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // ✅ Supabase & Custom Hooks
 import { supabase } from '@/lib/supabaseClient';
 import { useTerrainUser } from '@/hooks/useTerrainUser';
-import { checkTokenValidity } from '@/helpers/authHelper';
 
 // ✅ Security & Role Management
 import { can } from '@/utils/roleUtils';               // ⬅️  new import

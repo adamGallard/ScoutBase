@@ -1,8 +1,8 @@
 ﻿// src/pages/parent/NotificationsPage.jsx
 
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
+import { getParentSession } from '@/helpers/authHelper';
 import {
     PageWrapperParent,
     PageTitle,
@@ -12,9 +12,9 @@ import {
 } from '@/components/common/SharedStyles';
 import { Bell } from 'lucide-react'; 
 export default function NotificationsPage() {
-    const { state } = useLocation();
-    const groupId = state?.groupId;
-    const parentId = state?.parent?.id;
+    const supabase = getParentSupabaseClient();
+    const { parent, groupId } = getParentSession();
+    const parentId = parent?.id;
 
     const [tab, setTab] = useState('active'); // 'active' | 'archived'
     const [activeNotices, setActiveNotices] = useState([]);

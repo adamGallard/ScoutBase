@@ -1,21 +1,23 @@
 ﻿// src/components/common/ParentLayout.jsx
 
 import React, { useEffect, useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
 import LoggedInHeader from './LoggedInHeader';
 import FooterNav from './FooterNav';
 import { PageWrapperParent } from './SharedStyles';
 import UpdatePinModal from '@/components/UpdatePinModal';
+import { getParentSession } from '@/helpers/authHelper';
 
 export default function ParentLayout({ children }) {
+    const supabase = getParentSupabaseClient();
     const location = useLocation();
     const navigate = useNavigate();
-    const { state } = location;
-    const parent = state?.parent;
-    const groupId = state?.groupId;
 
-    // preserve the original group slug for logout/login redirects
+    // Use session for parent and groupId
+    const { parent, groupId } = getParentSession();
+
+    // preserve group slug from query string
     const query = new URLSearchParams(location.search);
     const groupSlug = query.get('group');
 
@@ -23,11 +25,12 @@ export default function ParentLayout({ children }) {
     const [noticeCount, setNoticeCount] = useState(0);
     const [matchingParent, setMatchingParent] = useState(null);
 
-
     useEffect(() => {
-        if (!parent?.id || !groupId) { return <Navigate to={`/sign-in?group=${groupSlug}`} replace />;
-    }
-
+        // This hook runs for notice badge, NOT auth. No redirects!
+        if (!parent?.id || !groupId) {
+            setNoticeCount(0);
+            return;
+        }
         (async () => {
             // fetch all notifications for this group
             const { data: notifs, error: notifErr } = await supabase
@@ -35,7 +38,7 @@ export default function ParentLayout({ children }) {
                 .select('id')
                 .eq('group_id', groupId);
             if (notifErr) {
-                console.error('Error fetching notifications:', notifErr);
+                setNoticeCount(0);
                 return;
             }
 
@@ -45,7 +48,7 @@ export default function ParentLayout({ children }) {
                 .select('notification_id')
                 .eq('parent_id', parent.id);
             if (ackErr) {
-                console.error('Error fetching acknowledgements:', ackErr);
+                setNoticeCount(0);
                 return;
             }
 
@@ -55,7 +58,7 @@ export default function ParentLayout({ children }) {
 
             setMatchingParent(parent);
         })();
-    }, [parent, groupId]);
+    }, [parent, groupId, supabase]);
 
     return (
         <PageWrapperParent style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -63,9 +66,7 @@ export default function ParentLayout({ children }) {
                 parentName={parent?.name}
                 onUpdatePin={() => setShowUpdatePinModal(true)}
                 onLogout={() => {
-                    // clear any in-memory parent state
                     setMatchingParent(null);
-                    // redirect back to the group-specific login
                     navigate(`/sign-in?group=${groupSlug}`, { replace: true });
                 }}
             />

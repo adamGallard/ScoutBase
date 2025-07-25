@@ -1,60 +1,54 @@
-import { supabase } from '../lib/supabaseClient';
-import { verifyPin } from './authHelper';
+﻿import { getParentSession } from '@/helpers/authHelper';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
 
-export const searchParentByNameOrPhone = async (searchTerm, pin, groupId) => {
-    const { data, error } = await supabase
-        .from('parent')
-        .select('*')
-        .or(`name.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`)
-        .eq('group_id', groupId); //  restrict by group
+// Get youth linked to this parent
+export async function fetchYouthByParentId(parentId) {
 
-    if (error || !data || data.length === 0) {
-        return { error: 'Invalid name or PIN. Please try again.' };
-    }
+    const { token } = getParentSession();
+    if (!token || !parentId) return { youthList: [], error: 'Not authenticated' };
 
-    const parent = data[0];
-    const isValid = await verifyPin(pin, parent.pin_hash);
-
-    if (!isValid) {
-        return { error: 'Invalid name or PIN. Please try again.' };
-    }
-
-    return { parent };
-};
-
-
-export const fetchYouthByParentId = async (parentId) => {
+    const supabase = getParentSupabaseClient();
     const { data, error } = await supabase
         .from('parent_youth')
-        .select('youth (id, name, dob, section)')
-        .eq('parent_id', parentId);
+        .select('youth(id, name, dob, section)')
+        .eq('parent_id',
+            parentId);
 
-    if (error) {
-        return { error: 'Error fetching youth.' };
-    }
+    return { youthList: data?.map((row) => row.youth).filter(Boolean) || [], error };
+	
+}
 
-    return { youthList: data.map((entry) => entry.youth) };
-};
-
-
+// Get latest attendance for all these youth in this group
 export async function fetchLatestAttendanceForYouthList(youthList, groupId) {
-    const today = new Date().toISOString().split("T")[0];
-    const statuses = {};
+    const { token } = getParentSession();
+    const ids = (Array.isArray(youthList) ? youthList : []).map(y => y && y.id).filter(Boolean);
 
-    for (const youth of youthList) {
-        const { data, error } = await supabase
-            .from("attendance")
-            .select("*")
-            .eq("youth_id", youth.id)
-            .eq("group_id", groupId)
-            .gte("timestamp", `${today}T00:00:00`)
-            .order("timestamp", { ascending: false })
-            .limit(1);
+    if (!token || !groupId || ids.length === 0)
+        return {};
 
-        if (!error && data.length > 0) {
-            statuses[youth.id] = data[0];
+	const supabase = getParentSupabaseClient();
+
+    const { data, error } = await supabase
+        .from('attendance')
+        .select('id, youth_id, action, timestamp')
+        .in('youth_id', ids)
+        .eq('group_id', groupId)
+        .order('timestamp', { ascending: false });
+
+    // Map to youth_id -> latest attendance
+    const latest = {};
+    if (data) {
+        for (const row of data) {
+            if (!latest[row.youth_id]) {
+                latest[row.youth_id] = row;
+            }
         }
     }
+    return latest;
+}
 
-    return statuses;
+export async function insertAttendance(row) {
+    const supabase = getParentSupabaseClient();
+    const { error } = await supabase.from('attendance').insert([row]);
+    return { error };
 }

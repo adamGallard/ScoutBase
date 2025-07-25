@@ -1,17 +1,15 @@
 ﻿// src/pages/parent/LinksPage.jsx
 
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
 import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { ExternalLink } from 'lucide-react';
 
-export default function LinksPage() {
+const supabase = getParentSupabaseClient();
+export default function LinksPage({ groupId }) {
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    const { state } = useLocation();
-    const groupId = state?.groupId;
     // Fetch links from Supabase
     useEffect(() => {
         if (!groupId) return;

@@ -1,4 +1,4 @@
-﻿import { supabase } from "@/lib/supabaseClient";
+﻿import { getSupabaseClientWithToken } from "@/lib/supabaseClient";
 
 export const logAuditEvent = async ({
     userId,
@@ -26,7 +26,7 @@ export const logAuditEvent = async ({
             insertData.user_admin_id = userId;
         }
         console.log("📋 AUDIT INSERT PAYLOAD:", insertData);
-        await supabase.from('audit_logs').insert([insertData]);
+        await getSupabaseClientWithToken.from('audit_logs').insert([insertData]);
     } catch (error) {
         console.error("❌ Failed to log audit event:", error.message);
     }

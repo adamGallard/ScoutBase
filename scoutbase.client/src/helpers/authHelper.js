@@ -1,113 +1,77 @@
-﻿import { supabase } from '../lib/supabaseClient';
-import bcrypt from 'bcryptjs';
+﻿// src/helpers/authHelper.js
 
-export const verifyPin = async (enteredPin, storedHash) => {
-    if (typeof storedHash !== 'string') return false;
+const SESSION_KEY = 'parentSession';
+
+/**
+ * Calls your backend API to verify a parent and PIN, returning a group-scoped JWT and parent info.
+ * @param {string} identifier - Name or phone (as entered by user)
+ * @param {string} enteredPin - The PIN entered by the parent
+ * @param {string} groupId    - The group id (from group slug, etc)
+ * @returns {Object} { success, token, parent, error }
+ */
+export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, groupId) => {
     try {
-        return await bcrypt.compare(enteredPin, storedHash);
+        const res = await fetch('/api/loginParent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identifier, enteredPin, groupId }),
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.token || !data.parent) {
+            return { success: false, error: data.error || 'Invalid name or PIN' };
+        }
+
+        return { success: true, token: data.token, parent: data.parent };
     } catch (err) {
-        console.error('Error comparing PIN hash:', err);
-        return false;
+        console.error('Parent login API error:', err);
+        return { success: false, error: 'Network or server error. Please try again.' };
     }
 };
 
-export function normalizeMobile(raw = '') {
-    // ensure it’s a string
-    const str = typeof raw === 'string' ? raw : String(raw);
-    // remove any non‑digit characters
-    return str.replace(/\D+/g, '');
+/**
+ * Stores parent session (token, parent object, groupId) as a single object.
+ */
+export function setParentSession(token, parent, groupId) {
+    if (!token || !parent || !groupId) return;
+    const session = { token, parent, groupId };
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
 }
 
-
-export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, groupId) => {
-    const trimmed = identifier.trim();
-    const isPhone = /^\d{8,}$/.test(trimmed.replace(/\s+/g, ''));
-
-    const { data, error } = await supabase
-        .from('parent')
-        .select('*')
-        .eq('group_id', groupId);
-
-    if (error || !data || data.length === 0) {
-        console.error('Supabase error or no data:', error);
-        return { success: false, error: 'Invalid name or PIN' };
-    }
-
-    const match = data.find(p => {
-        if (isPhone) {
-            return normalizeMobile(p.phone) === normalizeMobile(trimmed);
-        } else {
-            return p.name?.trim().toLowerCase() === trimmed.toLowerCase();
-        }
-    });
-
-    if (!match || !match.pin_hash || typeof match.pin_hash !== 'string') {
-        return { success: false, error: 'Invalid name or PIN' };
-    }
-
-    const isValid = await verifyPin(enteredPin, match.pin_hash);
-    if (!isValid) {
-        return { success: false, error: 'Invalid name or PIN' };
-    }
-
-    return { success: true, parent: match };
-};
-
-export const updateParentPin = async (parentId, currentPin, newPin) => {
-    const { data, error } = await supabase
-        .from('parent')
-        .select('pin_hash')
-        .eq('id', parentId)
-        .single();
-
-    if (error || !data?.pin_hash) {
-        console.error('Error fetching current pin_hash:', error);
-        return { success: false, error: 'Could not verify current PIN' };
-    }
-
-    const isValid = await verifyPin(currentPin, data.pin_hash);
-    if (!isValid) {
-        return { success: false, error: 'Current PIN is incorrect' };
-    }
-
-    const newHash = await bcrypt.hash(newPin, 10);
-    const { error: updateError } = await supabase
-        .from('parent')
-        .update({ pin_hash: newHash })
-        .eq('id', parentId);
-
-    if (updateError) {
-        console.error('Error updating PIN:', updateError);
-        return { success: false, error: 'Failed to update PIN' };
-    }
-
-    return { success: true };
-};
-
-export const resetParentPin = async (parentId, newPin) => {
-    const newHash = await bcrypt.hash(newPin, 10);
-
-    const { error } = await supabase
-        .from('parent')
-        .update({ pin_hash: newHash })
-        .eq('id', parentId);
-
-    if (error) {
-        console.error('Error resetting PIN:', error);
-        return { success: false, error: 'Failed to reset PIN' };
-    }
-
-    return { success: true };
-};
-
-export function checkTokenValidity() {
-    const token = localStorage.getItem('scoutbase-terrain-idtoken');
-    if (!token) return false;
-
-    const [, payload] = token.split('.');
-    if (!payload) return false;
-
+/**
+ * Returns { token, parent, groupId } if set, else {}.
+ */
+export function getParentSession() {
     try {
+        const sessionRaw = sessionStorage.getItem(SESSION_KEY);
+        if (!sessionRaw) return {};
+        const session = JSON.parse(sessionRaw);
+        if (!session.token || !session.parent || !session.groupId) return {};
+        return session;
+    } catch {
+        return {};
+    }
+}
+
+/**
+ * Removes parent session (on logout).
+ */
+export function clearParentSession() {
+    sessionStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem('parent_token');
+    localStorage.removeItem('parent_info');
+    localStorage.removeItem('parent_group');
+}
+
+/**
+ * Checks if the current session JWT is valid (not expired).
+ */
+export function isParentTokenValid() {
+    const { token } = getParentSession();
+    if (!token) return false;
+    try {
+        const [, payload] = token.split('.');
+        if (!payload) return false;
         const decoded = JSON.parse(atob(payload));
         const now = Math.floor(Date.now() / 1000);
         return decoded.exp > now;
