@@ -1,6 +1,6 @@
 // version.js
 export const appVersion = {
-	version: '1.4.0 - Secure'
+	version: '1.4.2 - Secure'
 
 
 };
