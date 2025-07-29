@@ -6,31 +6,34 @@ import NotificationsPage from '@/components/parent/NotificationsPage';
 import CalendarPage from '@/components/parent/CalendarPage';
 import LinksPage from '@/components/parent/LinksPage';
 import ParentProfilePage from '@/components/parent/ParentProfilePage';
-import { getParentSession } from '@/helpers/authHelper';
+import { useParentSession } from '@/helpers/SessionContext';
+import { NotificationProvider } from '@/helpers/NotificationContext';
 
 export default function ParentPage() {
-    const { parent, groupId, token } = getParentSession();
+    const { session, loading } = useParentSession();
     const location = useLocation();
 
-    if (!parent || !groupId || !token) {
+    if (loading) {
+        return <div>Loading session...</div>;
+    }
+
+    if (!session?.parent || !session?.groupId || !session?.token) {
         return <Navigate to={`/sign-in${location.search || ''}`} replace />;
     }
 
-    const sharedState = { parent, groupId, token };
-
-    const wrapWithProps = (Component) => <Component parent={parent} groupId={groupId} token={token} />;
-
     return (
-        <ParentLayout>
-            <Routes>
-                <Route index element={wrapWithProps(YouthAttendancePage)} />
-                <Route path="signin" element={wrapWithProps(YouthAttendancePage)} />
-                <Route path="notifications" element={wrapWithProps(NotificationsPage)} />
-                <Route path="calendar" element={wrapWithProps(CalendarPage)} />
-                <Route path="links" element={wrapWithProps(LinksPage)} />
-                <Route path="profile" element={wrapWithProps(ParentProfilePage)} />
-                <Route path="*" element={<Navigate to="signin" replace />} />
-            </Routes>
-        </ParentLayout>
+        <NotificationProvider>
+            <ParentLayout>
+                <Routes>
+                    <Route index element={<YouthAttendancePage />} />
+                    <Route path="signin" element={<YouthAttendancePage />} />
+                    <Route path="notifications" element={<NotificationsPage />} />
+                    <Route path="calendar" element={<CalendarPage />} />
+                    <Route path="links" element={<LinksPage />} />
+                    <Route path="profile" element={<ParentProfilePage />} />
+                    <Route path="*" element={<Navigate to="signin" replace />} />
+                </Routes>
+            </ParentLayout>
+         </NotificationProvider>
     );
 }

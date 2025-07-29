@@ -5,15 +5,21 @@ import ParentCalendar from '@/components/parent/ParentCalendar';
 import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { Calendar } from 'lucide-react';
 import { getParentSupabaseClient } from '@/lib/parentSupabaseClient'
+import { useParentSession } from '@/helpers/SessionContext';
 
 
-const supabase = getParentSupabaseClient();
-export default function ParentCalendarPage({ groupId }) {
+
+export default function  ParentCalendarPage() {
     // Vite injects env vars prefixed with VITE_ into import.meta.env
     const [feedUrl, setFeedUrl] = useState('');
     const [error, setError] = useState(null);
+    const { session, loading: sessionLoading } = useParentSession();
+    const parent = session?.parent;
+    const groupId = session?.groupId;
 
     useEffect(() => {
+        if (!session?.token) return;
+        const supabase = getParentSupabaseClient();
         async function fetchCalendarUrl() {
             const { data, error } = await supabase
                 .from('groups')
@@ -32,8 +38,9 @@ export default function ParentCalendarPage({ groupId }) {
         }
 
         fetchCalendarUrl();
-    }, [groupId]); // Re-fetch when the groupId changes
+    }, [groupId, session]); // Re-fetch when the groupId changes
 
+    if (sessionLoading) return <div>Loading...</div>;
     if (error) {
         return <div>Error fetching calendar URL. Check with a Leader if the URL has been set.</div>;
     }

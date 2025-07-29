@@ -1,21 +1,28 @@
-﻿import { createClient } from '@supabase/supabase-js';
-import { getParentSession } from '@/helpers/authHelper';   // <-- import this!
+﻿// src/lib/parentSupabaseClient.js
 
-let cachedClient = null;
-let cachedToken = null;
+import { createClient } from '@supabase/supabase-js';
 
-export function getParentSupabaseClient() {
-    // 🟢 Get the token from the session object, not sessionStorage.getItem('parentToken')
-    const { token } = getParentSession();
-    const url = import.meta.env.VITE_SUPABASE_URL;
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON;
+const url = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_ANON;
+const supabase = createClient(url, anonKey);
 
-    // Only create a new client if the token has changed or there's no cached client
-    if (!cachedClient || cachedToken !== token) {
-        cachedClient = createClient(url, anonKey, {
-            global: { headers: { Authorization: `Bearer ${token}` } }
-        });
-        cachedToken = token;
+/**
+ * Sets or clears the parent JWT (RLS). Use ONLY on login/logout/session restore.
+ * @param {string|null} token 
+ */
+export async function setParentToken(token) {
+    if (!token) {
+        // Logs out the current session in Supabase's memory
+        await supabase.auth.signOut();
+        return;
     }
-    return cachedClient;
+    // Set the JWT for RLS. Only needed ONCE on login or session restore.
+    await supabase.auth.setSession({ access_token: token, refresh_token: '' });
+}
+
+/**
+ * Returns the shared Supabase client.
+ */
+export function getParentSupabaseClient() {
+    return supabase;
 }

@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState } from 'react';
 import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
 
-const supabase = getParentSupabaseClient();
+
 
 export default function ParentNoticeView({ groupId, parentId }) {
     const [notices, setNotices] = useState([]);
@@ -11,7 +11,7 @@ export default function ParentNoticeView({ groupId, parentId }) {
 
     useEffect(() => {
         if (!groupId || !parentId) return;
-
+        const supabase = getParentSupabaseClient();
         const fetchAll = async () => {
 
             try {
@@ -65,6 +65,7 @@ export default function ParentNoticeView({ groupId, parentId }) {
     }, [groupId, parentId]);
 
     const acknowledgeNotice = async (noticeId) => {
+        const supabase = getParentSupabaseClient();
         const { error } = await supabase
             .from('notification_acknowledgements')
             .insert([{ parent_id: parentId, notification_id: noticeId }]);

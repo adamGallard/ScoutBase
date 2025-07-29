@@ -4,15 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { getParentSupabaseClient } from '@/lib/parentSupabaseClient';
 import { PageWrapperParent, PageTitle } from '@/components/common/SharedStyles';
 import { ExternalLink } from 'lucide-react';
+import { useParentSession } from '@/helpers/SessionContext';
 
-const supabase = getParentSupabaseClient();
-export default function LinksPage({ groupId }) {
+
+export default function LinksPage() {
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(false);
+    const { session, loading: sessionLoading } = useParentSession();
+    const parent = session?.parent;
+    const groupId = session?.groupId;
 
     // Fetch links from Supabase
     useEffect(() => {
         if (!groupId) return;
+        const supabase = getParentSupabaseClient();
         (async () => {
             setLoading(true);
             const { data, error } = await supabase

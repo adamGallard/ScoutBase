@@ -2,14 +2,16 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Bell, MessageCircle, Calendar, Link as LinkIcon, UserCircle, UserCheck } from 'lucide-react';
+import { useNotificationContext } from '@/helpers/NotificationContext';
 import './FooterNav.css';
 
-export default function FooterNav({ noticeCount = 0, messageCount = 0 }) {
+export default function FooterNav() {
+    const { unreadCount } = useNotificationContext();
     const location = useLocation();
     const search = location.search;    // preserve ?group=…
     const items = [
         { to: `/parent/signin${search}`, Icon: UserCheck, label: 'Sign In/Out' },
-        { to: `/parent/notifications${search}`, Icon: Bell, label: 'Notices', badge: noticeCount },
+        { to: `/parent/notifications${search}`, Icon: Bell, label: 'Notices', badge: unreadCount },
         { to: `/parent/calendar${search}`, Icon: Calendar, label: 'Calendar' },
         { to: `/parent/links${search}`, Icon: LinkIcon, label: 'Links' },
         { to: `/parent/profile${search}`, Icon: UserCircle, label: 'Profile' },

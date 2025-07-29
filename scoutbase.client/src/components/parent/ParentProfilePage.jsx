@@ -2,12 +2,16 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { LogOut, Key, Edit2, UserCircle } from "lucide-react";
 import { PrimaryButton, ModalOverlay, ModalBox, ButtonRow, PageWrapperParent, PageTitle } from "@/components/common/SharedStyles";
-import { getParentSupabaseClient } from "@/lib/parentSupabaseClient";
-const supabase = getParentSupabaseClient();
 import { resetParentPin } from "@/helpers/pinHelper";
-import { clearParentSession } from '@/helpers/authHelper';
-export default function ParentProfilePage({ parent, groupId }) {
+import { useParentSession } from '@/helpers/SessionContext';
+import { getParentSupabaseClient } from "@/lib/parentSupabaseClient";
+
+
+export default function ParentProfilePage() {
     const navigate = useNavigate();
+    const { session, loading: sessionLoading } = useParentSession();
+    const parent = session?.parent;
+    const groupId = session?.groupId;
 
     // Local states
     const [editMode, setEditMode] = useState(false);
@@ -16,40 +20,51 @@ export default function ParentProfilePage({ parent, groupId }) {
     const [showPinModal, setShowPinModal] = useState(false);
     const [pinSuccess, setPinSuccess] = useState(false);
 
+
     // Fetch parent from DB if not in state, or after updates
     useEffect(() => {
         async function fetchParent(id) {
+            if (!id) return;
+            const supabase = getParentSupabaseClient();
             setLoading(true);
-            const { data } = await supabase.from("parent").select("*").eq("id", id).single();
-            setEditValues(data || {});
+            const { data, error } = await supabase
+                .from("parent")
+                .select("*")
+                .eq("id", id)
+                .single();
+            if (!error) {
+                setEditValues(data || {});
+            } else {
+                console.error("Error fetching parent profile:", error);
+            }
             setLoading(false);
         }
-
-        if (parent?.id) {
+        if (!sessionLoading && parent?.id) {
             fetchParent(parent.id);
         }
-    }, [parent]);
+    }, [sessionLoading, parent]);
+
+    // If session is loading or we're fetching the parent, show loader
+    if (sessionLoading || loading) return <div>Loading...</div>;
+    if (!parent) return <div>No profile found.</div>;
 
     // Save profile changes
     async function handleSave() {
         setLoading(true);
+        const supabase = getParentSupabaseClient(); 
         const toUpdate = filterEditableFields(editValues);
-
         const { error } = await supabase
             .from("parent")
             .update(toUpdate)
             .eq("id", parent.id);
-
-        console.log("Updating parent with payload:", toUpdate);
-
         if (!error) {
             setEditMode(false);
         } else {
             alert("Failed to update profile.");
         }
-
         setLoading(false);
     }
+
     function filterEditableFields(obj) {
         const editable = [
             "name",
@@ -70,33 +85,15 @@ export default function ParentProfilePage({ parent, groupId }) {
         setEditValues({ ...editValues, [e.target.name]: e.target.value });
     }
 
-    // Pin change logic
-    async function handleChangePin(newPin) {
-        await supabase
-            .from("parent")
-            .update({ pin: newPin }) // hash if needed
-            .eq("id", parent.id); // ✅ use actual parent prop
-        alert("PIN changed!");
-        setShowPinModal(false);
-        setPinSuccess(true); // Optional: show success message
-    }
-
     // inside the component
-    const location = useLocation();
     const query = new URLSearchParams(location.search);
     const groupSlug = query.get('group');
 
-    function handleSignOut() {
-        clearParentSession();
+    async function handleSignOut() {
+
         navigate(`/sign-in?group=${groupSlug}`, { replace: true });
     }
 
-
-    if (loading) return <div>Loading...</div>;
-    if (!parent) return <div>No profile found.</div>;
-
-    if (loading) return <div>Loading...</div>;
-    if (!parent) return <div>No profile found.</div>;
     return (
         <PageWrapperParent style={{ padding: '0rem', paddingBottom: '20px' }}>
             <PageTitle><UserCircle /> Profile</PageTitle>
@@ -113,7 +110,6 @@ export default function ParentProfilePage({ parent, groupId }) {
                     PIN changed successfully!
                 </div>
             )}
-            
             {!editMode ? (
                 <>
                     <ProfileRow label="Name" value={editValues.name} />
@@ -134,15 +130,15 @@ export default function ParentProfilePage({ parent, groupId }) {
                     </div>
                 </>
             ) : (
-                    <>
-                        <ProfileRow label="Name" value={parent.name} />
+                <>
+                    <ProfileRow label="Name" value={parent.name} />
                     <EditField label="Email" name="email" value={editValues.email || ""} onChange={handleChange} />
-                        <EditField label="Phone" name="phone" value={editValues.phone || ""} onChange={handleChange} />
-                        <p style={{ fontSize: "0.92em", color: "#555", marginBottom: 8 }}>
-                            Tip: List multiple skills or hobbies by using commas, e.g. <em>"First Aid, Cooking, Gardening"</em>
-                        </p>
+                    <EditField label="Phone" name="phone" value={editValues.phone || ""} onChange={handleChange} />
+                    <p style={{ fontSize: "0.92em", color: "#555", marginBottom: 8 }}>
+                        Tip: List multiple skills or hobbies by using commas, e.g. <em>"First Aid, Cooking, Gardening"</em>
+                    </p>
                     <EditField label="Skills" name="skills" value={editValues.skills || ""} onChange={handleChange} />
-                        <EditField label="Hobbies" name="interests_hobbies" value={editValues.interests_hobbies || ""} onChange={handleChange} />
+                    <EditField label="Hobbies" name="interests_hobbies" value={editValues.interests_hobbies || ""} onChange={handleChange} />
                     <div style={{ marginTop: 32, display: "flex", gap: 12 }}>
                         <PrimaryButton onClick={handleSave}>Save</PrimaryButton>
                         <button onClick={() => setEditMode(false)}>Cancel</button>

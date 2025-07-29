@@ -1,4 +1,5 @@
 ﻿import React, { useEffect, useState } from 'react';
+import { useParentSession } from '@/helpers/SessionContext';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
     fetchYouthByParentId,
@@ -20,14 +21,16 @@ import { clearParentSession } from '@/helpers/authHelper';
 const codeToSectionLabel = code =>
     sections.find(s => s.code === code)?.label ?? code;
 
-export default function YouthAttendancePage({ parent, groupId, token }) {
+export default function YouthAttendancePage() {
+    const { session, loading: sessionLoading } = useParentSession();
     const navigate = useNavigate();
     const { search } = useLocation();
     const isMobile = useIsMobile();
-    const [error, setError] = useState('');
-    // *** Get parent, groupId, token from session ***
-    const { state } = useLocation();
-    // If not logged in, bounce to login!
+
+    // --- All hooks at the top ---
+    const parent = session?.parent;
+    const groupId = session?.groupId;
+    const token = session?.token;
     const query = new URLSearchParams(search);
     const groupSlug = query.get('group');
 
@@ -38,25 +41,50 @@ export default function YouthAttendancePage({ parent, groupId, token }) {
     const [sectionFilter, setSectionFilter] = useState('');
     const [selectedMember, setSelectedMember] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
+    // Bounce to login if not authenticated
     useEffect(() => {
-        console.log("Effect triggered", { parent, groupId, token });
-        if (!parent || !groupId || !token) return;
+        if (!sessionLoading && (!parent || !groupId || !token)) {
+            navigate(`/sign-in?group=${groupSlug}`, { replace: true });
+        }
+    }, [sessionLoading, parent, groupId, token, navigate, groupSlug]);
+
+    // Fetch youth and their attendance
+    useEffect(() => {
+        if (!parent?.id || !groupId || !token) return;
+        setLoading(true);
+        setError('');
         (async () => {
-            setLoading(true);
-            const result = await fetchYouthByParentId(parent.id, token);
-            if (result.error) {
-                setError(result.error);
+            try {
+                const result = await fetchYouthByParentId(parent.id, token);
+                if (result.error) {
+                    setError(result.error);
+                    setYouthList([]);
+                    setLoading(false);
+                    return;
+                }
+                const yl = result.youthList || [];
+                setYouthList(yl);
+                if (yl.length > 0) {
+                    const statusMap = await fetchLatestAttendanceForYouthList(yl, groupId);
+                    setLatestStatusMap(statusMap);
+                } else {
+                    setLatestStatusMap({});
+                }
                 setLoading(false);
-                return;
+            } catch (err) {
+                setError('Could not load youth. Please try again.');
+                setLoading(false);
             }
-            const yl = result.youthList || [];
-            setYouthList(yl);
-            const statusMap = await fetchLatestAttendanceForYouthList(yl, groupId);
-            setLatestStatusMap(statusMap);
-            setLoading(false);
         })();
     }, [parent, groupId, token]);
+
+    // --- Early returns for loading/error/youth-list ---
+    if (sessionLoading) return <PageWrapperParent><p>Loading...</p></PageWrapperParent>;
+    if (error) return <PageWrapperParent><p style={{ color: 'red' }}>{typeof error === "string" ? error : error.message || JSON.stringify(error)}</p></PageWrapperParent>;
+    if (loading) return <PageWrapperParent><p>Loading youth…</p></PageWrapperParent>;
+    if (!youthList.length) return <PageWrapperParent><p>No youth found linked to this parent account.</p></PageWrapperParent>;
 
     // Handle sign in/out
     const handleSign = async (memberId, data) => {
@@ -92,10 +120,86 @@ export default function YouthAttendancePage({ parent, groupId, token }) {
     };
 
     // Filter youth by section
-    const filteredYouth = youthList.filter(
-        y => !sectionFilter || y.section === sectionFilter
-    );
-    if (error) return <div style={{ color: 'red' }}>{typeof error === "string" ? error : error.message || JSON.stringify(error)}</div>;
+    const filteredYouth = youthList
+        .filter(y => !sectionFilter || y.section === sectionFilter)
+        .sort((a, b) => {
+            if (a.is_primary === b.is_primary) {
+                return a.name.localeCompare(b.name);
+            }
+            return a.is_primary ? -1 : 1;
+        });
+
+    const primaryYouth = filteredYouth.filter(y => y.is_primary);
+    const otherYouth = filteredYouth.filter(y => !y.is_primary);
+
+    const renderYouthCard = (y) => {
+        const latest = latestStatusMap[y.id];
+        return (
+            <div
+                key={y.id}
+                style={{
+                    width: '90%',
+                    maxWidth: '500px',
+                    background: '#fff',
+                    border: '1px solid #ccc',
+                    borderRadius: '8px',
+                    padding: '1rem',
+                    margin: '0.5rem auto',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                }}
+            >
+                <button
+                    onClick={() => {
+                        setSelectedMember(y);
+                        setStep('form');
+                    }}
+                    style={{
+                        width: '100%',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'none',
+                        border: 'none',
+                        padding: 0,
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                        fontSize: isMobile ? '1rem' : '0.95rem',
+                    }}
+                >
+                    <div>
+                        <div><strong>{y.name}</strong></div>
+                        <div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                            {codeToSectionLabel(y.section)}
+                        </div>
+                    </div>
+                    <div
+                        style={{
+                            fontSize: '0.75rem',
+                            color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
+                            fontWeight: 'bold',
+                            textAlign: 'right',
+                        }}
+                    >
+                        {latest ? (
+                            <>
+                                {latest.action} at<br />
+                                {new Date(latest.timestamp).toLocaleString('en-AU', {
+                                    weekday: 'short',
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                })}
+                            </>
+                        ) : (
+                            'Not signed in'
+                        )}
+                    </div>
+                </button>
+            </div>
+        );
+    };
+
     return (
         <PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
             <PageTitle style={{ marginBottom: '1rem' }}>
@@ -137,74 +241,17 @@ export default function YouthAttendancePage({ parent, groupId, token }) {
                         </label>
                     </div>
 
-                    {loading ? (
-                        <p>Loading youth…</p>
-                    ) : (
-                        filteredYouth.map(y => {
-                            const latest = latestStatusMap[y.id];
-                            return (
-                                <div
-                                    key={y.id}
-                                    style={{
-                                        width: '90%',
-                                        maxWidth: '500px',
-                                        background: '#fff',
-                                        border: '1px solid #ccc',
-                                        borderRadius: '8px',
-                                        padding: '1rem',
-                                        margin: '0.5rem auto',
-                                        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-                                    }}
-                                >
-                                    <button
-                                        onClick={() => {
-                                            setSelectedMember(y)
-                                            setStep('form');
-                                        }}
-                                        style={{
-                                            width: '100%',
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            background: 'none',
-                                            border: 'none',
-                                            padding: 0,
-                                            textAlign: 'left',
-                                            cursor: 'pointer',
-                                            fontSize: isMobile ? '1rem' : '0.95rem',
-                                        }}
-                                    >
-                                        <div>
-                                            <div><strong>{y.name}</strong></div>
-                                            <div style={{ fontSize: '0.875rem', color: '#6b7280', }}>{codeToSectionLabel(y.section)}</div>
-                                        </div>
-                                        <div
-                                            style={{
-                                                fontSize: '0.75rem',
-                                                color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
-                                                fontWeight: 'bold',
-                                                textAlign: 'right',
-                                            }}
-                                        >
-                                            {latest ? (
-                                                <>
-                                                    {latest.action} at<br />
-                                                    {new Date(latest.timestamp).toLocaleString('en-AU', {
-                                                        weekday: 'short',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                        hour: '2-digit',
-                                                        minute: '2-digit',
-                                                    })}
-                                                </>
-                                            ) : (
-                                                'Not signed in'
-                                            )}
-                                        </div>
-                                    </button>
-                                </div>
-                            );
-                        })
+                    {primaryYouth.length > 0 && (
+                        <>
+                            <h4 style={{ marginLeft: '1rem' }}>Primary Linked Youth</h4>
+                            {primaryYouth.map(renderYouthCard)}
+                        </>
+                    )}
+                    {otherYouth.length > 0 && (
+                        <>
+                            <h4 style={{ marginLeft: '1rem' }}>Other Youth</h4>
+                            {otherYouth.map(renderYouthCard)}
+                        </>
                     )}
 
                     <PrimaryButton
@@ -215,7 +262,7 @@ export default function YouthAttendancePage({ parent, groupId, token }) {
                             navigate(`/sign-in?group=${groupSlug}`);
                         }}
                     >
-						Logout of ScoutBase
+                        Logout of ScoutBase
                     </PrimaryButton>
                 </>
             )}

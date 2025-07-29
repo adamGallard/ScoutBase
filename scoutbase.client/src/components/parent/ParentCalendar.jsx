@@ -8,6 +8,7 @@ import {
 } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { useParentSession } from '@/helpers/SessionContext';
 
 const localizer = momentLocalizer(moment);
 
@@ -26,6 +27,9 @@ export default function ParentCalendar({ feedUrl }) {
     const [view, setView] = useState('month');  // ← control view
     const [categoryFilter, setCategoryFilter] = useState('all');
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const { session } = useParentSession();
+    const parent = session?.parent;
+    const groupId = session?.groupId;
 
     // 1) Load ICS feed
     useEffect(() => {
