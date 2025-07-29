@@ -8,6 +8,7 @@ import {
 } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { useSwipeable } from 'react-swipeable';
 
 const localizer = momentLocalizer(moment);
 
@@ -88,6 +89,22 @@ export default function ParentCalendar({ feedUrl }) {
         ? events
         : events.filter(e => e.category === categoryFilter);
 
+    function changeMonth(offset) {
+        setDate(prev => {
+            const m = moment(prev).add(offset, 'months');
+            return m.toDate();
+        });
+    }
+
+    // Set up swipe handlers
+    const handlers = useSwipeable({
+        onSwipedLeft: () => changeMonth(1),
+        onSwipedRight: () => changeMonth(-1),
+        delta: 30, // Minimum distance(px) for a swipe
+        trackMouse: true // allows desktop drag
+    });
+
+
     return (
         <>
             {/* Legend & Filter */}
@@ -119,7 +136,7 @@ export default function ParentCalendar({ feedUrl }) {
             </div>
 
             {/* Calendar with working Month/Agenda toggle */}
-            <div style={{ height: 600 }}>
+            <div style={{ height: 600 }} {...handlers}>
                 <Calendar
                     localizer={localizer}
                     events={filtered}
@@ -130,11 +147,14 @@ export default function ParentCalendar({ feedUrl }) {
                     defaultView="month"
                     date={date}
                     onNavigate={setDate}
-                    view={view}              // ← controlled view
-                    onView={setView}         // ← must provide this
+                    view={view}
+                    onView={setView}
                     onSelectEvent={setSelectedEvent}
                     style={{ height: '100%' }}
                 />
+            </div>
+            <div style={{ textAlign: 'center', fontSize: '0.95rem', color: '#888', margin: '0.5rem 0' }}>
+                Swipe left or right to change months
             </div>
 
             {/* Event Details Modal */}

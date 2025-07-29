@@ -26,14 +26,27 @@ export const searchParentByNameOrPhone = async (searchTerm, pin, groupId) => {
 export const fetchYouthByParentId = async (parentId) => {
     const { data, error } = await supabase
         .from('parent_youth')
-        .select('youth (id, name, dob, section)')
+        .select(`
+            youth: youth_id (
+                id,
+                name,
+                section
+            ),
+            is_primary
+        `)
         .eq('parent_id', parentId);
 
     if (error) {
         return { error: 'Error fetching youth.' };
     }
 
-    return { youthList: data.map((entry) => entry.youth) };
+    // Merge is_primary into each youth object
+    return {
+        youthList: data.map((entry) => ({
+            ...entry.youth,
+            is_primary: entry.is_primary
+        }))
+    };
 };
 
 
@@ -57,4 +70,30 @@ export async function fetchLatestAttendanceForYouthList(youthList, groupId) {
     }
 
     return statuses;
+}
+
+export async function fetchSignersForPrimaryChildren(parentId) {
+    // Get primary youth for this parent
+    const { data: primaryLinks, error } = await supabase
+        .from('parent_youth')
+        .select('youth: youth_id (id, name)')
+        .eq('parent_id', parentId)
+        .eq('is_primary', true);
+
+    if (error || !primaryLinks) return [];
+
+    // For each, fetch all parents linked to that youth
+    const results = [];
+    for (const link of primaryLinks) {
+        const { data: parentLinks } = await supabase
+            .from('parent_youth')
+            .select('parent:parent_id (id, name, phone, email)')
+            .eq('youth_id', link.youth.id);
+
+        results.push({
+            youth: link.youth,
+            parents: parentLinks.map(p => p.parent)
+        });
+    }
+    return results;
 }

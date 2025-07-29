@@ -55,10 +55,8 @@ export default function YouthAttendancePage() {
 		if (!parent || !groupId) return;
 		(async () => {
 			setLoading(true);
-			const { youthList: yl } =
-				await fetchYouthByParentId(parent.id);
-			const statusMap =
-				await fetchLatestAttendanceForYouthList(yl, groupId);
+			const { youthList: yl } = await fetchYouthByParentId(parent.id);
+			const statusMap = await fetchLatestAttendanceForYouthList(yl, groupId);
 			setYouthList(yl);
 			setLatestStatusMap(statusMap);
 			setLoading(false);
@@ -67,7 +65,6 @@ export default function YouthAttendancePage() {
 
 	// Handle sign-in/out action
 	const handleSign = async (memberId, data) => {
-		// 1) Write to attendance table
 		const timestamp = new Date().toISOString();            // keep full UTC stamp
 		const event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
 		const { error: insertError } = await supabase
@@ -88,7 +85,7 @@ export default function YouthAttendancePage() {
 			return;
 		}
 
-		// 2) Log audit event
+		// Log audit event
 		await logAuditEvent({
 			userId: parent.id,
 			groupId,
@@ -96,7 +93,7 @@ export default function YouthAttendancePage() {
 			action: data.action,
 		});
 
-		// 3) Go back to list and refresh statuses
+		// Go back to list and refresh statuses
 		setStep('list');
 		setSelectedMember(null);
 		const statusMap = await fetchLatestAttendanceForYouthList(youthList, groupId);
@@ -107,6 +104,91 @@ export default function YouthAttendancePage() {
 	const filteredYouth = youthList.filter(
 		y => !sectionFilter || y.section === sectionFilter
 	);
+
+	const compareByName = (a, b) =>
+		a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+	const primaryYouth = filteredYouth.filter(y => y.is_primary).sort(compareByName);
+	const otherYouth = filteredYouth.filter(y => !y.is_primary).sort(compareByName);
+
+	function renderYouthGroup(label, youthGroup) {
+		if (youthGroup.length === 0) return null;
+		return (
+			<>
+				<h3 style={{
+					margin: '1rem 0 0.25rem 1rem', fontWeight: 600,
+					color: '#0F5BA4', fontSize: '1.05rem'
+				}}>
+					{label}
+				</h3>
+				{youthGroup.map(y => {
+					const latest = latestStatusMap[y.id];
+					return (
+						<div
+							key={y.id}
+							style={{
+								width: '90%',
+								maxWidth: '500px',
+								background: '#fff',
+								border: '1px solid #ccc',
+								borderRadius: '8px',
+								padding: '1rem',
+								margin: '0.5rem auto',
+								boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+							}}
+						>
+							<button
+								onClick={() => {
+									setSelectedMember(y);
+									setStep('form');
+								}}
+								style={{
+									width: '100%',
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									background: 'none',
+									border: 'none',
+									padding: 0,
+									textAlign: 'left',
+									cursor: 'pointer',
+									fontSize: isMobile ? '1rem' : '0.95rem',
+								}}
+							>
+								<div>
+									<div><strong>{y.name}</strong></div>
+									<div style={{ fontSize: '0.875rem', color: '#6b7280', }}>{codeToSectionLabel(y.section)}</div>
+								</div>
+								<div
+									style={{
+										fontSize: '0.75rem',
+										color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
+										fontWeight: 'bold',
+										textAlign: 'right',
+									}}
+								>
+									{latest ? (
+										<>
+											{latest.action} at<br />
+											{new Date(latest.timestamp).toLocaleString('en-AU', {
+												weekday: 'short',
+												month: 'short',
+												day: 'numeric',
+												hour: '2-digit',
+												minute: '2-digit',
+											})}
+										</>
+									) : (
+										'Not signed in'
+									)}
+								</div>
+							</button>
+						</div>
+					);
+				})}
+			</>
+		);
+	}
 
 	return (
 		<PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
@@ -134,7 +216,6 @@ export default function YouthAttendancePage() {
 								value={sectionFilter}
 								onChange={e => setSectionFilter(e.target.value)}
 								style={{
-
 									padding: '0.75rem',
 									fontSize: '1rem',
 									borderRadius: 6,
@@ -155,85 +236,21 @@ export default function YouthAttendancePage() {
 					{loading ? (
 						<p>Loading youth…</p>
 					) : (
-						filteredYouth.map(y => {
-							const latest = latestStatusMap[y.id];
-							return (
-
-								<div
-									key={y.id}
-									style={{
-										width: '90%',
-										maxWidth: '500px',
-										background: '#fff',
-										border: '1px solid #ccc',
-										borderRadius: '8px',
-										padding: '1rem',
-										margin: '0.5rem auto',
-										boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-									}}
-								>
-									<button
-										onClick={() => {
-											setSelectedMember(y)
-											setStep('form');
-										}}
-										style={{
-											width: '100%',
-											display: 'flex',
-											justifyContent: 'space-between',
-											alignItems: 'center',
-											background: 'none',
-											border: 'none',
-											padding: 0,
-											textAlign: 'left',
-											cursor: 'pointer',
-											fontSize: isMobile ? '1rem' : '0.95rem',
-										}}
-									>
-										<div>
-											<div><strong>{y.name}</strong></div>
-											<div style={{ fontSize: '0.875rem', color: '#6b7280', }}>{codeToSectionLabel(y.section)}</div>
-										</div>
-										<div
-											style={{
-												fontSize: '0.75rem',
-												color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
-												fontWeight: 'bold',
-												textAlign: 'right',
-											}}
-										>
-											{latest ? (
-												<>
-													{latest.action} at<br />
-													{new Date(latest.timestamp).toLocaleString('en-AU', {
-														weekday: 'short',
-														month: 'short',
-														day: 'numeric',
-														hour: '2-digit',
-														minute: '2-digit',
-													})}
-												</>
-											) : (
-												'Not signed in'
-											)}
-										</div>
-									</button>
-								</div>
-							);
-						})
+						<>
+								{renderYouthGroup("Primary Children", primaryYouth)}
+							{renderYouthGroup("Other Children", otherYouth)}
+						</>
 					)}
 
 					<PrimaryButton
-     isMobile={isMobile}
-					     type="button"
-					      onClick={() => {
-						        // clear any in-memory state if needed…
-						        // then navigate back to the group login
-							        navigate(`/sign-in?group=${groupSlug}`);
-						      }}
-    >
-					      Logout
-					    </PrimaryButton>
+						isMobile={isMobile}
+						type="button"
+						onClick={() => {
+							navigate(`/sign-in?group=${groupSlug}`);
+						}}
+					>
+						Logout
+					</PrimaryButton>
 				</>
 			)}
 
@@ -244,7 +261,6 @@ export default function YouthAttendancePage() {
 					parentName={parent.name}
 					onSign={handleSign}
 					onCancel={() => {
-						// go back to the list view
 						setStep('list');
 						setSelectedMember(null);
 					}}
