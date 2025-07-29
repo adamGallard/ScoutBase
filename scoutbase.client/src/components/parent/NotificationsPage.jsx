@@ -19,7 +19,7 @@ export default function NotificationsPage() {
 
             <TabList style={{ marginBottom: '1rem' }}>
                 <TabButton onClick={() => setTab('active')} isActive={tab === 'active'}>Active</TabButton>
-                <TabButton onClick={() => setTab('archived')} isActive={tab === 'archived'}>Archived</TabButton>
+                <TabButton onClick={() => setTab('archived')} isActive={tab === 'archived'}>Read</TabButton>
             </TabList>
 
             {loading ? (
@@ -42,7 +42,7 @@ export default function NotificationsPage() {
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <SecondaryButton onClick={() => archivedNotices(n.id)}>
-                                    Archive
+                                    Mark as read
                                 </SecondaryButton>
                             </div>
                         </div>
@@ -67,7 +67,7 @@ export default function NotificationsPage() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <SecondaryButton onClick={() => activeNotices(n.id)}>
-                                Unarchive
+                                Unread
                             </SecondaryButton>
                         </div>
                     </div>
