@@ -10,6 +10,19 @@ import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date ut
 import AttendanceModal from "@/components/admin/reports/AttendanceEditModal";
 // ...other imports
 
+function formatTimeWithDate(timestamp, eventDate) {
+    if (!timestamp) return '';
+    const dt = new Date(timestamp);
+    const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const tsDate = dt.toISOString().slice(0, 10); // YYYY-MM-DD
+    // If eventDate is not provided or they match, return just time
+    if (!eventDate || tsDate === eventDate) {
+        return timeStr;
+    }
+    // Otherwise, add the date
+    return `${dt.toLocaleDateString()} ${timeStr}`;
+}
+
 ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
     activeGroupId,
@@ -390,10 +403,16 @@ export default function AttendanceView({
                             <tr key={youth.id}>
                                 <td>{youth.name}</td>
                                 <td>{codeToLabel(youth.section)}</td>
-                                <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
-                                <td>{signIn?.comment || ''}</td>
-                                <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
-                                <td>{signOut?.comment || ''}</td>
+                                <td>
+                                    {signIn
+                                        ? `${formatTimeWithDate(signIn.timestamp, selectedDate)} by ${signIn.parent?.name || 'Unknown'}`
+                                        : '-'}
+                                </td><td>{signIn?.comment || ''}</td>
+                                <td>
+                                    {signOut
+                                        ? `${formatTimeWithDate(signOut.timestamp, selectedDate)} by ${signOut.parent?.name || 'Unknown'}`
+                                        : '-'}
+                                </td><td>{signOut?.comment || ''}</td>
                                 <td>
                                     <button onClick={() => handleEditAttendance(youth, signIn, signOut)}>
                                         Edit

@@ -78,6 +78,17 @@ export default function ParentLogin() {
             { state: { parent, groupId } }
         );
     };
+    function getRemainingAttempts(errorMsg) {
+        // Looks for pattern like: "(2/5 attempts)" and returns remaining
+        const match = errorMsg?.match(/\((\d+)\/5 attempts\)/);
+        if (!match) return null;
+        return 5 - parseInt(match[1], 10);
+    }
+    const remainingAttempts = getRemainingAttempts(error);
+    const isLocked = error?.toLowerCase().includes('too many incorrect pin attempts');
+
+
+
 
     if (loadingGroup) {
         return (
@@ -147,6 +158,7 @@ export default function ParentLogin() {
                         placeholder="Enter parent name or phone"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        disabled={isLocked}
                         style={{
                             width: '90%',
                             padding: isMobile ? '0.75rem' : '0.5rem',
@@ -162,6 +174,7 @@ export default function ParentLogin() {
                         value={pin}
                         maxLength={4}
                         onChange={(e) => setPin(e.target.value)}
+                        disabled={isLocked}
                         style={{
                             width: '90%',
                             padding: isMobile ? '0.75rem' : '0.5rem',
@@ -169,13 +182,16 @@ export default function ParentLogin() {
                             marginBottom: '1rem'
                         }}
                     />
+
                     <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                        <PrimaryButton
-                            type="submit"
-                            isMobile={isMobile}
-                        >
-                            Continue
-                        </PrimaryButton>
+                    <PrimaryButton
+                        type="submit"
+                        isMobile={isMobile}
+                        disabled={isLocked}
+                    >
+                        Continue
+                    </PrimaryButton>
+
                     </div>
                     {error && <p style={{
                         color: 'red', marginTop: '0.5rem', fontWeight: 'bold', textAlign: 'center', maxWidth: '100%' }}>{error}</p>}

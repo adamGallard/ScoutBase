@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
 	PageWrapper,
@@ -127,7 +127,13 @@ export default function FamilySignupPage() {
 
 			const { data: insertedYouths, error: yErr } = await supabase
 				.from('pending_youth')
-				.insert(youths.map(y => ({ ...y, family_id: fam.id })))
+				.insert(
+					youths.map(y => ({
+						...y,
+						section: y.section ? y.section.toLowerCase() : '', // 👈 enforce lowercase
+						family_id: fam.id
+					}))
+				)
 				.select();
 			if (yErr) throw new Error(yErr.message);
 
