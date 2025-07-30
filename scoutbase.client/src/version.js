@@ -2,5 +2,4 @@
 export const appVersion = {
 	version: '1.3.10'
 
-
 };
