@@ -153,6 +153,28 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
         }
     };
 
+    const unlockParent = async (id) => {
+        const { error } = await supabase
+            .from('parent')
+            .update({ is_locked: false, failed_pin_attempts: 0 })
+            .eq('id', id);
+
+        if (error) {
+            alert("Failed to unlock parent: " + error.message);
+            return;
+        }
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId,
+            role: userInfo.role,
+            action: 'Unlock',
+            targetType: 'Parent',
+            targetId: id,
+            metadata: `Unlocked parent account`
+        });
+        fetchParents(); // Refresh list
+    };
+
     const deleteParent = async (id) => {
         if (confirm('Are you sure you want to delete this parent?')) {
             const { data: deletedParent } = await supabase
@@ -284,7 +306,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                 </thead>
                 <tbody>
                     {paginatedParents.map(p => (
-                        <tr key={p.id}>
+                        <tr key={p.id} style={p.is_locked ? { backgroundColor: '#ffebee' } : {}}>
                             <td>
                                 {editingParentId === p.id ? (
                                     <input
@@ -326,8 +348,36 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                 )}
 
                             </td>
-                            <td style={{ display: 'flex', gap: '0.5rem' }}>
-                                {editingParentId === p.id ? (
+                            <td style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                {p.is_locked && (
+                                    <>
+                                        <span style={{
+                                            color: '#C00',
+                                            fontWeight: 'bold',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.25rem'
+                                        }}>
+                                            <X size={16} color="#C00" /> Locked
+                                        </span>
+                                        <button
+                                            style={{
+                                                background: '#00664a',
+                                                color: '#fff',
+                                                border: 'none',
+                                                borderRadius: 4,
+                                                padding: '0.25rem 0.75rem',
+                                                fontSize: '0.85rem',
+                                                cursor: 'pointer'
+                                            }}
+                                            onClick={() => unlockParent(p.id)}
+                                            title="Unlock parent"
+                                        >
+                                            Unlock
+                                        </button>
+                                    </>
+                                )}
+                                {!p.is_locked && editingParentId === p.id ? (
                                     <>
                                         <button onClick={() => updateParent(p.id)} title="Confirm"><Check size={16} /></button>
                                         <button onClick={() => {
@@ -337,16 +387,17 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                             <X size={16} />
                                         </button>
                                     </>
-                                ) : (
+                                ) : !p.is_locked && (
                                     <>
-                                            <button onClick={() => { setEditingParentId(p.id); setFormData(p); }} title="Edit parent"><Pencil size={16} /></button>
-                                            <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link size={16} /></button>
-                                            <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Hammer size={16} /></button>
-                                            <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
-                                            <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
+                                        <button onClick={() => { setEditingParentId(p.id); setFormData(p); }} title="Edit parent"><Pencil size={16} /></button>
+                                        <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link size={16} /></button>
+                                        <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Hammer size={16} /></button>
+                                        <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
+                                        <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
                                     </>
                                 )}
                             </td>
+
                         </tr>
 
                     )

@@ -33,6 +33,7 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
     const [loading, setLoading] = useState(false);
     const [sending, setSending] = useState(false);
     const [emailFilter, setEmailFilter] = useState('');
+    const [stageFilter, setStageFilter] = useState('');
 
     // Email settings from the group
     const [emailingDirectEnabled, setEmailingDirectEnabled] = useState(false);
@@ -80,7 +81,7 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
         const fetchParentsList = async () => {
             let query = supabase
                 .from('parent_youth')
-                .select(`parent:parent_id(id, name, email, group_id), youth:youth_id(name, section)`)
+                .select(`parent:parent_id(id, name, email, group_id), youth:youth_id(name, section, membership_stage)`)
                 .eq('is_primary', true)
                 .eq('parent.group_id', groupId);
 
@@ -106,10 +107,13 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
                 // Add youth info if present
                 if (r.youth && r.youth.name) {
                     // Prevent duplicates
-                    if (!dedup[p.id].youth.some(y => y.name === r.youth.name && y.section === r.youth.section)) {
+                    if (!dedup[p.id].youth.some(
+                        y => y.name === r.youth.name && y.section === r.youth.section && y.membership_stage === r.youth.membership_stage
+                    )) {
                         dedup[p.id].youth.push({
                             name: r.youth.name,
                             section: r.youth.section,
+                            membership_stage: r.youth.membership_stage?.toLowerCase() || '',
                         });
                     }
                 }
@@ -125,19 +129,24 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
     // Filter displayed parents based on section filter and email filter
     const displayedParents = parentsList
         .map(p => {
-            // Filter the youth list for this parent by section
-            const filteredYouth = (p.youth || []).filter(y => !sectionFilter || y.section === sectionFilter);
+            const filteredYouth = (p.youth || []).filter(y => {
+                if (!y) return false;
+                const stage = (y.membership_stage || '').toLowerCase();
+                if (stage === 'retired') return false;
+                if (sectionFilter && y.section !== sectionFilter) return false;
+                if (stageFilter && stage !== stageFilter) return false;
+                return true;
+            });
             return { ...p, filteredYouth };
         })
+        .filter(p => p.filteredYouth.length > 0)
         .filter(p => {
-            // Text filter (same as before, but use filteredYouth)
             const filter = emailFilter.toLowerCase().trim();
-            if (!filter) return p.filteredYouth.length > 0;
-
+            if (!filter) return true;
             const nameMatch = p.name.toLowerCase().includes(filter);
             const emailMatch = p.email.toLowerCase().includes(filter);
             const youthMatch = p.filteredYouth.some(y => y.name.toLowerCase().includes(filter));
-            return p.filteredYouth.length > 0 && (nameMatch || emailMatch || youthMatch);
+            return nameMatch || emailMatch || youthMatch;
         });
 
     // Toggle parent selection
@@ -345,6 +354,19 @@ export default function MessageParentsEmailPage({ groupId, userInfo }) {
                                 onChange={e => setEmailFilter(e.target.value)}
                                 style={{ flex: 1, minWidth: 0, padding: '0.5rem', borderRadius: 4, border: '1px solid #ccc' }}
                             />
+                            <select
+                                value={stageFilter}
+                                onChange={e => setStageFilter(e.target.value)}
+                                style={{ padding: '0.25rem 0.5rem' }}
+                            >
+                                <option value="">All Stages</option>
+                                <option value="invested">Invested</option>
+                                <option value="member">Member</option>
+                                <option value="linking">Linking</option>
+                                <option value="have_a_go">Have a Go</option>
+                                
+                                {/* Don't offer "Retired" since we're excluding them */}
+                            </select>
                             <select
                                 value={sectionFilter}
                                 onChange={handleSectionFilterChange}
