@@ -161,11 +161,17 @@ export default function AdminDashboard() {
             // 6) Parent counts & unlinked
             let { data: parentsData = [] } = await supabase
                 .from("parent")
-                .select("id, email, phone")
+                .select("id, email, phone, is_locked_out, pin_attempts")
                 .eq("group_id", groupId);
+
             const allParentIds = parentsData.map(p => p.id);
             const unlinkedParents = allParentIds.filter(
                 id => !linksData.some(l => l.parent_id === id)
+            );
+
+            // Parents locked out: (use whatever field/logic you use for lockout)
+            const parentsLockedOut = parentsData.filter(
+                p => p.is_locked_out || (p.pin_attempts && p.pin_attempts >= 5)
             );
 
             // 7) Primary links & unlinked youth
@@ -243,6 +249,7 @@ export default function AdminDashboard() {
                 parentsMissingContact: parentsMissingContact.length,
                 pendingFamiliesCount, // ← add this
                 badgeOrderStats,
+                parentsLockedOutCount: parentsLockedOut.length,
             });
             
         }
@@ -334,6 +341,8 @@ export default function AdminDashboard() {
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.unlinkedParents}</p>
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Parents Missing Contact</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentsMissingContact}</p>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Parents Locked Out</h3>
+                    <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentsLockedOutCount}</p>
                 </div>
                 {/* Badge Orders Panel */}
                 <div style={{

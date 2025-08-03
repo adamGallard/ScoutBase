@@ -9,7 +9,7 @@ import EditParentSkillsModal from './EditParentSkillsModal';
 
 export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, userInfo }) {
     const [parents, setParents] = useState([]);
-    const [formData, setFormData] = useState({ name: '', email: '', phone: '',comments:'' });
+    const [formData, setFormData] = useState({ name: '', email: '', phone: '', comments: '', role: 'parent' });
     const [editingParentId, setEditingParentId] = useState(null);
     const [filter, setFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -94,6 +94,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                 name,
                 email,
                 phone,
+				role: formData.role || 'parent', // default to 'parent' if not specified
                 comments,
                 group_id: groupId,
                 pin_hash: hashedPIN
@@ -123,16 +124,16 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             metadata: `Added parent: ${newParent.name}`
         });
         setAddError('');
-        setFormData({ name: '', email: '', phone: '', comments: '' });
+        setFormData({ name: '', email: '', phone: '', comments: '', role: 'parent' });
         fetchParents();
     };
 
     const updateParent = async (id) => {
-        const { name, email, phone, comments } = formData;
+        const { name, email, phone, role, comments } = formData;
 
         const { error } = await supabase
             .from('parent')
-            .update({ name, email, phone, comments })
+            .update({ name, email, phone, comments, role: role || 'parent' })
             .eq('id', id);
 
         if (error) {
@@ -300,6 +301,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
+                        <th>Role</th>
                         <th>Comments</th>
                         <th style={{ width: '140px' }}>Actions</th>
                     </tr>
@@ -335,6 +337,27 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                     />
                                 ) : (
                                     p.phone
+                                )}
+                            </td>
+                            <td>
+                                {editingParentId === p.id ? (
+                                    <select
+                                        value={formData.role || 'parent'}
+                                        onChange={e => setFormData(f => ({ ...f, role: e.target.value }))}
+                                    >
+                                        <option value="parent">Parent</option>
+                                        <option value="leader">Leader</option>
+                                        <option value="parent_helper">Parent Helper</option>
+                                        <option value="committee">Committee</option>
+                                    </select>
+                                ) : (
+                                    p.role === 'leader'
+                                        ? "Leader"
+                                        : p.role === 'parent_helper'
+                                            ? "Parent Helper"
+                                            : p.role === 'committee'
+                                                ? "Committee"
+                                                : "Parent"
                                 )}
                             </td>
                             <td>
@@ -423,6 +446,17 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                     value={formData.phone}
                                     onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
                                 />
+                            </td>
+                            <td>
+                                <select
+                                    value={formData.role || 'parent'}
+                                    onChange={e => setFormData(f => ({ ...f, role: e.target.value }))}
+                                >
+                                    <option value="parent">Parent</option>
+                                    <option value="leader">Leader</option>
+                                    <option value="parent_helper">Parent Helper</option>
+                                    <option value="committee">Committee</option>
+                                </select>
                             </td>
                             <td>
                                 <input

@@ -19,13 +19,8 @@ export const logAuditEvent = async ({
             metadata,
         };
 
-        // Assign user ID to the correct field based on role
-        if (role === 'parent') {
-            insertData.user_parent_id = userId;
-        } else {
-            insertData.user_admin_id = userId;
-        }
-        console.log("📋 AUDIT INSERT PAYLOAD:", insertData);
+           insertData.user_parent_id = userId;
+        
         await supabase.from('audit_logs').insert([insertData]);
     } catch (error) {
         console.error("❌ Failed to log audit event:", error.message);

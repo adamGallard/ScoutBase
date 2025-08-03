@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
 	fetchYouthByParentId,
-	fetchLatestAttendanceForYouthList
+	fetchLatestAttendanceForYouthList,
+	fetchLatestHelperAttendance
 } from '@/helpers/attendanceHelper';
 import { logAuditEvent } from '@/helpers/auditHelper';
 import SignInForm from '@/components/SignInForm';
@@ -30,6 +31,9 @@ export default function YouthAttendancePage() {
 	const parent = state?.parent;
 	const groupId = state?.groupId;
 	const isMobile = useIsMobile();
+	const [helperRoles, setHelperRoles] = useState([]);
+	const [helperStatusMap, setHelperStatusMap] = useState({});
+
 
 	// pull the ?group=slug so we can bounce back to login if needed
 	const query = new URLSearchParams(search);
@@ -42,6 +46,7 @@ export default function YouthAttendancePage() {
 	const [sectionFilter, setSectionFilter] = useState('');
 	const [selectedMember, setSelectedMember] = useState(null);
 	const [loading, setLoading] = useState(false);
+	
 
 	// If no parent or groupId, redirect to login
 	useEffect(() => {
@@ -55,16 +60,89 @@ export default function YouthAttendancePage() {
 		if (!parent || !groupId) return;
 		(async () => {
 			setLoading(true);
+
+			// Fetch youth
 			const { youthList: yl } = await fetchYouthByParentId(parent.id);
 			const statusMap = await fetchLatestAttendanceForYouthList(yl, groupId);
 			setYouthList(yl);
 			setLatestStatusMap(statusMap);
+
+			// Prepare helper roles
+			let roles = [];
+			if (parent.role === 'leader') {
+				roles = [{
+					id: `{parent.id}`,
+					parentId: parent.id, 
+					type: 'helper',
+					name: parent.name,
+					roleLabel: 'Leader',
+				}];
+			} else if (parent.role === 'parent_helper') {
+				roles = [{
+					id: `{parent.id}`,
+					parentId: parent.id, 
+					type: 'helper',
+					name: parent.name,
+					roleLabel: 'Parent Helper',
+				}];
+			}
+			setHelperRoles(roles);
+
+
+			// Fetch latest helper attendance
+			const helperMap = await fetchLatestHelperAttendance(parent.id, groupId);
+			setHelperStatusMap(helperMap);
+
 			setLoading(false);
 		})();
 	}, [parent, groupId]);
 
+
 	// Handle sign-in/out action
 	const handleSign = async (memberId, data) => {
+
+
+		if (selectedMember?.type === 'helper') {
+			const event_date = getISODateInTZ('Australia/Brisbane');
+			const timestamp = new Date().toISOString();
+
+			const existing = helperStatusMap[selectedMember.roleLabel];
+			const isSignedIn = existing?.action === 'signed in';
+
+			const action = isSignedIn ? 'signed out' : 'signed in';
+
+			const { error } = await supabase
+				.from('helper_attendance')
+				.insert([{
+					parent_id: parent.id,
+					group_id: groupId,
+					action: data.action,        // e.g. 'signed in' / 'signed out'
+					comment: data.comment || '', // if your SignInForm collects a comment
+					timestamp,
+					event_date,
+					signed_by: parent.id,
+				}]);
+
+			if (error) {
+				console.error('Failed to save helper attendance:', error);
+				alert('Error saving helper attendance. Please try again.');
+				return;
+			}
+
+			await logAuditEvent({
+				userId: parent.id,
+				groupId,
+				role: selectedMember.roleLabel.toLowerCase(),
+				action,
+			});
+
+			setStep('list');
+			setSelectedMember(null);
+			const helperMap = await fetchLatestHelperAttendance(parent.id, groupId);
+			setHelperStatusMap(helperMap);
+			return;
+		}
+
 		const timestamp = new Date().toISOString();            // keep full UTC stamp
 		const event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
 		const { error: insertError } = await supabase
@@ -111,8 +189,9 @@ export default function YouthAttendancePage() {
 	const primaryYouth = filteredYouth.filter(y => y.is_primary).sort(compareByName);
 	const otherYouth = filteredYouth.filter(y => !y.is_primary).sort(compareByName);
 
-	function renderYouthGroup(label, youthGroup) {
-		if (youthGroup.length === 0) return null;
+
+	function renderMemberGroup({ label, members, getStatus, getStatusColor, getSubtitle }) {
+		if (members.length === 0) return null;
 		return (
 			<>
 				<h3 style={{
@@ -121,11 +200,16 @@ export default function YouthAttendancePage() {
 				}}>
 					{label}
 				</h3>
-				{youthGroup.map(y => {
-					const latest = latestStatusMap[y.id];
+				{members.map(m => {
+					const latest = getStatus(m);
+					const statusColor = getStatusColor(latest);
+					const statusLabel = latest
+						? getSubtitle ? getSubtitle(m, latest) : (latest.action || '')
+						: 'Not signed in';
+
 					return (
 						<div
-							key={y.id}
+							key={m.id}
 							style={{
 								width: '90%',
 								maxWidth: '500px',
@@ -139,7 +223,7 @@ export default function YouthAttendancePage() {
 						>
 							<button
 								onClick={() => {
-									setSelectedMember(y);
+									setSelectedMember(m);
 									setStep('form');
 								}}
 								style={{
@@ -156,21 +240,28 @@ export default function YouthAttendancePage() {
 								}}
 							>
 								<div>
-									<div><strong>{y.name}</strong></div>
-									<div style={{ fontSize: '0.875rem', color: '#6b7280', }}>{codeToSectionLabel(y.section)}</div>
+									<strong>{m.name}</strong>
+									{m.section && (
+										<div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+											{codeToSectionLabel(m.section)}
+										</div>
+									)}
+									{m.roleLabel && (
+										<div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+											{m.roleLabel}
+										</div>
+									)}
 								</div>
-								<div
-									style={{
-										fontSize: '0.75rem',
-										color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
-										fontWeight: 'bold',
-										textAlign: 'right',
-									}}
-								>
+								<div style={{
+									fontSize: '0.75rem',
+									color: statusColor,
+									fontWeight: 'bold',
+									textAlign: 'right',
+								}}>
 									{latest ? (
 										<>
-											{latest.action} at<br />
-											{new Date(latest.timestamp).toLocaleString('en-AU', {
+											{statusLabel}<br />
+											{new Date(latest.timestamp || latest.created_at).toLocaleString('en-AU', {
 												weekday: 'short',
 												month: 'short',
 												day: 'numeric',
@@ -178,9 +269,7 @@ export default function YouthAttendancePage() {
 												minute: '2-digit',
 											})}
 										</>
-									) : (
-										'Not signed in'
-									)}
+									) : 'Not signed in'}
 								</div>
 							</button>
 						</div>
@@ -199,7 +288,7 @@ export default function YouthAttendancePage() {
 			{/* Instruction to Select a Child */}
 			{step === 'list' && (
 				<p style={{ fontSize: '1rem', color: '#555', marginBottom: '1rem' }}>
-					Please select your child from the list below to sign them in or out.
+					Please select your child or helper role below to sign them in or out.
 				</p>
 			)}
 
@@ -236,9 +325,26 @@ export default function YouthAttendancePage() {
 					{loading ? (
 						<p>Loading youth…</p>
 					) : (
-						<>
-								{renderYouthGroup("Primary Children", primaryYouth)}
-							{renderYouthGroup("Other Children", otherYouth)}
+							<>
+								{renderMemberGroup({
+									label: "Leader or Parent Helper",
+									members: helperRoles,
+									getStatus: h => helperStatusMap[h.parentId],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								})}
+								{renderMemberGroup({
+									label: "Primary Children",
+									members: primaryYouth,
+									getStatus: y => latestStatusMap[y.id],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								}) }
+								{renderMemberGroup({
+									label: "Other Children",
+									members: otherYouth,
+									getStatus: y => latestStatusMap[y.id],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								}) }
+
 						</>
 					)}
 
@@ -264,7 +370,11 @@ export default function YouthAttendancePage() {
 						setStep('list');
 						setSelectedMember(null);
 					}}
-					latestStatus={latestStatusMap[selectedMember.id]}
+					latestStatus={
+						selectedMember.type === 'helper'
+							? helperStatusMap[selectedMember.parentId]
+							: latestStatusMap[selectedMember.id]
+					}
 				/>
 			)}
 		</PageWrapperParent>
