@@ -43,7 +43,8 @@ export default function AdminDashboard() {
         unlinkedYouth: 0,
         youthNoTransitions: 0,
         parentsMissingContact: 0,
-        pendingFamiliesCount: 0
+        pendingFamiliesCount: 0,
+        parentsLockedOut: 0,
     });
 
     const isSectionLeader = userInfo?.role === "Section Leader";
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
             // 6) Parent counts & unlinked
             let { data: parentsData = [] } = await supabase
                 .from("parent")
-                .select("id, email, phone, is_locked_out, pin_attempts")
+                .select("id, email, phone, is_locked, failed_pin_attempts")
                 .eq("group_id", groupId);
 
             const allParentIds = parentsData.map(p => p.id);
@@ -171,7 +172,7 @@ export default function AdminDashboard() {
 
             // Parents locked out: (use whatever field/logic you use for lockout)
             const parentsLockedOut = parentsData.filter(
-                p => p.is_locked_out || (p.pin_attempts && p.pin_attempts >= 5)
+                p => p.is_locked || (p.failed_pin_attempts && p.failed_pin_attempts >= 5)
             );
 
             // 7) Primary links & unlinked youth
@@ -335,13 +336,13 @@ export default function AdminDashboard() {
                 <div style={{ flex: "1 1 250px", background: "#fff", padding: "1rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
                     <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Pending Family Registrations</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.pendingFamiliesCount}</p>
-                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Linked Parents</h3>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Linked Adults</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentCount}</p>
-                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Unlinked Parents</h3>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Unlinked Adults</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.unlinkedParents}</p>
-                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Parents Missing Contact</h3>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Adults Missing Contact</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentsMissingContact}</p>
-                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Parents Locked Out</h3>
+                    <h3 style={{ fontSize: "1.125rem", fontWeight: 600, marginBottom: "0.5rem" }}>Adults Locked Out</h3>
                     <p style={{ fontSize: "2rem", fontWeight: 700 }}>{stats.parentsLockedOutCount}</p>
                 </div>
                 {/* Badge Orders Panel */}

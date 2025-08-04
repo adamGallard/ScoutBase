@@ -150,19 +150,45 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                         <SidebarButton
                             $selected={selectedKey === item.key}
                             $collapsed={collapsed}
-                            onClick={() => {
-                                if (item.expandable) toggleSection(item.key);
-                                else onNavigate(item.key);
+                            // Only handle navigation on the main area (not arrow)
+                            onClick={() => !item.expandable && onNavigate(item.key)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between', // So arrow is on the right
+                                width: '100%',
+                                cursor: 'pointer'
                             }}
                         >
-                            <span>{item.icon}</span>
-                            {!collapsed && <span>{item.label}</span>}
+                            {/* Main clickable area */}
+                            <span
+                                style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '0.5rem' }}
+                                onClick={e => {
+                                    if (item.expandable) {
+                                        // Stop arrow click bubbling up
+                                        onNavigate(item.key);
+                                    }
+                                }}
+                            >
+                                {item.icon}
+                                {!collapsed && <span>{item.label}</span>}
+                            </span>
+
+                            {/* Arrow - only for expandable */}
                             {!collapsed && item.expandable && (
-                                expandedSections.has(item.key)
-                                    ? <ChevronDown size={16} />
-                                    : <ChevronRight size={16} />
+                                <span
+                                    style={{ marginLeft: 'auto', paddingLeft: 8, cursor: 'pointer' }}
+                                    onClick={e => {
+                                        e.stopPropagation(); // prevent parent click
+                                        toggleSection(item.key);
+                                    }}
+                                >
+                                    {expandedSections.has(item.key)
+                                        ? <ChevronDown size={16} />
+                                        : <ChevronRight size={16} />}
+                                </span>
                             )}
-                            </SidebarButton>
+                        </SidebarButton>
 
                         {/* Child list */}
                         {!collapsed && item.expandable && expandedSections.has(item.key) && (

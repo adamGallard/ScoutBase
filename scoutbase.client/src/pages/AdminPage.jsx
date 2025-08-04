@@ -47,6 +47,9 @@ import MessageEmailPage from '@/components/admin/messages/MessageEmailPage';
 import SettingsPage from '@/components/admin/SettingsPage';
 import BadgeOrder from '@/components/admin/BadgeOrder';
 import RegistrationsPage from '@/components/admin/RegistrationsPage';
+import Members from '@/components/admin/Members';
+import Messages from '@/components/admin/Messages';
+import Reference from '@/components/admin/Reference';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -62,6 +65,9 @@ import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendanceP
 import ReportOAS from '../components/admin/reports/RefOAS';
 import BadgeOrderView from '../components/admin/BadgeOrder';
 import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
+import AdminTools from '../components/admin/AdminTools';
+
+
 
 // ───────────────────────────────────────────────────────────
 // 1. ONE registry of pages → permission keys
@@ -126,6 +132,7 @@ const PAGE_DEFINITIONS = {
     'user-management': { component: UserManagementView, permission: 'userAdmin', passProps: (c) => ({ activeGroupId: c.activeGroupId, userInfo: c.userInfo }) },
     'group-management': { component: GroupManagementView, permission: 'groupAdmin' },
     'reports': { component: Reports, permission: 'reportParentEmails' /* just to gate the menu page */ },
+	'people': { component: Members, permission: 'youthCRUD' },
     'report-parent-emails': { component: ReportParentEmails, permission: 'reportParentEmails', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
     'report-youth-by-section': { component: ReportYouthBySection, permission: 'reportYouthBySection', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'report-age': { component: ReportAge, permission: 'reportAge', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
@@ -141,7 +148,9 @@ const PAGE_DEFINITIONS = {
     'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'badge-order': { component: BadgeOrder, permission: 'badgeOrder', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
-
+    'messages-group': { component: Messages, permission: 'smsSend' },
+    'Ref-group': { component: Reference, permission: 'settings' },
+	'admin': { component: AdminTools, permission: 'settings' },
     // add more pages here…
 };
 
