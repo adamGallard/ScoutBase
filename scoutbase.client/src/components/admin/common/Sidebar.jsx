@@ -50,7 +50,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             expandable: true,
             children: [
                 (allow('parentCRUD') || allow('youthCRUD')) && { key: 'registrations', label: 'Registrations', icon: <ClipboardCheck size={16} /> },
-                allow('parentCRUD') && { key: 'add-parent', label: 'Parents', icon: <UserPlus size={16} /> },
+                allow('parentCRUD') && { key: 'add-parent', label: 'Adults', icon: <UserPlus size={16} /> },
                 allow('youthCRUD') && { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
                 allow('patrolCRUD') && { key: 'patrol-management', label: 'Patrols', icon: <Flag size={16} /> },
             ].filter(Boolean),
@@ -67,7 +67,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('reportAttendancePeriod') && { key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
                 allow('inspection') && { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
                 allow('badgeOrder') && { key: 'badge-order', label: 'Badge Order', icon: <Award size={16} /> }, 
-                allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
+                allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Adult Emails', icon: <Mail size={16} /> },
                 allow('reportYouthBySection') && { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 allow('reportAge') && { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
                 allow('reportLinkingHistory') && { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },

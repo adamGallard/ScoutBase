@@ -24,6 +24,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
     const [deletedMessage, setDeletedMessage] = useState('');
     const [selectedParent, setSelectedParent] = useState(null);
     const [showSkillsModal, setShowSkillsModal] = useState(false);
+    const [roleFilter, setRoleFilter] = useState('');
 
     const fetchParents = useCallback(async () => {
         const { data, error } = await supabase
@@ -211,8 +212,11 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
 
     const sortedFiltered = [...parents]
         .filter(p =>
-            (p.name?.toLowerCase() || '').includes(filter) ||
-            (p.email?.toLowerCase() || '').includes(filter)
+            (!roleFilter || (p.role?.toLowerCase() === roleFilter.toLowerCase())) &&
+            (
+                (p.name?.toLowerCase() || '').includes(filter) ||
+                (p.email?.toLowerCase() || '').includes(filter)
+            )
         )
         .sort((a, b) => a.name.localeCompare(b.name));
 
@@ -223,7 +227,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [filter]);
+    }, [filter], roleFilter);
 
 
     const openSkillsModal = (parent) => {
@@ -235,15 +239,51 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
         <div className="content-box">
             <PageTitle>
                 <UserPlus size={25} style={{ marginRight: "0.5rem", verticalAlign: "middle" }} />
-                Parent Management</PageTitle>
+                Adult Management</PageTitle>
 
-            <input
-                type="text"
-                placeholder="Search"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value.toLowerCase())}
-                style={{ marginBottom: '1rem', padding: '0.5rem', border: '1px solid #ccc', borderRadius: '6px' }}
-            />
+            <div
+                style={{
+                    display: 'flex',
+                    gap: '0.75rem',
+                    alignItems: 'center',
+                    marginBottom: '1rem',
+                    flexWrap: 'wrap',
+                }}
+            >
+                <input
+                    type="text"
+                    placeholder="Search"
+                    value={filter}
+                    onChange={e => setFilter(e.target.value.toLowerCase())}
+                    style={{
+                        padding: '0.4rem 0.75rem',
+                        border: '1px solid #ccc',
+                        borderRadius: 6,
+                        width: 160,
+                        fontSize: '1rem',
+                    }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', fontSize: '1rem' }}>
+                    <span style={{ marginRight: 4 }}>Role:</span>
+                    <select
+                        value={roleFilter}
+                        onChange={e => setRoleFilter(e.target.value)}
+                        style={{
+                            padding: '0.4rem 0.75rem',
+                            borderRadius: 6,
+                            border: '1px solid #ccc',
+                            width: 160,
+                            fontSize: '1rem',
+                        }}
+                    >
+                        <option value="">All</option>
+                        <option value="parent">Parent</option>
+                        <option value="leader">Leader</option>
+                        <option value="parent_helper">Parent Helper</option>
+                        <option value="committee">Committee</option>
+                    </select>
+                </label>
+            </div>
             {deletedMessage && (
                 <div style={{
                     backgroundColor: '#d4edda',
