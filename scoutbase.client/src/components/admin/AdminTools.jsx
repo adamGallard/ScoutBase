@@ -5,7 +5,8 @@ import {
     Settings,
     FolderSymlink,
     MapPin,
-    FileText
+    FileText, IdCardLanyard 
+
 } from 'lucide-react';
 import { PageTitle } from '@/components/common/SharedStyles';
 
@@ -28,11 +29,11 @@ const adminTools = [
         icon: <FolderSymlink size={18} />,
         description: 'Add and manage quick-access links for parents on the sign-in page. Control the titles, URLs, and descriptions of resources shown to families, making it easy to share forms, calendars, or important information.'
     },
-    {
-        path: 'group-management',
-        label: 'Groups',
-        icon: <MapPin size={18} />,
-        description: 'View and manage all Scout groups in the system. Add new groups, edit group names, or remove groups when necessary. Super Admin access is required for changes.'
+     {
+        path: 'group-roles',
+        label: 'Group Roles',
+        icon: <IdCardLanyard size={18} />,
+        description: 'Manage the list of available adult and leader roles for your group. Add, edit, or remove roles to keep your team structure up to date.'
     },
     {
         path: 'audit-log',
@@ -40,6 +41,7 @@ const adminTools = [
         icon: <FileText size={18} />,
         description: 'Review a full audit log of all admin activity and changes in the database. Track edits, deletions, user logins, and data exports for compliance and transparency.'
     }
+
 ];
 
 export default function AdminTools() {

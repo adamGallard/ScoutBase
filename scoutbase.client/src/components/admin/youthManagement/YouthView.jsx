@@ -489,7 +489,7 @@ export default function YouthView({ groupId, userInfo }) {
 
 
 										{y.membership_stage === 'retired' ? (
-											<button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth">
+												<button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth" style={{ color: '#C00' }}>
 												<Trash size={16} />
 											</button>
 										) : (

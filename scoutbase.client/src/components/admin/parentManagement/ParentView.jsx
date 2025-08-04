@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { Pencil, Trash, Plus, Link, Key, Check, X, UserPlus, Hammer } from 'lucide-react';
+import { Pencil, Trash, Plus, Link, KeyRound, Check, X, UserPlus, Lightbulb } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
 import bcrypt from 'bcryptjs';
 import { logAuditEvent } from '@/helpers/auditHelper';
@@ -502,9 +502,9 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                             });
                                         }} title="Edit parent"><Pencil size={16} /></button>
                                         <button onClick={() => onOpenLinkModal(p.id)} title="Link youth to parent"><Link size={16} /></button>
-                                        <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Hammer size={16} /></button>
-                                        <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><Key size={16} /></button>
-                                        <button onClick={() => deleteParent(p.id)} title="Delete parent"><Trash size={16} /></button>
+                                            <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Lightbulb size={16} /></button>
+                                            <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><KeyRound size={16} /></button>
+                                            <button onClick={() => deleteParent(p.id)} title="Delete parent" style={{ color: '#C00' }}><Trash size={16} /></button>
                                     </>
                                 )}
                             </td>

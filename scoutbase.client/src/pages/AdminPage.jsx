@@ -66,7 +66,7 @@ import ReportOAS from '../components/admin/reports/RefOAS';
 import BadgeOrderView from '../components/admin/BadgeOrder';
 import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
 import AdminTools from '../components/admin/AdminTools';
-
+import GroupRoles from '../components/admin/GroupRoles';
 
 
 // ───────────────────────────────────────────────────────────
@@ -150,7 +150,8 @@ const PAGE_DEFINITIONS = {
     'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'messages-group': { component: Messages, permission: 'smsSend' },
     'Ref-group': { component: Reference, permission: 'settings' },
-	'admin': { component: AdminTools, permission: 'settings' },
+    'admin': { component: AdminTools, permission: 'settings' },
+    'group-roles': { component: GroupRoles, permission: 'groupRoles' },
     // add more pages here…
 };
 
@@ -243,7 +244,7 @@ export default function AdminPage() {
     const renderContent = () => {
         if (userLoading || !userInfo) return <p>Loading user info…</p>;
         if (!activeGroupId) return <p>Loading group data…</p>;
-
+        
         // 1. Dashboard fall‑throughs first
         if (!subPath || subPath === 'admindashboard') {
             if (userInfo.role === 'Super Admin')

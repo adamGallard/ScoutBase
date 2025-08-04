@@ -15,7 +15,7 @@ export const roles = [
 /* ────────────────────────────────────────────────────────── */
 const rolePermissions = {
     /* governance only */
-    'Super Admin': ['groupAdmin', 'userAdmin', 'auditLog'],
+    'Super Admin': ['groupAdmin', 'userAdmin', 'auditLog', 'groupRoles'],
 
     /* group level */
     'Group Leader': [
@@ -45,6 +45,7 @@ const rolePermissions = {
         'badgeOrder',
         'reportYouthProjection',
         'reportAttendanceAdult',
+        'groupRoles'
     ],
 
     /* section level */

@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown,Calendar
+    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard
 } from 'lucide-react';
 import { SidebarButton } from '@/components/common/SharedStyles';
 
@@ -38,7 +38,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             s.has(key) ? s.delete(key) : s.add(key);
             return s;
         });
-
+    
     /** ------------ NAV DEFINITIONS ------------ **/
     const navItems = [
         { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
@@ -103,12 +103,14 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('oasCRUD') && { key: 'oas-ref', label: 'OAS', icon: <Tent size={16} /> },
             ].filter(Boolean),
         },
+
         /* 🔐  Admin Tools */
         {
             key: 'admin',
             label: 'Admin Tools',
             icon: <Shield size={16} />,
             expandable: true,
+            
             children: [
                 /* Users / Settings (GL + up) */
                 allow('userAdmin') && { key: 'user-management', label: 'Users', icon: <User size={16} /> },
@@ -116,18 +118,20 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
 
                 /* Parent Links editable if group settings perm */
                 allow('settings') && { key: 'parent-header-links', label: 'Parent Links', icon: <FolderSymlink size={16} /> },
-
+                
                 /* Governance (Super Admin only) */
                 allow('groupAdmin') && { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
+                allow('groupRoles') && { key: 'group-roles', label: 'Group Roles', icon: <IdCardLanyard size={16} /> }, 
                 allow('auditLog') && { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> },
             ].filter(Boolean),
         },
-
+        
         { key: 'logout', label: 'Logout', icon: <LogOut size={16} /> },
     ].filter(Boolean);
 
     /** ------------ RENDER ------------ **/
     return (
+        
         <div
             style={{
                 width: collapsed ? '60px' : '200px',
