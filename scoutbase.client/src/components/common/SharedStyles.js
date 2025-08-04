@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 
 // Existing constants remain untouched
 
@@ -715,4 +715,44 @@ export const TabButton = styled.button`
   color: ${({ isActive }) => (isActive ? '#0F5BA4' : '#333')};
 `;
 
+export const SidebarButton = styled.button`
+  background: none;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  padding: 0.75rem 1rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: #333;
+  transition: background 0.2s, color 0.2s;
 
+  &:hover {
+    background: #e6f2ff;
+    color: #0F5BA4;
+  }
+
+  ${({ $selected }) =>
+        $selected &&
+        css`
+      background: #0F5BA4 !important;
+      color: #fff !important;
+      font-weight: 500;
+
+      /* Ensure hover doesn't override selected style */
+      &:hover {
+        background: #0F5BA4 !important;
+        color: #fff !important;
+      }
+    `}
+
+  ${({ $collapsed }) =>
+        $collapsed &&
+        css`
+      justify-content: center;
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    `}
+`;

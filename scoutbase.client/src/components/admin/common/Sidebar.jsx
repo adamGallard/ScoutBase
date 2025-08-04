@@ -7,6 +7,7 @@ import {
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
     MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown,Calendar
 } from 'lucide-react';
+import { SidebarButton } from '@/components/common/SharedStyles';
 
 import { can } from '@/utils/roleUtils';
 
@@ -25,7 +26,7 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
-export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
+export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin, selectedKey }) {
     const [collapsed, setCollapsed] = useState(false);
     const [expandedSections, setExpandedSections] = useState(new Set());
 
@@ -146,12 +147,13 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
                 {navItems.map(item => (
                     <li key={item.key} style={{ width: '100%' }}>
-                        <button
+                        <SidebarButton
+                            $selected={selectedKey === item.key}
+                            $collapsed={collapsed}
                             onClick={() => {
                                 if (item.expandable) toggleSection(item.key);
                                 else onNavigate(item.key);
                             }}
-                            style={btnStyle}
                         >
                             <span>{item.icon}</span>
                             {!collapsed && <span>{item.label}</span>}
@@ -160,17 +162,20 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                                     ? <ChevronDown size={16} />
                                     : <ChevronRight size={16} />
                             )}
-                        </button>
+                            </SidebarButton>
 
                         {/* Child list */}
                         {!collapsed && item.expandable && expandedSections.has(item.key) && (
                             <ul style={{ listStyle: 'none', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                                 {item.children.map(child => (
                                     <li key={child.key}>
-                                        <button onClick={() => onNavigate(child.key)} style={btnStyle}>
+                                        <SidebarButton
+                                            $selected={selectedKey === child.key}
+                                            $collapsed={collapsed}
+                                            onClick={() => onNavigate(child.key)}>
                                             <span>{child.icon}</span>
                                             {!collapsed && <span>{child.label}</span>}
-                                        </button>
+                                        </SidebarButton>
                                     </li>
                                 ))}
                             </ul>

@@ -25,6 +25,12 @@ import { getISODateInTZ } from '@/utils/dateUtils'
 const codeToSectionLabel = code =>
 	sections.find(s => s.code === code)?.label ?? code;
 
+function toProperCase(str) {
+	if (!str) return '';
+	return str
+		.replace(/_/g, ' ')                     // Replace underscores with spaces
+		.replace(/\b\w/g, l => l.toUpperCase()); // Capitalise first letter of each word
+}
 export default function YouthAttendancePage() {
 	const navigate = useNavigate();
 	const { state, search } = useLocation();
@@ -46,8 +52,28 @@ export default function YouthAttendancePage() {
 	const [sectionFilter, setSectionFilter] = useState('');
 	const [selectedMember, setSelectedMember] = useState(null);
 	const [loading, setLoading] = useState(false);
-	
+	const [adultRoles, setAdultRoles] = useState([]);
+	const [rolesLoading, setRolesLoading] = useState(true);
+	const roleObj = adultRoles.find(r => r.code === parent.role_code);
 
+	useEffect(() => {
+		async function loadRoles() {
+			setRolesLoading(true);
+			const { data, error } = await supabase
+				.from('adult_roles')
+				.select('code, title, role_group, section, abbreviation');
+			if (!error && data) setAdultRoles(data);
+			setRolesLoading(false);
+		}
+		loadRoles();
+	}, []);
+
+	const nonParentRoleCodes = adultRoles
+		.filter(r => r.role_group !== 'parent')
+		.map(r => r.code);
+
+	const codeToAdultRoleTitle = (code) =>
+		adultRoles.find(r => r.code === code)?.title ?? code;
 	// If no parent or groupId, redirect to login
 	useEffect(() => {
 		if (!parent || !groupId) {
@@ -67,27 +93,24 @@ export default function YouthAttendancePage() {
 			setYouthList(yl);
 			setLatestStatusMap(statusMap);
 
+			// Determine which roles are non-parent
+			const nonParentRoleCodes = adultRoles
+				.filter(r => r.role_group !== 'parent')
+				.map(r => r.code);
+
 			// Prepare helper roles
 			let roles = [];
-			if (parent.role === 'leader') {
+			if (parent.role_code && nonParentRoleCodes.includes(parent.role_code)) {
 				roles = [{
-					id: `{parent.id}`,
-					parentId: parent.id, 
+					id: parent.id,
+					parentId: parent.id,
 					type: 'helper',
 					name: parent.name,
-					roleLabel: 'Leader',
-				}];
-			} else if (parent.role === 'parent_helper') {
-				roles = [{
-					id: `{parent.id}`,
-					parentId: parent.id, 
-					type: 'helper',
-					name: parent.name,
-					roleLabel: 'Parent Helper',
+					roleLabel: codeToAdultRoleTitle(parent.role_code),
+					roleGroup: roleObj.role_group,
 				}];
 			}
 			setHelperRoles(roles);
-
 
 			// Fetch latest helper attendance
 			const helperMap = await fetchLatestHelperAttendance(parent.id, groupId);
@@ -95,7 +118,7 @@ export default function YouthAttendancePage() {
 
 			setLoading(false);
 		})();
-	}, [parent, groupId]);
+	}, [parent, groupId, adultRoles]);
 
 
 	// Handle sign-in/out action
@@ -249,6 +272,7 @@ export default function YouthAttendancePage() {
 									{m.roleLabel && (
 										<div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
 											{m.roleLabel}
+										
 										</div>
 									)}
 								</div>
@@ -327,7 +351,7 @@ export default function YouthAttendancePage() {
 					) : (
 							<>
 								{renderMemberGroup({
-									label: "Leader or Parent Helper",
+									label: toProperCase(helperRoles[0]?.roleGroup) || "Helper",
 									members: helperRoles,
 									getStatus: h => helperStatusMap[h.parentId],
 									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'

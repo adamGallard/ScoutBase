@@ -2,27 +2,14 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { RefreshCcw, Download, CalendarCheck, ChevronUp, ChevronDown } from 'lucide-react';
 import { AdminTable, PageTitle } from '@/components/common/SharedStyles';
-import { sections } from '@/components/common/Lookups.js';
-import { getTodayDate } from '@/utils/dateUtils.js';
 
-const codeToLabel = code => sections.find(s => s.code === code)?.label ?? (code || '—');
-
-const ADULT_ROLES = [
-    { code: 'leader', label: 'Leader' },
-    { code: 'parent_helper', label: 'Parent Helper' },
-    { code: 'committee', label: 'Committee' },
-    { code: 'parent', label: 'Parent (Unassigned)' }
-];
-
-function formatTimeWithDate(timestamp, eventDate) {
-    if (!timestamp) return '';
-    const dt = new Date(timestamp);
-    const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const tsDate = dt.toISOString().slice(0, 10);
-    if (!eventDate || tsDate === eventDate) {
-        return timeStr;
-    }
-    return `${dt.toLocaleDateString()} ${timeStr}`;
+function toProperCase(str) {
+    if (!str) return '';
+    return str
+        .toLowerCase()
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
 }
 
 export default function ReportHelperAttendance({
@@ -38,6 +25,23 @@ export default function ReportHelperAttendance({
     const [roleFilter, setRoleFilter] = useState('');
     const [sortField, setSortField] = useState('name');
     const [sortDirection, setSortDirection] = useState('asc');
+    const [adultRoles, setAdultRoles] = useState([]);
+    const uniqueRoleGroups = [
+        ...new Set(adultRoles.map(r => r.role_group).filter(Boolean))
+    ];
+
+    // Fetch adult roles from Supabase
+    useEffect(() => {
+        supabase
+            .from('adult_roles')
+            .select('*')
+            .then(({ data, error }) => {
+                if (!error) setAdultRoles(data || []);
+            });
+    }, []);
+
+    // Helper for label
+    const codeToRole = code => adultRoles.find(r => r.code === code);
 
     // Fetch attendance records for selected date
     useEffect(() => {
@@ -46,8 +50,9 @@ export default function ReportHelperAttendance({
             .from('helper_attendance')
             .select(`
                 *,
-                parent:parent_id(id, name, role),
+                parent:parent_id(id, name, role_code),
                 signer:signed_by(id, name)
+                adult_role:parent_id(role_code)
             `)
             .eq('group_id', activeGroupId)
             .eq('event_date', selectedDate)
@@ -77,40 +82,44 @@ export default function ReportHelperAttendance({
             if (entry.action === 'signed out') byParent[id].signOut = entry;
         });
 
-        // Apply filters
+        // Apply filters (from role and section on role)
         return Object.values(byParent)
             .filter(row => {
-                const matchesSection = !sectionFilter || row.parent.section === sectionFilter;
-                const matchesRole = !roleFilter || row.parent.role === roleFilter;
+                const role = codeToRole(row.parent.role_code);
+                const roleSection = role?.section || '';
+                const matchesSection = !sectionFilter || roleSection === sectionFilter;
+                const matchesRole = !roleFilter || codeToRole(row.parent.role_code)?.role_group === roleFilter;
                 return matchesSection && matchesRole;
             });
-    }, [attendance, sectionFilter, roleFilter]);
+    }, [attendance, sectionFilter, roleFilter, adultRoles]);
 
-    // Sorting
+    // Sorting (by name, role label, or section label)
     const sorted = useMemo(() => {
         if (!sortField) return rows;
         return [...rows].sort((a, b) => {
+            const aRole = codeToRole(a.parent.role_code);
+            const bRole = codeToRole(b.parent.role_code);
             const aVal =
                 sortField === 'name'
                     ? (a.parent.name || '').toLowerCase()
                     : sortField === 'role'
-                        ? (a.parent.role || '')
+                        ? (aRole?.label || '')
                         : sortField === 'section'
-                            ? (a.parent.section || '')
+                            ? (aRole?.section || '')
                             : '';
             const bVal =
                 sortField === 'name'
                     ? (b.parent.name || '').toLowerCase()
                     : sortField === 'role'
-                        ? (b.parent.role || '')
+                        ? (bRole?.label || '')
                         : sortField === 'section'
-                            ? (b.parent.section || '')
+                            ? (bRole?.section || '')
                             : '';
             if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
             if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
             return 0;
         });
-    }, [rows, sortField, sortDirection]);
+    }, [rows, sortField, sortDirection, adultRoles]);
 
     const handleSort = field => {
         if (sortField === field) {
@@ -121,20 +130,28 @@ export default function ReportHelperAttendance({
         }
     };
 
+    // For filter dropdown: sections from adultRoles, deduplicated and propercased
+    const uniqueSections = [
+        ...new Set(adultRoles.map(r => r.section).filter(Boolean))
+    ];
+
     const exportCSV = () => {
         const dataRows = [
             ['Name', 'Role', 'Section', 'Sign In Time', 'Signed In By', 'Sign In Comment', 'Sign Out Time', 'Signed Out By', 'Sign Out Comment'],
-            ...sorted.map(row => [
-                row.parent.name,
-                ADULT_ROLES.find(r => r.code === row.parent.role)?.label ?? row.parent.role,
-                codeToLabel(row.parent.section),
-                row.signIn ? new Date(row.signIn.timestamp).toLocaleString() : '',
-                row.signIn?.signer?.name || '',
-                row.signIn?.comment || '',
-                row.signOut ? new Date(row.signOut.timestamp).toLocaleString() : '',
-                row.signOut?.signer?.name || '',
-                row.signOut?.comment || ''
-            ])
+            ...sorted.map(row => {
+                const role = codeToRole(row.parent.role_code);
+                return [
+                    row.parent.name,
+                    toProperCase(role?.label),
+                    toProperCase(role?.section),
+                    row.signIn ? new Date(row.signIn.timestamp).toLocaleString() : '',
+                    row.signIn?.signer?.name || '',
+                    row.signIn?.comment || '',
+                    row.signOut ? new Date(row.signOut.timestamp).toLocaleString() : '',
+                    row.signOut?.signer?.name || '',
+                    row.signOut?.comment || ''
+                ];
+            })
         ];
         const csvContent = 'data:text/csv;charset=utf-8,' + dataRows.map(e => e.join(',')).join('\n');
         const encodedUri = encodeURI(csvContent);
@@ -145,6 +162,17 @@ export default function ReportHelperAttendance({
         link.click();
         document.body.removeChild(link);
     };
+
+    function formatTimeWithDate(timestamp, eventDate) {
+        if (!timestamp) return '';
+        const dt = new Date(timestamp);
+        const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const tsDate = dt.toISOString().slice(0, 10);
+        if (!eventDate || tsDate === eventDate) {
+            return timeStr;
+        }
+        return `${dt.toLocaleDateString()} ${timeStr}`;
+    }
 
     return (
         <div className="content-box">
@@ -158,20 +186,19 @@ export default function ReportHelperAttendance({
                     Section:{' '}
                     <select value={sectionFilter} onChange={e => setSectionFilter(e.target.value)}>
                         <option value="">All</option>
-                        {sections.map(({ code, label }) => (
-                            <option key={code} value={code}>{label}</option>
+                        {uniqueSections.map(section => (
+                            <option key={section} value={section}>{toProperCase(section)}</option>
                         ))}
-                        <option value="group">Group</option>
                     </select>
                 </label>
-                <label>
-                    Role:{' '}
-                    <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
-                        <option value="">All</option>
-                        {ADULT_ROLES.map(({ code, label }) => (
-                            <option key={code} value={code}>{label}</option>
-                        ))}
-                    </select>
+<label>
+    Role:{' '}
+    <select value={roleFilter} onChange={e => setRoleFilter(e.target.value)}>
+        <option value="">All</option>
+        {uniqueRoleGroups.map(group => (
+            <option key={group} value={group}>{toProperCase(group)}</option>
+        ))}
+    </select>
                 </label>
                 <label>
                     Date:{' '}
@@ -212,27 +239,30 @@ export default function ReportHelperAttendance({
                         </tr>
                     </thead>
                     <tbody>
-                        {sorted.map(row => (
-                            <tr key={row.parent.id}>
-                                <td>{row.parent.name}</td>
-                                <td>{ADULT_ROLES.find(r => r.code === row.parent.role)?.label ?? row.parent.role}</td>
-                                <td>{codeToLabel(row.parent.section)}</td>
-                                <td>
-                                    {row.signIn
-                                        ? formatTimeWithDate(row.signIn.timestamp, selectedDate)
-                                        : '-'}
-                                </td>
-                                <td>{row.signIn?.signer?.name || ''}</td>
-                                <td>{row.signIn?.comment || ''}</td>
-                                <td>
-                                    {row.signOut
-                                        ? formatTimeWithDate(row.signOut.timestamp, selectedDate)
-                                        : '-'}
-                                </td>
-                                <td>{row.signOut?.signer?.name || ''}</td>
-                                <td>{row.signOut?.comment || ''}</td>
-                            </tr>
-                        ))}
+                        {sorted.map(row => {
+                            const role = codeToRole(row.parent.role_code);
+                            return (
+                                <tr key={row.parent.id}>
+                                    <td>{row.parent.name}</td>
+                                    <td>{toProperCase(role?.title || row.parent.role_code || '')}</td>
+                                    <td>{toProperCase(role?.section)}</td>
+                                    <td>
+                                        {row.signIn
+                                            ? formatTimeWithDate(row.signIn.timestamp, selectedDate)
+                                            : '-'}
+                                    </td>
+                                    <td>{row.signIn?.signer?.name || ''}</td>
+                                    <td>{row.signIn?.comment || ''}</td>
+                                    <td>
+                                        {row.signOut
+                                            ? formatTimeWithDate(row.signOut.timestamp, selectedDate)
+                                            : '-'}
+                                    </td>
+                                    <td>{row.signOut?.signer?.name || ''}</td>
+                                    <td>{row.signOut?.comment || ''}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </AdminTable>
             </div>

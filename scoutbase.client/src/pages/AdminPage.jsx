@@ -63,7 +63,6 @@ import ReportOAS from '../components/admin/reports/RefOAS';
 import BadgeOrderView from '../components/admin/BadgeOrder';
 import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
 
-
 // ───────────────────────────────────────────────────────────
 // 1. ONE registry of pages → permission keys
 //    Add rows here instead of inside the switch‑case.
@@ -317,6 +316,7 @@ export default function AdminPage() {
                     <Sidebar
                         onNavigate={(path) => navigate(`/admin/${path}`)}
                         userInfo={userInfo}
+                        selectedKey={subPath || 'admindashboard'} 
                         actingAsGroupId={actingAsGroupId}
                         actingAsAdmin={actingAsAdmin}
                     />
