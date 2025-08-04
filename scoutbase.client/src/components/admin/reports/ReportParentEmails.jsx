@@ -5,32 +5,7 @@ import { PrimaryButton, PageTitle } from '@/components/common/SharedStyles';
 import { Mail } from 'lucide-react';
 import { sections } from '@/components/common/Lookups.js';
 
-const sectionMap = Object.fromEntries(sections.map(s => [s.code, s.label]));
-const roleOptions = [
-    { value: '', label: 'All Roles' },
-    { value: 'parent', label: 'Parent' },
-    { value: 'leader', label: 'Leader' },
-    { value: 'parent_helper', label: 'Parent Helper' },
-    { value: 'committee', label: 'Committee' }
-];
-
-const sectionOptions = [
-    { value: '', label: 'All Sections' },
-    ...sections
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map(s => ({ value: s.code, label: s.label }))
-];
-
-function formatRole(role) {
-    if (role === 'leader') return 'Leader';
-    if (role === 'parent_helper') return 'Parent Helper';
-    if (role === 'committee') return 'Committee';
-    return 'Parent';
-}
-
 function uniqueArray(arr) {
-    // Removes falsy and duplicates
     return [...new Set(arr.filter(Boolean))];
 }
 
@@ -38,7 +13,9 @@ export default function ReportParentEmails({ groupId }) {
     const [adults, setAdults] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // Filtering
+    // Filters
+    const [roleOptions, setRoleOptions] = useState([]);
+    const [sectionOptions, setSectionOptions] = useState([]);
     const [selectedRoles, setSelectedRoles] = useState(['']);
     const [selectedSections, setSelectedSections] = useState(['']);
     const [primaryOnly, setPrimaryOnly] = useState(false);
@@ -51,19 +28,52 @@ export default function ReportParentEmails({ groupId }) {
 
     // Email selection
     const [selectedIds, setSelectedIds] = useState([]);
-
-    // Clipboard
     const [copyStatus, setCopyStatus] = useState('');
+
+    useEffect(() => {
+        async function fetchFilters() {
+            // Get all role_groups from adult_roles
+            const { data: roles } = await supabase
+                .from('adult_roles')
+                .select('role_group')
+                .neq('role_group', null);
+
+            const groups = Array.from(
+                new Set((roles || []).map(r => r.role_group))
+            ).sort();
+
+            setRoleOptions([
+                { value: '', label: 'All Role Groups' },
+                ...groups.map(g => ({
+                    value: g,
+                    label: g
+                }))
+            ]);
+
+            setSectionOptions([
+                { value: '', label: 'All Sections' },
+                ...sections
+                    .slice()
+                    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+                    .map(s => ({ value: s.code, label: s.label }))
+            ]);
+        }
+        fetchFilters();
+    }, []);
 
     // Fetch all adults & youth relationships
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-
-            // 1. Adults (parents, leaders, etc.)
+            // Join parent to adult_roles
             const { data: adultsData, error: adultErr } = await supabase
                 .from('parent')
-                .select('id, name, email, role, group_id')
+                .select(`
+                    id, name, email, group_id, role_code,
+                    adult_roles:role_code (
+                        code, title, section, role_group
+                    )
+                `)
                 .eq('group_id', groupId);
 
             if (adultErr) {
@@ -108,10 +118,12 @@ export default function ReportParentEmails({ groupId }) {
                 }
             }
 
-            // Compose adults array for display
             setAdults(
-                adultsData.map(a => ({
+                (adultsData || []).map(a => ({
                     ...a,
+                    roleTitle: a.adult_roles?.title || '',
+                    roleSection: a.adult_roles?.section || '',
+                    roleGroup: a.adult_roles?.role_group || '',
                     youth: linksByParent[a.id] || []
                 }))
             );
@@ -143,29 +155,27 @@ export default function ReportParentEmails({ groupId }) {
         // 3. Filter by roles
         if (
             selectedRoles.length > 0 &&
-            !selectedRoles.includes('') && // '' means "All"
-            !selectedRoles.includes((a.role || '').toLowerCase())
-        ) {
-            // If this adult is a leader/committee/parent_helper with a primary youth, also show them for Parent
-            if (
-                selectedRoles.includes('parent') &&
-                a.youth.some(y => y.is_primary)
-            ) {
-                // Show
-            } else {
-                return false;
-            }
-        }
-
-        // 4. Filter by sections: at least one primary youth in any selected section
-        if (
-            selectedSections.length > 0 &&
-            !selectedSections.includes('') &&
-            !a.youth.some(
-                y => y.is_primary && selectedSections.includes(y.section)
-            )
+            !selectedRoles.includes('') &&
+            !selectedRoles.includes(a.roleGroup)
         ) {
             return false;
+        }
+
+        // 4. Filter by sections (from adult_roles)
+        if (
+            selectedSections.length > 0 &&
+            !selectedSections.includes('')
+        ) {
+            // If any of their linked youth's section matches (primary only if required)
+            const youthMatches = a.youth.some(
+                y => (!primaryOnly || y.is_primary) && selectedSections.includes(y.section)
+            );
+            // Or if their own section (from their role) matches
+            const roleSectionMatches = selectedSections.includes(a.roleSection);
+
+            if (!youthMatches && !roleSectionMatches) {
+                return false;
+            }
         }
 
         // 5. Show only selected
@@ -190,16 +200,16 @@ export default function ReportParentEmails({ groupId }) {
                 bval = b.email || '';
                 break;
             case 'Role':
-                aval = formatRole(a.role || '');
-                bval = formatRole(b.role || '');
+                aval = a.roleTitle || '';
+                bval = b.roleTitle || '';
+                break;
+            case 'Section':
+                aval = sections.find(s => s.code === a.roleSection)?.label || a.roleSection || '';
+                bval = sections.find(s => s.code === b.roleSection)?.label || b.roleSection || '';
                 break;
             case 'LinkedYouth':
                 aval = (a.youth.filter(y => y.is_primary).map(y => y.name).join(', ') || '').toLowerCase();
                 bval = (b.youth.filter(y => y.is_primary).map(y => y.name).join(', ') || '').toLowerCase();
-                break;
-            case 'Section':
-                aval = (a.youth.filter(y => y.is_primary).map(y => sectionMap[y.section]).join(', ') || '');
-                bval = (b.youth.filter(y => y.is_primary).map(y => sectionMap[y.section]).join(', ') || '');
                 break;
             case 'Primary':
                 aval = a.youth.some(y => y.is_primary) ? 'Yes' : 'No';
@@ -220,8 +230,9 @@ export default function ReportParentEmails({ groupId }) {
         return {
             Name: a.name,
             Email: a.email,
-            Role: formatRole(a.role),
-            LinkedYouth: primaryYouth.map(y => `${y.name} (${sectionMap[y.section] || y.section})`).join(', '),
+            Role: a.roleTitle,
+            Section: sections.find(s => s.code === a.roleSection)?.label || a.roleSection || '',
+            LinkedYouth: primaryYouth.map(y => `${y.name} (${sections.find(s => s.code === y.section)?.label || y.section})`).join(', '),
             Primary: primaryYouth.length > 0 ? 'Yes' : 'No'
         };
     });
@@ -254,13 +265,11 @@ export default function ReportParentEmails({ groupId }) {
     }
 
     // Multi-select for roles/sections
-    function handleMultiSelect(e, setter, options) {
+    function handleMultiSelect(e, setter) {
         let vals = Array.from(e.target.selectedOptions, opt => opt.value);
         if (vals.includes('')) {
-            // If 'All' is selected, reset to only ''
             setter(['']);
         } else if (vals.length === 0) {
-            // Prevent empty
             setter(['']);
         } else {
             setter(vals);
@@ -282,12 +291,11 @@ export default function ReportParentEmails({ groupId }) {
                     onChange={e => setSearch(e.target.value)}
                     style={{ padding: '0.4rem', borderRadius: 6, border: '1px solid #ccc', minWidth: 180 }}
                 />
-
                 <label>
                     <select
                         multiple
                         value={selectedRoles}
-                        onChange={e => handleMultiSelect(e, setSelectedRoles, roleOptions)}
+                        onChange={e => handleMultiSelect(e, setSelectedRoles)}
                         style={{ minWidth: 110, padding: 4, borderRadius: 6, border: '1px solid #ccc', height: 60 }}
                     >
                         {roleOptions.map(r =>
@@ -299,7 +307,7 @@ export default function ReportParentEmails({ groupId }) {
                     <select
                         multiple
                         value={selectedSections}
-                        onChange={e => handleMultiSelect(e, setSelectedSections, sectionOptions)}
+                        onChange={e => handleMultiSelect(e, setSelectedSections)}
                         style={{ minWidth: 110, padding: 4, borderRadius: 6, border: '1px solid #ccc', height: 60 }}
                     >
                         {sectionOptions.map(s =>
@@ -342,7 +350,7 @@ export default function ReportParentEmails({ groupId }) {
                     <thead>
                         <tr style={{ background: '#f1f5f9' }}>
                             <th style={{ padding: 8, borderBottom: '1px solid #ddd', width: 40 }}></th>
-                            {['Name', 'Email', 'Role', 'LinkedYouth', 'Primary'].map(col => (
+                            {['Name', 'Email', 'Role', 'Section', 'LinkedYouth', 'Primary'].map(col => (
                                 <th
                                     key={col}
                                     style={{
@@ -364,9 +372,9 @@ export default function ReportParentEmails({ groupId }) {
                     </thead>
                     <tbody>
                         {loading ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center' }}>Loading…</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center' }}>Loading…</td></tr>
                         ) : sorted.length === 0 ? (
-                            <tr><td colSpan={6} style={{ textAlign: 'center' }}>No matching records.</td></tr>
+                            <tr><td colSpan={7} style={{ textAlign: 'center' }}>No matching records.</td></tr>
                         ) : (
                             sorted.map(adult => {
                                 const primaryYouth = adult.youth.filter(y => y.is_primary);
@@ -381,11 +389,12 @@ export default function ReportParentEmails({ groupId }) {
                                         </td>
                                         <td style={{ padding: 8 }}>{adult.name}</td>
                                         <td style={{ padding: 8 }}>{adult.email}</td>
-                                        <td style={{ padding: 8 }}>{formatRole(adult.role)}</td>
+                                        <td style={{ padding: 8 }}>{adult.roleTitle}</td>
+                                        <td style={{ padding: 8 }}>{sections.find(s => s.code === adult.roleSection)?.label || adult.roleSection || ''}</td>
                                         <td style={{ padding: 8 }}>
                                             {primaryYouth.length
                                                 ? primaryYouth.map(y =>
-                                                    `${y.name} (${sectionMap[y.section] || y.section})`
+                                                    `${y.name} (${sections.find(s => s.code === y.section)?.label || y.section})`
                                                 ).join(', ')
                                                 : ''}
                                         </td>

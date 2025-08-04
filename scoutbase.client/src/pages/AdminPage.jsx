@@ -53,6 +53,7 @@ import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
 import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySection';
 import ReportAge from '@/components/admin/reports/ReportAge';
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
+import ReportAttendanceAdult from '@/components/admin/reports/ReportLeaderAttendance';
 import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
@@ -80,6 +81,20 @@ const PAGE_DEFINITIONS = {
             userInfo: ctx.userInfo,
         }),
     },
+    'report-attendance-adult': {
+        component: ReportAttendanceAdult,
+        permission: 'reportAttendanceAdult',   // add to roleUtils
+        passProps: (ctx) => ({
+            activeGroupId: ctx.activeGroupId,
+            selectedDate: ctx.selectedDate,
+            sectionFilter: ctx.sectionFilter,
+            onDateChange: ctx.setSelectedDate,
+            onSectionChange: ctx.setSectionFilter,
+            userInfo: ctx.userInfo,
+        }),
+    },
+
+
     'report-attendance-period': {
         component: ReportAttendancePeriod,
         permission: 'reportAttendancePeriod',  // add to roleUtils
