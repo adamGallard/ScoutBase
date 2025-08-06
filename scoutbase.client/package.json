@@ -31,7 +31,7 @@
     "react-router-dom": "^7.5.3",
     "react-swipeable": "^7.0.2",
     "recharts": "^2.15.2",
-    "resend": "^4.3.0",
+    "resend": "^4.6.0",
     "styled-components": "^6.1.17",
     "twilio": "^5.5.2",
     "uuid": "^11.1.0",
