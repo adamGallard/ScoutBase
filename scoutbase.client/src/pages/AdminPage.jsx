@@ -50,6 +50,7 @@ import RegistrationsPage from '@/components/admin/RegistrationsPage';
 import Members from '@/components/admin/Members';
 import Messages from '@/components/admin/Messages';
 import Reference from '@/components/admin/Reference';
+import HelpGroup from '@/components/admin/HelpAbout';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
@@ -67,6 +68,11 @@ import BadgeOrderView from '../components/admin/BadgeOrder';
 import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
 import AdminTools from '../components/admin/AdminTools';
 import GroupRoles from '../components/admin/GroupRoles';
+
+import ChangelogPage from '@/components/admin/help/ChangelogPage';
+import AboutPage from '@/components/admin/help/AboutPage';
+import ContactPage from '@/components/admin/help/ContactPage';
+import HelpAbout from '../components/admin/HelpAbout';
 
 
 // ───────────────────────────────────────────────────────────
@@ -150,8 +156,21 @@ const PAGE_DEFINITIONS = {
     'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'messages-group': { component: Messages, permission: 'smsSend' },
     'Ref-group': { component: Reference, permission: 'settings' },
+    'help-group': { component: HelpGroup, permission: 'settings' },
     'admin': { component: AdminTools, permission: 'settings' },
     'group-roles': { component: GroupRoles, permission: 'groupRoles' },
+    'changelog': {
+        component: ChangelogPage,
+        permission: 'settings'  // or any perm that all admins have
+    },
+    'about': {
+        component: AboutPage,
+        permission: 'settings'
+    },
+    'contact': {
+        component: ContactPage,
+        permission: 'settings'
+    },
     // add more pages here…
 };
 

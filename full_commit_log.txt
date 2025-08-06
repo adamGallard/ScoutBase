@@ -1,0 +1,206 @@
+44823172c56fcc88107b675826189ceec45bf9cd|2025-08-04|feat(admin): add Group Roles management and table, UI improvements across admin area
+57925b3f31353aabfc3329dec3980ec25f77a5ec|2025-08-04|feat: Add summary landing pages, improved descriptions, and icon summaries for admin sections
+98efae4a954e9be686ed87b7969963c2090eea94|2025-08-04|feat: Sidebar UX, dynamic reports page, adult helper roles in attendance, and UI polish - Sidebar: Fixed styling for hover and selected states; now highlights properly when active/hovered. - Sidebar: Ensured parent menu items (like Reports) can link to an overview/landing page ("All Reports") with brief descriptions, even if expandable. - YouthAttendancePage: Refactored to fetch adult helper roles and role_group directly from the adult_roles table using Supabase. - YouthAttendancePage: Adult helpers now display under a dynamic section header based on their role_group, formatted to proper case (e.g. "Leader" or "Parent Helper"). - Added utility for proper-case conversion of role_group values for user-friendly headers. - Logic improved so adults with leader/helper roles (e.g. CSL, parent_helper) are displayed correctly for sign-in, with their title and role group from the DB. - Fixed filter logic and ensured adult helpers and youth are listed and sorted correctly. - Various minor UI and code improvements per session discussion.
+dca22781360f044fb54090c16bf9bc600b616b20|2025-08-04|feat(parent-roles): add, edit, and display adult roles; improve email report filters
+38825043049c169becbb10e00ab1574a6bc9ef41|2025-08-04|feat(reports): Enhanced Adult/Parent Email Distribution List
+68ab17111abe5a695d408e12c6ed23487597e543|2025-08-04|Merge branch 'dev' of https://github.com/adamGallard/ScoutBase into dev
+cc029757889288c582b97e8014c640636f34119a|2025-08-04|feat(admin): add parent role management and enhance parent login/sign-in
+1ea14dc3cf9bc85497c0e45e037f6014f9a360df|2025-07-30|Merge branch 'master' into dev
+10074fd4c1ff9504aadf6f91d1ebcaba87439842|2025-07-30|Enhancements: Attendance clarity, parent/youth email filtering, PIN attempt lockout, and admin PIN reset
+e8c4adadc6136d7f1950ce808e663938d5427bfa|2025-07-30|update to exclude the server.js
+74c7397965320ba01bb52c570f0a1238983d5d8f|2025-07-29|feat(parent-app): Parent portal improvements (grouped youth, signers modal, swipeable calendar) (#107)
+3795915ad3fa98bc79ea9d7c459591b165ea4174|2025-07-29|feat(parent-app): Parent portal improvements (grouped youth, signers modal, swipeable calendar)
+bd9ce83158764e529d3f4c351146a7ef3d2a7ea9|2025-07-17|Dev (#101)
+f259e9cc40675b81e088738a298a859dbf5f5550|2025-07-16|Dev (#99)
+e6573534128097ada0bb18631c690135a69721b4|2025-07-13|Dev (#98)
+0cd1d1a6a7cc5a510f43cae5f909199d63d767f7|2025-06-29|Merge pull request #79 from adamGallard/dependabot/npm_and_yarn/scoutbase.client/npm_and_yarn-7048c6d959
+8f12821b9de5bdb8bc04005c210acb61ef2af7b9|2025-05-28|Merge pull request #89 from adamGallard/dev
+ef6b97a179ae7246f1dc96ce67730489886c8f3b|2025-05-28|Fixed the Badgehistory Page!
+414f4fe0ad0694d13c735dac9d3938c78e113fd1|2025-05-27|refactored the sync from terrain,
+66531fecfe6e4ddf9565c6059309f84a44835aaa|2025-05-27|Fix some visual issues on the youthview and details modal.
+a8deec39442da5aadcfdcd1e8a79294943aae099|2025-05-27|fixed the sync from Terrain
+995f188bed5cf14bc2518cea60c221b0ba8946b8|2025-05-27|Added Vercel analytics
+ab903f7a991aac58b69abe913ade07ce33ef316a|2025-05-27|Updated the Version to 1.2.7
+f9250eb899c6d05204005fdc4001543191aa995e|2025-05-27|Merge branch 'dev' of https://github.com/adamGallard/ScoutBase into dev
+9af1fc9a2b825cc8be4241dfd92f919b87c41a9a|2025-05-27|Updated the Terrain Sync logic
+1f8d262d900dbbb457769106b43b99fe5889e555|2025-05-26|Merge pull request #88 from adamGallard/dev
+271789ec80dd7d8f224451e5cbf93aa625fe94f7|2025-05-26|Merge branch 'master' into dev
+cbcaac8a6c688d4aedbf8acba665180d4a4ea5bb|2025-05-26|fixed up the parent your link modal to have drop down options
+f1e77ca76fbdfc8087fbe6a426340cca9a390689|2025-05-26|Fixed the mission action buttons on the patrol management view
+6d211b19a91b59980a7c72b99e71ab284aabd14f|2025-05-26|Fixed the missing Section in the Attendance over period
+864460b25ccc094227623b25a7a90f92d49899fe|2025-05-26|fixed the badge order and added a new view awarded badges to youth.
+81f0233a34f8e5f215cfc2cdced27a823a5e132a|2025-05-26|made changes to the order badges
+fb063a7859dc0f66986d8dae4681d56f646a193f|2025-05-26|Added patrol members from clicking on patrol name
+84751c8f4d1da5899ae8cdc1179be7be60daf247|2025-05-25|updated the badge order to show a GL view, also add the stage filter to the report youth by section
+2fdf0ba3e151efd7ed71128ee1da513bb8ab1177|2025-05-23|updated an incorrect folder name for badge order
+1d87e4b6606de77dbb20213dcf948e8fb287e2a4|2025-05-23|added a new Badge Order Page
+ea63255451802e520afc648244c0d561dde54613|2025-05-22|updated the Attendance view to have sortable headers (#87)
+7f49ad955101469c64f4b00dde5f18229296ba3a|2025-05-22|updated the Attendance view to have sortable headers
+1204617e2e568b7f8ae6b5e784320c742236e82c|2025-05-21|Merge pull request #86 from adamGallard/dev
+1a883bb2d11cc130955b215ef928f30af64b83ed|2025-05-21|Fixed a date issue with UTC time, added a OAS Ref page
+a1c8daf4404adf772d85f210eef70a01ea749647|2025-05-08|fixed up the permissions for the section leader
+b9cbabf4d6ac634781d5d4acaed3d5eedc97e4fd|2025-05-06|Deleted the old sign in page
+54d0c5fb3dc1a3c73b0a76d7e73c63f90f8a3e7f|2025-05-06|Added the SMS settings to check if enabled and if full Twilio settings are valid
+53b4891efb22aa5b908ca758ed632629bc814c09|2025-05-06|added Settings Page, updated the email page so that the setting apply
+8c1ab6bcce7e69d58e87b73e725cd81746cf7724|2025-04-29|chore(deps): bump the npm_and_yarn group across 1 directory with 2 updates
+c62c6a4c9dbaaf83321cefd08312f387e254e8e3|2025-04-29|Merge pull request #80 from adamGallard/dev
+57e3ec8887b7f59b70632a25468897fce9019904|2025-04-29|fixed the login and out, sorted some formating and moved the calendar URL to the Group table
+b2aedefcebbf926429caf0118b348d6481c1674c|2025-04-28|chore(release): v1.0.0
+2d3dc4c361e4c8ee3869c4c4780e1480cb02281d|2025-04-28|updated the filters in Email and SMS, added code for a parent calendar
+76be250407d879f533acd5990f158012ab5e19d7|2025-04-28|feat(admin): integrate rich-text editor for email composition
+e1bb22ef1d26c9acb0a5312d3416042575554cf9|2025-04-28|feat(admin): add Email Parents page with BCC and default reply-to support
+a1979ddd8a895f2e4137a319a44fb871838432b7|2025-04-28|feat(admin): add “Email Parents” page and BCC-enabled send-email API
+6d1f5b90947c07b6de65fd7cb0187658337435a7|2025-04-26|added E164 validation.
+b0fb51a53ddd0a0ddecd0d53262cc5bf3e542841|2025-04-26|Update to the api fetch
+708fb2798494f382501dab46222a263521504a27|2025-04-26|Updated the send-sms api to allow for CORS
+8ff9a3489f0628d0a2330c699e42b59d6a0cc4dc|2025-04-26|feat(admin): add MessageParentsPage for bulk SMS to parents
+2a0166679a6b95caee0f9102f30875520dc9e406|2025-04-26|feat(data-quality): show “no issues” message when all reports are empty
+ee3ab29aced4f61896b684ab16a51f1dd1350c04|2025-04-26|refactor(link-modal): display human-friendly section labels via centralized lookup
+5ce7de4c6475dd36acbdaf4bfb7a73d909416f6b|2025-04-26|feat(attendance-report): add CSV export for period report
+c29563549c52a2a1e9bb2361a2ebe9dfbecaa51c|2025-04-26|refactor(sign-in): use centralized section lookups for filter and display
+da102c1cb76ba97efb3abc055ace9db7a45044cf|2025-04-24|Add “relationship” support to parent_youth linking
+c3dfde341b2fc95a44e99360003daa8972769ea2|2025-04-23|Merge pull request #73 from adamGallard/dev
+58d5d2fde6f9dbec650c5ba83253ffd014c0a697|2025-04-23|fix(auth): prevent duplicate audit logs from useTerrainUser in React Strict Mode
+15fb0ad35ac79c5072f8e59e150fe6b4f668f8b0|2025-04-23|Merge pull request #71 from adamGallard/dev
+211906edb5e6f482cb8e740b9429e5f9dc7a2dec|2025-04-23|feat(reports): enhance Transition History Report with section + name filters and improved UX
+228bce7025250b3a370d310365f555ef79d428a5|2025-04-23|feat: enhance Age Report with sorting, filtering, and linking alerts
+f38ece9dd0d9010f8c1c5c867639f4f5b16e6186|2025-04-23|feat(dashboard): improve youth insights with section-level breakdowns and attendance filtering
+dda7266513d992372c185e358b210d76a7e8d374|2025-04-22|Merge pull request #70 from adamGallard/dev
+0922200881f0708d9bd1fcbe96c5ee29adfe2ba6|2025-04-22|feat: add filter-by-ID support to ParentView with contextual banner and delete handling
+d197427ad0c5fbf252b7859e9f62dedba9e1c8ae|2025-04-22|Merge pull request #69 from adamGallard/dev
+a892fd452d613dbf927eff5f1d3fcfe10ec38ef7|2025-04-22|fixed logging in with phone number
+1c082e8627dcd4d563ec51095a03b3d65af7eab9|2025-04-22|feat(validation): improve error handling and uniqueness for parents, youth, and patrols
+0bd8efaaf57ce1c1fa76cd25137e235bb03eae74|2025-04-22|Merge pull request #68 from adamGallard/dev
+e66d252a3d2bdf75a691b888607d61452be46d29|2025-04-22|fix(transitions): ensure youth table reflects latest transition by date
+9d605d939075c6eb76fa35e705cc568c9a16b01e|2025-04-22|Fixed the report age report section
+345e7f26d54ae9ed6bce992ce36d7a942691f592|2025-04-22|feat(patrol-management,parents): add parent comments, patrol member counts, rank badges & CSV export
+d0e2ccc4c8cc2421fb40fec21a1e664b82bccfd7|2025-04-22|Merge pull request #67 from adamGallard/dev
+fb0220a766c54969da9f4a0de04a5e246f039aef|2025-04-22|minor formating changes
+71a4751985fdc1d21806324e09d4597b855ffa4e|2025-04-21|fix(vercel): only ignore feature branches in ignoreCommand
+16d93c7fcdbae0a46b41ba369b8144ca4fcf05b7|2025-04-21|feat(contact): add intro text and update Contact Us page layout
+1e9df241ed33214ad490d4d8dcef6bbed5ea76c0|2025-04-20|Merge branch 'dev' of https://github.com/adamGallard/ScoutBase into dev
+0ea09ddc5b5c5e834d8e4a95dd0a9b806545b725|2025-04-20|feat: add Transition History Report with grouped layout and CSV export
+bc385993d8e4a0ff500166e697dcbe37db6987ee|2025-04-20|Merge pull request #48 from adamGallard/dev
+584de8e28d968543919461fe41d8aa1fc5d11351|2025-04-20|Merge pull request #47 from adamGallard/master
+15ebf5a0062136e7a26dc97064499ad6c9911dd2|2025-04-20|updated vercel.json to ignore feautre
+bbb973ac53bb0070e2de372e70cac78b7e808c9b|2025-04-20|Added Dev Build to footer, and added comments to the attendance report
+3c57379e8550d5a7325ce92d3185315ad48ceca0|2025-04-19|Merge pull request #45 from adamGallard/Dev
+ff691df0f7b7ce5c04e352481ca4621de64602dd|2025-04-19|feat: Add dynamic header link management for parent view
+05ee9b592f09853a0263252ef1e3ba86b1a9f5ba|2025-04-19|Merge pull request #44 from adamGallard/Dev
+1e66f93f6c55214ea213f6b5fc3c6a33a450c941|2025-04-19|Add resend package for contact form email
+e21050878317fa314dff13ebbc3c82f6021e9d6e|2025-04-19|Merge pull request #43 from adamGallard/Dev
+786d2c5fab43c1f3e245aa3acdfb0c4710e00424|2025-04-19|updated send email address
+e2008ff41c627b486f3ad700a13f187702cde561|2025-04-19|Merge pull request #42 from adamGallard/Dev
+d34d3b5c25defc0842d63454145d95db85599ff7|2025-04-19|moved contact.js
+09c17e474ec49ad0a5e7312a36fb0c4d4896a5a8|2025-04-19|Update Contact.jsx
+2284115f2711548437847542f3e74ed323116f83|2025-04-19|Merge pull request #41 from adamGallard/Dev
+6c9e6e902c4eae5e232403aaa8944239a4a047ff|2025-04-19|updated domain from vercel to scoutbase.app
+9dfb230c2b01eb9ee895d6c576414a94e08369ca|2025-04-19|Updated About, contact and Features page, added in a contact page
+563546bc155a8dfb6f198f7b7a6a635341c97fcb|2025-04-18|Merge pull request #40 from adamGallard/Dev
+6fc01d7b4ee7abdd860dfa1239882458466969ef|2025-04-18|Merge pull request #39 from adamGallard/master
+9e946dae794ff8b83ea99cb65df6265a59f1f4b3|2025-04-18|Merge pull request #38 from adamGallard/Dev
+d9f5019eb43b1e9b21203fecec9c56e79a42e10e|2025-04-18|Update README.md
+7f13cc8e5fdc8b2235fd0a1d2bc236da84e9b443|2025-04-18|Rename scoutbase.client/README.md to README.md
+165b35771d70f105ce58bb9b614cfed17bf420bd|2025-04-18|Delete Dockerfile
+e65d9d2b24026648d04ded9ad8e4337d8916990a|2025-04-18|Fixed the ignore of .env
+9c1174a5a701ea5fd82c70d9a2ab43d021ba7160|2025-04-18|added .env to .gitignore
+ee812966ea1125cb639bb36b63ac29abf6e45909|2025-04-18|Move Supabase credentials to .env file and secure config
+97ca7f68dd135e8804dbe47daf66d41efcd97e21|2025-04-18|Merge pull request #37 from adamGallard/Dev
+764f88944f5bb8deb4ef606a22c11a6e86e5400e|2025-04-18|more structure fixes
+4c43a796df9f5f8ffda3fd200c8651b08bfc6a90|2025-04-18|Fixed some structure names
+d21cc0b736b09870892c7abe3cc57384a5ea35d9|2025-04-18|feat(notifications): add parent-facing alerts system with section targeting and admin interface
+e8fac13647bb6fef42fa7c58341fbb19dafb4957|2025-04-17|chore(refactor): restructure component folders and update import paths
+afebb9b414c96fdd6634c75276459340ce248e71|2025-04-17|feat(patrols): add patrol linking modal with filtered youth list and real-time refresh
+532a099019345a85eb2b1a7f911272f60606fdce|2025-04-17|Version Update
+b777953484f13390cc60fbf440c477f00b7a29d3|2025-04-17|fixed conflics
+28900d4acbe3ccec892278edc4462bd419cb58d3|2025-04-17|Updated landing page
+2ebdb3cc30c83777990bffe4e78f5f3fbaf49431|2025-04-17|create a admin specific header, fixed some stlying
+061e382e1eb712b860900017e4b4a2cc579b3bba|2025-04-16|Merge pull request #30 from adamGallard/master
+649ec59e78a271d3a60ac41f1c1b45d57041c33e|2025-04-16|Update Footer.jsx
+bdbc6a3b2c287ec9784e2dc8dfe44c069a21ecba|2025-04-16|Merge pull request #29 from adamGallard/Dev
+6d477ac80c58ac4c6f103e4bc70e443189ee7a5a|2025-04-16|Update InspectionEntryForm.jsx
+c2878687bb2559fb05fb24b6afdef65e0ffeb355|2025-04-16|udpated the changelog and version
+c579ae50e8e07ec5c5591b8ec3e9d8f82c774cf8|2025-04-16|fix: resolve SheetJS vulnerabilities and correct InspectionPage import
+b5b3fa75aac34113c06e356b091e48e3293b454b|2025-04-16|feat: enhance attendance tracking and admin UI
+1dc2e43c4f320a06d256a59407bd46507e45bad1|2025-04-15|Merge pull request #27 from adamGallard/Dev
+3a1aabdb3bd5f2be78ed6ff27bfa793e4022a23c|2025-04-15|fixed some permissions and transitions update
+d85c89fa9e7b52d207d77f5266a9132090002b33|2025-04-15|Updated the roles and applied permissions
+abe067f631ce0b6ffd71f0f90120094ddd9c39f2|2025-04-15|Merge pull request #25 from adamGallard/Dev
+5a3a39311741d7bfdda767d819855da02dafb490|2025-04-15|added import youth from Excel
+5dd65d2fb9725f277e88c4943601e8cd23690911|2025-04-14|Merge pull request #24 from adamGallard/Dev
+25959c7d49efad6cfaed4064c6e107cbe1771f5f|2025-04-14|feat(admin): add QR code page for group sign-in and sidebar link
+d635c69825462d8fdff7c3b17f56b1b0b5711d5c|2025-04-14|updateing the styling of the page titles
+b1cc40f057c346438f1a75354ba283cd9536fe5b|2025-04-14|feat: add superadmin impersonation audit logging and settings UI cleanup
+719405d1d6168d6b7e1947a13b978c54151fa4e6|2025-04-14|Updated the roles, fixed up the sidebar, added a superuser dashbaord
+0c4c91b311dfbcc722531b736c33764b6cdc1ad8|2025-04-14|Merge pull request #23 from adamGallard/Dev
+7f2b789c4142bea8803781b70df559edff9025a6|2025-04-14|Merge branch 'Dev' of https://github.com/adamGallard/ScoutBase into Dev
+6fb3fd23e0a0cc9d26fae43393de843311bce1c6|2025-04-14|Merge pull request #22 from adamGallard/Dev
+84e5dac5f58a41e234a1590a1babf019e61d6d97|2025-04-14|create dashboard
+f3b184cf0f3837b4a2b863224ed740dce7c52c34|2025-04-14|Merge pull request #21 from adamGallard/master
+43b8bc786f30606f555ee7af655c9942c509ac48|2025-04-13|Rename
+34c6e0b095bc661cee972b30f900ce0b3109b2f4|2025-04-13|created Reports for Age, Parent Email and Youth by section.
+d8ea390be329ea6762005b3138256738254d63df|2025-04-12|feat(linkmodal): support marking primary parents during linking
+180be41e8329769d446da7b3c713f822f339e635|2025-04-12|Merge pull request #18 from adamGallard/Dev
+a93ef8b4e0905cd84b2b2e1c733641fddad83362|2025-04-12|last few changes to remove scoutbase.server
+bfe25b7d420470c8e899d639aee634dc22b30074|2025-04-12|removed scoutbase.server as no longer needed
+69a3e64cf052e5f9bf37c48e067f7980bee64606|2025-04-12|Allow login even when Terrain profile fetch fails; flag sync availability in localStorage
+d727dfc98c858fce2e0b5392efadec3b85f188f1|2025-04-12|Update Dockerfile
+f0da7eb4b2f879ee6325bd33b73132ebbe09f283|2025-04-12|Update Dockerfile
+062a93328d3de10e5ec2730c6787603cdd367754|2025-04-12|Create Dockerfile
+cdc0431bb2bce64bb711d2fff5c5f0949666ccb7|2025-04-12|Merge pull request #17 from adamGallard/Dev
+a6b592493de8e3bda5d8f8152bc5fb00913d32e5|2025-04-12|changes to use render
+22362bbacf0705929ccf8720c0b024382d5eee5b|2025-04-12|Major terrain sync overhaul + LinkModal improvements (search, sort, pagination)
+8ab31fe69001b73f14cc95dd9b5c23fcc3f98929|2025-04-11|feat: improve youth admin view with transitions and filters
+19f3ce20938505fcc05a185f2bd69856e9de0fa8|2025-04-11|refactor: create PrimaryButton styled-component for consistent button styling
+f482f781c1cb99dba03b9343ee257038d5c77bd8|2025-04-10|Merge pull request #14 from adamGallard/Dev
+15b6f07fd940d8679c85cd62fc0a2c962478b044|2025-04-10|feat: added forgotten PIN recovery modal with email link to primary leader; reduced top margin of footer for tighter layout
+f4cdfd16c5192b770d42056eeeb96b8a49e33ecc|2025-04-10|feat: allow parents to update their PIN via modal with secure validation
+50c8645e1c1bd101843568b27c9e7caa61b5b958|2025-04-10|Started to add pin modal
+f92d4a12a318d5170ab60489d4a8cc62b8a99154|2025-04-09|Merge pull request #4 from adamGallard/Dev
+62d695040ea7d1c6177a250fe7303898e691eb1e|2025-04-09|fix some suff
+bce172043b5b915a1234e22870ebf37a40d58151|2025-04-09|Merge pull request #3 from adamGallard/Dev
+f92a92145e9d8f01aa4286ed011a202164ad8f8e|2025-04-09|fixed signin page layout for mobiles
+f5a7a1561a550d8565979e8edcda8c9963f56f09|2025-04-09|Merge pull request #2 from adamGallard/Dev
+6802560248a2120bb16e720cd27b953ffe79efe7|2025-04-09|fixed pinmodal so it works with the site stye and also added admin to the Header
+3a4102d4cd4d5d81fa0086c7a532e73c6854bf48|2025-04-09|added the header.jsx and updated all pages to use it, also updated the pages for mobile usage.
+74f81158fc794ace26e017f782f6934c76bba495|2025-04-09|Merge pull request #1 from adamGallard/Dev
+7ecd47953f3a8140fcdc0cbfe93ce10271810dbe|2025-04-09|feat: add GroupManagementView for superadmins and restrict inactive groups from sign-in
+8033e0a3647be0306b120022910739dc2a5fc2a8|2025-04-09|Updated the page styling
+20546820368800868dbce5f98d7c2e281bf7b1be|2025-04-08|Rename YouthView.jsx to YouthView.jsx
+62acd7704e2a45f6829a27eb37ff0bec3ab71490|2025-04-08|Rename UserManagementView.jsx to UserManagementView.jsx
+a3a4bb89dad2597f64ae27f362805b87de65658f|2025-04-08|Rename Sidebar.jsx to Sidebar.jsx
+8fc2edcab6322b4f84905d85876989c2548b7758|2025-04-08|Rename PinModal.jsx to PinModal.jsx
+3c972a8f0a65537b4612226f4024e6fca88f06d0|2025-04-08|Rename ParentView.jsx to ParentView.jsx
+9a82fd896b4585b8026148ae7c5ac9be93f67db8|2025-04-08|Rename LinkModal.jsx to LinkModal.jsx
+3c1a4718db8ba042ba798cef62ac1478da200c92|2025-04-08|Rename AttendanceView.jsx to AttendanceView.jsx
+d9eba995ed745fb081ef8a7547d882b2fd4fd1e2|2025-04-08|Fix React hook dependency warnings and improve data fetching in YouthView
+c05b317241b3677bb894a9b6319fe058a7b39d21|2025-04-08|feat: major admin panel updates incl. group-based user loading, modular views, PIN fixes, and superadmin user management
+336e080408698ae2c086ab726bc331137c584503|2025-04-08|Refactor AdminPage: split into components, fix group resolution via Terrain user, improve parent/youth management with scoped group data, and fix PIN modal saving
+a5736906db62f025bea1a0b3fcef7e471699a3f9|2025-04-07|Merge branch 'master' of https://github.com/adamGallard/ScoutBase
+4031f5710151ad16bff1cf62c833216986652d9c|2025-04-07|added the vercel.json to fix routing
+21d462873be3286fdba6d327ad6c5a27216a1a0b|2025-04-07|Rename Utils to utils
+b9367c929625763a1a27acd80207868b6c83c0bc|2025-04-07|Rename SigninRouteWrapper.jsx to SignInRouteWrapper.jsx
+84ceefb91b8911908b62f9206e409866a56b01e0|2025-04-07|local Build
+d52cdab2f0db50a466028dfa673ab4c9780dfe32|2025-04-07|added a favicon and fixed signinrouting
+e9aa40a8d88bad285c1bb9b8fe614cffd01daa62|2025-04-07|moved some files arround to tidy up the structure
+672e2c7dc21809165e80c1933a05deb49b3e1008|2025-04-07|Refactor App routing and add SignInRouteWrapper component
+3d35ba1a62b624c82f115abce9262e297e60950a|2025-04-07|Start of refactoring
+bbcd3c97d945783fe076465f8def8baff31b3742|2025-04-07|check to make sure the group is valid
+7d913428e2e7f532ca11ad90956ba435fbd6930c|2025-04-07|add groups
+48e4d7c62b3bb9dfdaeb3597119b19db4c4cbb55|2025-04-05|added a pin and able to use a phone number
+8106452ba415a2f56938d3f0ce2aacee9e23d363|2025-04-04|added filters and sorting
+65ca37ff4fc93890074d7ca77a36424b01a727f5|2025-04-04|Update the login to use Terrain
+07d2cb2029b6e0aad1b9c5e01953b3b469523cc5|2025-04-04|Fixed up some UI Issues
+5a5ed538726bb3407d232ade097b536ecda7369d|2025-04-03|added the membership stage field
+c7ca081fa08bdff4a6e245784001b443f65fe59c|2025-04-03|added tables to the parent and youth pages and updated the attendace record
+9c6d2dda8e313b633ba6f4fa9139a399f551e93c|2025-04-03|added input pages in the Admin area
+79aad64c7c03fb24b45d750b7fbe385669fb023c|2025-04-03|Fixed the App.jsx
+6afa4fd6f516d8fc6cc2bcad32b9fe785dedf100|2025-04-03|Added a Admin Area
+ca37f9edf1964addb1ea73d0f5332e64611cff8c|2025-04-03|Added a Logo and fixed up the UI
+c5fec1369f18f2a4cce8094a1870d89e7e64ce53|2025-04-02|Added Subabase DB and attendance changes
+2cc91c2068ff70e30b79d4b9dd9b85dbb0fc7982|2025-04-02|added a supabase DB to store data
+fa3f1d6bc7db72c72e4f9a15ce5ce54288dae256|2025-04-02|added react-qrcode-logo
+03607bd7156af794399740b811cf0134194bd67b|2025-04-02|Changing the user that commits for Vercel
+7c1236e50400229017298cbf899b6f0ce01883c7|2025-04-02|Updating the packages to use Vite for deployment on vercel
+56164023f9cd49c151e8c6f21030f783d6cace38|2025-04-02|Add project files.
+0fab538387903ed88863248d44a18f56bf6c0fc7|2025-04-02|Add .gitattributes and .gitignore.

@@ -15,12 +15,13 @@ import {
 	Main,
 	Content,
 	LogoWrapper,
-	PrimaryButton
+	PrimaryButton,
 } from '@/components/common/SharedStyles';
 import { sections } from '@/components/common/Lookups.js';
 import { supabase } from '@/lib/supabaseClient';
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getISODateInTZ } from '@/utils/dateUtils'
+import { AlertTriangle } from 'lucide-react'; // or your icon lib
 
 const codeToSectionLabel = code =>
 	sections.find(s => s.code === code)?.label ?? code;
@@ -126,13 +127,30 @@ export default function YouthAttendancePage() {
 
 
 		if (selectedMember?.type === 'helper') {
-			const event_date = getISODateInTZ('Australia/Brisbane');
+			let event_date = getISODateInTZ('Australia/Brisbane');
 			const timestamp = new Date().toISOString();
 
 			const existing = helperStatusMap[selectedMember.roleLabel];
 			const isSignedIn = existing?.action === 'signed in';
-
 			const action = isSignedIn ? 'signed out' : 'signed in';
+
+			if (data.action === 'signed out') {
+				// Find the last "signed in" for this parent/group
+				const { data: lastSignIn } = await supabase
+					.from('helper_attendance')
+					.select('event_date')
+					.eq('parent_id', parent.id)
+					.eq('group_id', groupId)
+					.eq('action', 'signed in')
+					.order('timestamp', { ascending: false })
+					.limit(1)
+					.single();
+
+				if (lastSignIn && lastSignIn.event_date) {
+					event_date = lastSignIn.event_date;
+				}
+			}
+
 
 			const { error } = await supabase
 				.from('helper_attendance')
@@ -167,7 +185,24 @@ export default function YouthAttendancePage() {
 		}
 
 		const timestamp = new Date().toISOString();            // keep full UTC stamp
-		const event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
+		let event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
+		if (data.action === 'signed out') {
+			// Find the last "signed in" for this youth/group
+			const { data: lastSignIn } = await supabase
+				.from('attendance')
+				.select('event_date')
+				.eq('youth_id', memberId)
+				.eq('group_id', groupId)
+				.eq('action', 'signed in')
+				.order('timestamp', { ascending: false })
+				.limit(1)
+				.single();
+
+			if (lastSignIn && lastSignIn.event_date) {
+				event_date = lastSignIn.event_date;
+			}
+		}
+
 		const { error: insertError } = await supabase
 			.from('attendance')
 			.insert([{
@@ -215,6 +250,8 @@ export default function YouthAttendancePage() {
 
 	function renderMemberGroup({ label, members, getStatus, getStatusColor, getSubtitle }) {
 		if (members.length === 0) return null;
+
+
 		return (
 			<>
 				<h3 style={{
@@ -230,6 +267,15 @@ export default function YouthAttendancePage() {
 						? getSubtitle ? getSubtitle(m, latest) : (latest.action || '')
 						: 'Not signed in';
 
+					let isStale = false;
+					if (latest?.action === 'signed in' && latest.timestamp) {
+						const signedInTime = new Date(latest.timestamp);
+						const now = new Date();
+						const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+						if (diffDays >= 4) {
+							isStale = true;
+						}
+					}
 					return (
 						<div
 							key={m.id}
@@ -276,24 +322,33 @@ export default function YouthAttendancePage() {
 										</div>
 									)}
 								</div>
-								<div style={{
-									fontSize: '0.75rem',
-									color: statusColor,
-									fontWeight: 'bold',
-									textAlign: 'right',
-								}}>
-									{latest ? (
-										<>
-											{statusLabel}<br />
-											{new Date(latest.timestamp || latest.created_at).toLocaleString('en-AU', {
-												weekday: 'short',
-												month: 'short',
-												day: 'numeric',
-												hour: '2-digit',
-												minute: '2-digit',
-											})}
-										</>
-									) : 'Not signed in'}
+								<div style={{ display: 'flex', alignItems: 'center', gap: '0.4em' }}>
+									<span style={{
+										fontSize: '0.75rem',
+										color: statusColor,
+										fontWeight: 'bold',
+										textAlign: 'right',
+									}}>
+										{latest ? (
+											<>
+												{statusLabel}<br />
+												{new Date(latest.timestamp || latest.created_at).toLocaleString('en-AU', {
+													weekday: 'short',
+													month: 'short',
+													day: 'numeric',
+													hour: '2-digit',
+													minute: '2-digit',
+												})}
+											</>
+										) : 'Not signed in'}
+									</span>
+									{isStale && (
+										// Icon with optional tooltip/text
+										<span title="Signed in more than 4 days ago! Please sign out.">
+											<AlertTriangle color="#f59e42" size={18} style={{ verticalAlign: 'middle' }} />
+										</span>
+										// or just use an emoji: <span title="Signed in 4+ days">⚠️</span>
+									)}
 								</div>
 							</button>
 						</div>
@@ -379,7 +434,7 @@ export default function YouthAttendancePage() {
 							navigate(`/sign-in?group=${groupSlug}`);
 						}}
 					>
-						Logout
+						Logout of ScoutBase
 					</PrimaryButton>
 				</>
 			)}

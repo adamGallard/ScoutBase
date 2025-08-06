@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard
+    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard, Info, HelpCircle
 } from 'lucide-react';
 import { SidebarButton } from '@/components/common/SharedStyles';
 
@@ -124,6 +124,17 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('groupRoles') && { key: 'group-roles', label: 'Group Roles', icon: <IdCardLanyard size={16} /> }, 
                 allow('auditLog') && { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> },
             ].filter(Boolean),
+        },
+        {
+            key: 'help-group',
+            label: 'Help / About',
+            icon: <HelpCircle size={16} />,
+            expandable: true,
+            children: [
+                { key: 'changelog', label: 'Changelog', icon: <FileText size={16} /> },
+                { key: 'contact', label: 'Contact Us', icon: <Mail size={16} /> },
+                { key: 'about', label: 'About ScoutBase', icon: <Info size={16} /> },
+            ]
         },
         
         { key: 'logout', label: 'Logout', icon: <LogOut size={16} /> },
