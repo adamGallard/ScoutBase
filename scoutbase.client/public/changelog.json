@@ -20,7 +20,8 @@
 				"Contact Support (admin) and Contact Us (public) forms both styled to match the app’s look and feel, with clear text and status feedback",
 				"Contact Support page now features a GitHub Issue Log link and clearer intro for feedback, bugs, or questions",
 				"Ensured that changelog and help resources are easy to find via sidebar navigation",
-				"General UI improvements: consistent iconography, updated colors, margins, and link styles in support/help pages"
+				"General UI improvements: consistent iconography, updated colors, margins, and link styles in support/help pages",
+				"Removed the requirement for parent email addresses to be unique."
 			]
 		},
 		{
