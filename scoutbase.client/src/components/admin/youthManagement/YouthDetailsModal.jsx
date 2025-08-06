@@ -3,10 +3,11 @@ import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { codeToStageLabel, codeToSectionLabel } from '@/components/common/Lookups.js';
 import { formatDate, getAgeWithMonths } from '@/utils/dateUtils.js';
+import { useNavigate } from 'react-router-dom';
 
 export default function YouthDetailsModal({ youth, onClose }) {
     const [parents, setParents] = useState([]);
-
+    const navigate = useNavigate();
     useEffect(() => {
         if (youth?.id) {
             loadParents();
@@ -65,7 +66,21 @@ export default function YouthDetailsModal({ youth, onClose }) {
                         .map(p => (
                             <li key={p.id}>
                                 <div>
-                                    <strong>{p.name}</strong>
+                                    {/* Clickable parent name */}
+                                    <span
+                                        style={{
+                                            color: '#0F5BA4',
+                                            cursor: 'pointer',
+                                            textDecoration: 'none',
+                                            fontWeight: 600,
+                                        }}
+                                        onClick={() => {
+                                            onClose(); // closes the modal
+                                            navigate(`/admin/add-parent?id=${p.id}`);
+                                        }}
+                                    >
+                                        {p.name}
+                                    </span>
                                     {p.relationship && <span> - {p.relationship}</span>}
                                     {p.is_primary && <span style={{ color: '#0F5BA4' }}> (Primary)</span>}
                                     <br />

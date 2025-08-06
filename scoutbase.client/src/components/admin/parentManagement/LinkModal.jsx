@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { ModalOverlay, ModalBox, ButtonRow } from '@/components/common/SharedStyles';
 import { logAuditEvent } from '@/helpers/auditHelper';
 import { sections } from '@/components/common/Lookups.js';
+import { useNavigate } from 'react-router-dom';
 
 // helper to map section code → label
    const codeToSectionLabel = code =>
@@ -17,7 +18,7 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
     const [relationshipMap, setRelationshipMap] = useState({});
     const relationshipOptions = ['Mother', 'Father', 'Friend', 'Other'];
     const [otherSelectedMap, setOtherSelectedMap] = useState({});
-
+    const navigate = useNavigate();
 
     useEffect(() => {
         if (parentId) {
@@ -137,8 +138,20 @@ export default function LinkModal({ parentId, onClose, groupId, userInfo }) {
                                 marginBottom: '0.2rem'
                             }}
                         >
-                            {/* 1. Name */}
-                            <span>
+                            {/* 1. Name (Clickable) */}
+                            <span
+                                style={{
+                                    color: '#0F5BA4',
+                                    cursor: 'pointer',
+                                    textDecoration: 'none',
+                                    fontWeight: 600,
+                                }}
+                                onClick={() => {
+                                    onClose();
+                                    navigate(`/admin/add-youth?id=${youth.id}`);
+                                }}
+                                title="View youth details"
+                            >
                                 {youth.name} ({codeToSectionLabel(youth.section)})
                             </span>
 

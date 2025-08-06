@@ -27,11 +27,7 @@ export const fetchYouthByParentId = async (parentId) => {
     const { data, error } = await supabase
         .from('parent_youth')
         .select(`
-            youth: youth_id (
-                id,
-                name,
-                section
-            ),
+            youth: youth_id (*),
             is_primary
         `)
         .eq('parent_id', parentId);
@@ -40,18 +36,19 @@ export const fetchYouthByParentId = async (parentId) => {
         return { error: 'Error fetching youth.' };
     }
 
-    // Merge is_primary into each youth object
-    return {
-        youthList: data.map((entry) => ({
+    // Filter out any with missing youth
+    const youthList = (data || [])
+        .filter(entry => entry.youth && entry.youth.id && entry.youth.name)
+        .map(entry => ({
             ...entry.youth,
             is_primary: entry.is_primary
-        }))
-    };
+        }));
+
+    return { youthList };
 };
 
 
 export async function fetchLatestAttendanceForYouthList(youthList, groupId) {
-    const today = new Date().toISOString().split("T")[0];
     const statuses = {};
 
     for (const youth of youthList) {
@@ -60,8 +57,7 @@ export async function fetchLatestAttendanceForYouthList(youthList, groupId) {
             .select("*")
             .eq("youth_id", youth.id)
             .eq("group_id", groupId)
-            .gte("timestamp", `${today}T00:00:00`)
-            .order("timestamp", { ascending: false })
+            .order("timestamp", { ascending: false }) // no event_date filter!
             .limit(1);
 
         if (!error && data.length > 0) {
@@ -96,4 +92,21 @@ export async function fetchSignersForPrimaryChildren(parentId) {
         });
     }
     return results;
+}
+export async function fetchLatestHelperAttendance(parentId, groupId) {
+    const statuses = {};
+
+    const { data, error } = await supabase
+        .from("helper_attendance")
+        .select("*")
+        .eq("parent_id", parentId)
+        .eq("group_id", groupId)
+        .order("timestamp", { ascending: false }) // no event_date filter!
+        .limit(1);
+
+    if (!error && data.length > 0) {
+        statuses[parentId] = data[0];
+    }
+
+    return statuses;
 }

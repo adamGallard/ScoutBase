@@ -20,6 +20,7 @@ import ImportYouthModal from './ImportYouthModal';
 import { handleYouthImportLogic } from '@/helpers/supabaseHelpers'
 import { logAuditEvent } from '@/helpers/auditHelper';
 import { sections, stages, codeToStageLabel, codeToSectionLabel } from '@/components/common/Lookups.js';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Helpers to map code → label
 const sectionLabelToCode = val => {
@@ -35,7 +36,9 @@ const sectionLabelToCode = val => {
 };
 
 export default function YouthView({ groupId, userInfo }) {
-
+	const { search } = useLocation();
+	const query = new URLSearchParams(search);
+	const selectedYouthId = query.get('id');
 	const [addError, setAddError] = useState('');
 	const [youthList, setYouthList] = useState([]);
 	const [youthForm, setYouthForm] = useState({ name: '', dob: '', membership_stage: '', gender: '' });
@@ -56,7 +59,7 @@ export default function YouthView({ groupId, userInfo }) {
 	const handleYouthImport = async (data, filename) => {
 		await handleYouthImportLogic(data, groupId, filename); // this is the real function logic
 	};
-
+	const navigate = useNavigate();
 	const handleTerrainSync = async () => {
 		const token = localStorage.getItem('scoutbase-terrain-idtoken');
 		if (!token) return alert('Please log in.');
@@ -118,7 +121,6 @@ export default function YouthView({ groupId, userInfo }) {
 			.eq('group_id', groupId)
 			.order('name');
 
-		console.log(userInfo?.role);
 		//  Filter by section if the user is a Section Leader
 		if (userInfo?.role === 'Section Leader' && userInfo?.section) {
 			query = query.or(`section.eq.${userInfo.section},linking_section.eq.${userInfo.section}`);
@@ -232,7 +234,10 @@ export default function YouthView({ groupId, userInfo }) {
 
 	const filteredList = youthList
 		.filter(y => {
-			// normalize both stored fields and the selected filter
+			if (selectedYouthId) {
+				return y.id === selectedYouthId;
+			}
+			// (your existing logic for section, stage, name search)
 			const secCode = sectionLabelToCode(y.section);
 			const linkCode = sectionLabelToCode(y.linking_section);
 			const filterCode = sectionLabelToCode(sectionFilter);
@@ -248,10 +253,8 @@ export default function YouthView({ groupId, userInfo }) {
 					|| secCode === filterCode
 					|| linkCode === filterCode;
 			}
-			// Name search
 			const matchesSearch = !filter
 				|| y.name.toLowerCase().includes(filter);
-			// Stage filter (you could do a similar helper if needed)
 			const matchesStage = !stageFilter
 				? y.membership_stage !== 'retired'
 				: y.membership_stage === stageFilter;
@@ -265,6 +268,10 @@ export default function YouthView({ groupId, userInfo }) {
 	);
 
 	const canSync = localStorage.getItem('scoutbase-terrain-units-available') === 'true';
+
+	const filteredYouth = selectedYouthId
+		? youthList.find(y => y.id === selectedYouthId)
+		: null;
 
 	return (
 		<div className="content-box">
@@ -361,6 +368,42 @@ export default function YouthView({ groupId, userInfo }) {
 				</button>
 			</div>
 
+			{selectedYouthId && filteredYouth && (
+				<div style={{
+					backgroundColor: '#fff3cd',
+					color: '#856404',
+					border: '1px solid #ffeeba',
+					padding: '0.75rem 1rem',
+					borderRadius: '6px',
+					marginBottom: '1rem',
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center'
+				}}>
+					<span>
+						<strong>Filtered by Youth:</strong> {filteredYouth.name}
+						{filteredYouth.member_number && <> (Member #{filteredYouth.member_number})</>}
+					</span>
+					<button
+						style={{
+							backgroundColor: '#856404',
+							color: '#fff',
+							border: 'none',
+							padding: '0.35rem 0.75rem',
+							borderRadius: '4px',
+							cursor: 'pointer',
+							fontSize: '0.85rem'
+						}}
+						onClick={() => {
+							const params = new URLSearchParams(window.location.search);
+							params.delete('id');
+							navigate(`${window.location.pathname}${params.toString() ? '?' + params.toString() : ''}`);
+						}}
+					>
+						Clear Filter
+					</button>
+				</div>
+			)}
 			<AdminTable>
 				<thead>
 					<tr>
@@ -446,7 +489,7 @@ export default function YouthView({ groupId, userInfo }) {
 
 
 										{y.membership_stage === 'retired' ? (
-											<button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth">
+												<button onClick={() => deleteYouth(y.id)} title="Delete Retired Youth" style={{ color: '#C00' }}>
 												<Trash size={16} />
 											</button>
 										) : (
