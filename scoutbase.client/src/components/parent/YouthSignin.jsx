@@ -1,10 +1,11 @@
 ﻿// src/pages/parent/YouthAttendancePage.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
 	fetchYouthByParentId,
-	fetchLatestAttendanceForYouthList
+	fetchLatestAttendanceForYouthList,
+	fetchLatestHelperAttendance
 } from '@/helpers/attendanceHelper';
 import { logAuditEvent } from '@/helpers/auditHelper';
 import SignInForm from '@/components/SignInForm';
@@ -14,22 +15,33 @@ import {
 	Main,
 	Content,
 	LogoWrapper,
-	PrimaryButton
+	PrimaryButton,
 } from '@/components/common/SharedStyles';
 import { sections } from '@/components/common/Lookups.js';
 import { supabase } from '@/lib/supabaseClient';
 import { useIsMobile } from '@/hooks/useIsMobile'
 import { getISODateInTZ } from '@/utils/dateUtils'
+import { AlertTriangle } from 'lucide-react'; // or your icon lib
 
 const codeToSectionLabel = code =>
 	sections.find(s => s.code === code)?.label ?? code;
 
+
+function toProperCase(str) {
+	if (!str) return '';
+	return str
+		.replace(/_/g, ' ')                     // Replace underscores with spaces
+		.replace(/\b\w/g, l => l.toUpperCase()); // Capitalise first letter of each word
+}
 export default function YouthAttendancePage() {
 	const navigate = useNavigate();
 	const { state, search } = useLocation();
 	const parent = state?.parent;
 	const groupId = state?.groupId;
 	const isMobile = useIsMobile();
+	const [helperRoles, setHelperRoles] = useState([]);
+	const [helperStatusMap, setHelperStatusMap] = useState({});
+
 
 	// pull the ?group=slug so we can bounce back to login if needed
 	const query = new URLSearchParams(search);
@@ -42,7 +54,59 @@ export default function YouthAttendancePage() {
 	const [sectionFilter, setSectionFilter] = useState('');
 	const [selectedMember, setSelectedMember] = useState(null);
 	const [loading, setLoading] = useState(false);
+	const [adultRoles, setAdultRoles] = useState([]);
+	const [rolesLoading, setRolesLoading] = useState(true);
+	const roleObj = adultRoles.find(r => r.code === parent.role_code);
 
+	useEffect(() => {
+		async function loadRoles() {
+			setRolesLoading(true);
+			const { data, error } = await supabase
+				.from('adult_roles')
+				.select('code, title, role_group, section, abbreviation');
+			if (!error && data) setAdultRoles(data);
+			setRolesLoading(false);
+		}
+		loadRoles();
+	}, []);
+
+	// Combine all relevant members (youth + helpers)
+	const allMembers = useMemo(() => [
+		...helperRoles,
+		...youthList
+	], [helperRoles, youthList]);
+
+	const hasStaleAttendance = useMemo(() => {
+		// Check helpers
+		for (const h of helperRoles) {
+			const latest = helperStatusMap[h.parentId];
+			if (latest?.action === 'signed in' && latest.timestamp) {
+				const signedInTime = new Date(latest.timestamp);
+				const now = new Date();
+				const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+				if (diffDays >= 4) return true;
+			}
+		}
+		// Check youth
+		for (const y of youthList) {
+			const latest = latestStatusMap[y.id];
+			if (latest?.action === 'signed in' && latest.timestamp) {
+				const signedInTime = new Date(latest.timestamp);
+				const now = new Date();
+				const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+				if (diffDays >= 4) return true;
+			}
+		}
+		return false;
+	}, [helperRoles, helperStatusMap, youthList, latestStatusMap]);
+
+
+	const nonParentRoleCodes = adultRoles
+		.filter(r => r.role_group !== 'parent')
+		.map(r => r.code);
+
+	const codeToAdultRoleTitle = (code) =>
+		adultRoles.find(r => r.code === code)?.title ?? code;
 	// If no parent or groupId, redirect to login
 	useEffect(() => {
 		if (!parent || !groupId) {
@@ -55,21 +119,122 @@ export default function YouthAttendancePage() {
 		if (!parent || !groupId) return;
 		(async () => {
 			setLoading(true);
-			const { youthList: yl } =
-				await fetchYouthByParentId(parent.id);
-			const statusMap =
-				await fetchLatestAttendanceForYouthList(yl, groupId);
+
+			// Fetch youth
+			const { youthList: yl } = await fetchYouthByParentId(parent.id);
+			const statusMap = await fetchLatestAttendanceForYouthList(yl, groupId);
 			setYouthList(yl);
 			setLatestStatusMap(statusMap);
+
+			// Determine which roles are non-parent
+			const nonParentRoleCodes = adultRoles
+				.filter(r => r.role_group !== 'parent')
+				.map(r => r.code);
+
+			// Prepare helper roles
+			let roles = [];
+			if (parent.role_code && nonParentRoleCodes.includes(parent.role_code)) {
+				roles = [{
+					id: parent.id,
+					parentId: parent.id,
+					type: 'helper',
+					name: parent.name,
+					roleLabel: codeToAdultRoleTitle(parent.role_code),
+					roleGroup: roleObj.role_group,
+				}];
+			}
+			setHelperRoles(roles);
+
+			// Fetch latest helper attendance
+			const helperMap = await fetchLatestHelperAttendance(parent.id, groupId);
+			setHelperStatusMap(helperMap);
+
 			setLoading(false);
 		})();
-	}, [parent, groupId]);
+	}, [parent, groupId, adultRoles]);
+
 
 	// Handle sign-in/out action
 	const handleSign = async (memberId, data) => {
-		// 1) Write to attendance table
+
+
+		if (selectedMember?.type === 'helper') {
+			let event_date = getISODateInTZ('Australia/Brisbane');
+			const timestamp = new Date().toISOString();
+
+			const existing = helperStatusMap[selectedMember.roleLabel];
+			const isSignedIn = existing?.action === 'signed in';
+			const action = isSignedIn ? 'signed out' : 'signed in';
+
+			if (data.action === 'signed out') {
+				// Find the last "signed in" for this parent/group
+				const { data: lastSignIn } = await supabase
+					.from('helper_attendance')
+					.select('event_date')
+					.eq('parent_id', parent.id)
+					.eq('group_id', groupId)
+					.eq('action', 'signed in')
+					.order('timestamp', { ascending: false })
+					.limit(1)
+					.single();
+
+				if (lastSignIn && lastSignIn.event_date) {
+					event_date = lastSignIn.event_date;
+				}
+			}
+
+
+			const { error } = await supabase
+				.from('helper_attendance')
+				.insert([{
+					parent_id: parent.id,
+					group_id: groupId,
+					action: data.action,        // e.g. 'signed in' / 'signed out'
+					comment: data.comment || '', // if your SignInForm collects a comment
+					timestamp,
+					event_date,
+					signed_by: parent.id,
+				}]);
+
+			if (error) {
+				console.error('Failed to save helper attendance:', error);
+				alert('Error saving helper attendance. Please try again.');
+				return;
+			}
+
+			await logAuditEvent({
+				userId: parent.id,
+				groupId,
+				role: selectedMember.roleLabel.toLowerCase(),
+				action,
+			});
+
+			setStep('list');
+			setSelectedMember(null);
+			const helperMap = await fetchLatestHelperAttendance(parent.id, groupId);
+			setHelperStatusMap(helperMap);
+			return;
+		}
+
 		const timestamp = new Date().toISOString();            // keep full UTC stamp
-		const event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
+		let event_date = getISODateInTZ('Australia/Brisbane'); // "2025-05-18"
+		if (data.action === 'signed out') {
+			// Find the last "signed in" for this youth/group
+			const { data: lastSignIn } = await supabase
+				.from('attendance')
+				.select('event_date')
+				.eq('youth_id', memberId)
+				.eq('group_id', groupId)
+				.eq('action', 'signed in')
+				.order('timestamp', { ascending: false })
+				.limit(1)
+				.single();
+
+			if (lastSignIn && lastSignIn.event_date) {
+				event_date = lastSignIn.event_date;
+			}
+		}
+
 		const { error: insertError } = await supabase
 			.from('attendance')
 			.insert([{
@@ -88,7 +253,7 @@ export default function YouthAttendancePage() {
 			return;
 		}
 
-		// 2) Log audit event
+		// Log audit event
 		await logAuditEvent({
 			userId: parent.id,
 			groupId,
@@ -96,7 +261,7 @@ export default function YouthAttendancePage() {
 			action: data.action,
 		});
 
-		// 3) Go back to list and refresh statuses
+		// Go back to list and refresh statuses
 		setStep('list');
 		setSelectedMember(null);
 		const statusMap = await fetchLatestAttendanceForYouthList(youthList, groupId);
@@ -108,16 +273,155 @@ export default function YouthAttendancePage() {
 		y => !sectionFilter || y.section === sectionFilter
 	);
 
+	const compareByName = (a, b) =>
+		a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+
+	const primaryYouth = filteredYouth.filter(y => y.is_primary).sort(compareByName);
+	const otherYouth = filteredYouth.filter(y => !y.is_primary).sort(compareByName);
+
+
+	function renderMemberGroup({ label, members, getStatus, getStatusColor, getSubtitle }) {
+		if (members.length === 0) return null;
+
+
+		return (
+			<>
+				<h3 style={{
+					margin: '1rem 0 0.25rem 1rem', fontWeight: 600,
+					color: '#0F5BA4', fontSize: '1.05rem'
+				}}>
+					{label}
+				</h3>
+				{members.map(m => {
+					const latest = getStatus(m);
+					const statusColor = getStatusColor(latest);
+					const statusLabel = latest
+						? getSubtitle ? getSubtitle(m, latest) : (latest.action || '')
+						: 'Not signed in';
+
+					let isStale = false;
+					if (latest?.action === 'signed in' && latest.timestamp) {
+						const signedInTime = new Date(latest.timestamp);
+						const now = new Date();
+						const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+						if (diffDays >= 4) {
+							isStale = true;
+						}
+					}
+					return (
+						<div
+							key={m.id}
+							style={{
+								width: '90%',
+								maxWidth: '500px',
+								background: '#fff',
+								border: '1px solid #ccc',
+								borderRadius: '8px',
+								padding: '1rem',
+								margin: '0.5rem auto',
+								boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+							}}
+						>
+							<button
+								onClick={() => {
+									setSelectedMember(m);
+									setStep('form');
+								}}
+								style={{
+									width: '100%',
+									display: 'flex',
+									justifyContent: 'space-between',
+									alignItems: 'center',
+									background: 'none',
+									border: 'none',
+									padding: 0,
+									textAlign: 'left',
+									cursor: 'pointer',
+									fontSize: isMobile ? '1rem' : '0.95rem',
+								}}
+							>
+								<div>
+									<strong>{m.name}</strong>
+									{m.section && (
+										<div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+											{codeToSectionLabel(m.section)}
+										</div>
+									)}
+									{m.roleLabel && (
+										<div style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+											{m.roleLabel}
+										
+										</div>
+									)}
+								</div>
+								<div style={{ display: 'flex', alignItems: 'center', gap: '0.4em' }}>
+									<span style={{
+										fontSize: '0.75rem',
+										color: statusColor,
+										fontWeight: 'bold',
+										textAlign: 'right',
+									}}>
+										{latest ? (
+											<>
+												{statusLabel}<br />
+												{new Date(latest.timestamp || latest.created_at).toLocaleString('en-AU', {
+													weekday: 'short',
+													month: 'short',
+													day: 'numeric',
+													hour: '2-digit',
+													minute: '2-digit',
+												})}
+											</>
+										) : 'Not signed in'}
+									</span>
+									{isStale && (
+										// Icon with optional tooltip/text
+										<span title="Signed in more than 4 days ago! Please sign out.">
+											<AlertTriangle color="#f59e42" size={18} style={{ verticalAlign: 'middle' }} />
+										</span>
+										// or just use an emoji: <span title="Signed in 4+ days">⚠️</span>
+									)}
+								</div>
+							</button>
+						</div>
+					);
+				})}
+			</>
+		);
+	}
+
 	return (
 		<PageWrapperParent style={{ padding: '0rem', paddingBottom: '56px' }}>
 			<PageTitle style={{ marginBottom: '1rem' }}>
 				{parent?.name}
 			</PageTitle>
+			{hasStaleAttendance && (
+				<div style={{
+					background: '#fffbe6',
+					border: '1px solid #f59e42',
+					borderRadius: 8,
+					padding: '1rem',
+					margin: '1rem auto',
+					maxWidth: 500,
+					color: '#b36a00',
+					display: 'flex',
+					alignItems: 'center',
+					gap: '0.75em',
+					fontWeight: 'bold',
+					fontSize: isMobile ? '0.7rem' : '1rem'
+				}}>
+					<AlertTriangle color="#f59e42" size={24} style={{ flexShrink: 0 }} />
+					<span>
+						<b>Warning:</b> At least one child or helper has not been signed out for more than 4 days.<br />
+						Please check and sign out any lingering attendances.
+					</span>
+				</div>
+			)}
 
 			{/* Instruction to Select a Child */}
 			{step === 'list' && (
 				<p style={{ fontSize: '1rem', color: '#555', marginBottom: '1rem' }}>
-					Please select your child from the list below to sign them in or out.
+					Please select your child or helper role below to sign them in or out.
 				</p>
 			)}
 
@@ -134,7 +438,6 @@ export default function YouthAttendancePage() {
 								value={sectionFilter}
 								onChange={e => setSectionFilter(e.target.value)}
 								style={{
-
 									padding: '0.75rem',
 									fontSize: '1rem',
 									borderRadius: 6,
@@ -155,85 +458,38 @@ export default function YouthAttendancePage() {
 					{loading ? (
 						<p>Loading youth…</p>
 					) : (
-						filteredYouth.map(y => {
-							const latest = latestStatusMap[y.id];
-							return (
+							<>
+								{renderMemberGroup({
+									label: toProperCase(helperRoles[0]?.roleGroup) || "Helper",
+									members: helperRoles,
+									getStatus: h => helperStatusMap[h.parentId],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								})}
+								{renderMemberGroup({
+									label: "Primary Children",
+									members: primaryYouth,
+									getStatus: y => latestStatusMap[y.id],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								}) }
+								{renderMemberGroup({
+									label: "Other Children",
+									members: otherYouth,
+									getStatus: y => latestStatusMap[y.id],
+									getStatusColor: latest => latest?.action === 'signed in' ? '#10b981' : '#ef4444'
+								}) }
 
-								<div
-									key={y.id}
-									style={{
-										width: '90%',
-										maxWidth: '500px',
-										background: '#fff',
-										border: '1px solid #ccc',
-										borderRadius: '8px',
-										padding: '1rem',
-										margin: '0.5rem auto',
-										boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
-									}}
-								>
-									<button
-										onClick={() => {
-											setSelectedMember(y)
-											setStep('form');
-										}}
-										style={{
-											width: '100%',
-											display: 'flex',
-											justifyContent: 'space-between',
-											alignItems: 'center',
-											background: 'none',
-											border: 'none',
-											padding: 0,
-											textAlign: 'left',
-											cursor: 'pointer',
-											fontSize: isMobile ? '1rem' : '0.95rem',
-										}}
-									>
-										<div>
-											<div><strong>{y.name}</strong></div>
-											<div style={{ fontSize: '0.875rem', color: '#6b7280', }}>{codeToSectionLabel(y.section)}</div>
-										</div>
-										<div
-											style={{
-												fontSize: '0.75rem',
-												color: latest?.action === 'signed in' ? '#10b981' : '#ef4444',
-												fontWeight: 'bold',
-												textAlign: 'right',
-											}}
-										>
-											{latest ? (
-												<>
-													{latest.action} at<br />
-													{new Date(latest.timestamp).toLocaleString('en-AU', {
-														weekday: 'short',
-														month: 'short',
-														day: 'numeric',
-														hour: '2-digit',
-														minute: '2-digit',
-													})}
-												</>
-											) : (
-												'Not signed in'
-											)}
-										</div>
-									</button>
-								</div>
-							);
-						})
+						</>
 					)}
 
 					<PrimaryButton
-     isMobile={isMobile}
-					     type="button"
-					      onClick={() => {
-						        // clear any in-memory state if needed…
-						        // then navigate back to the group login
-							        navigate(`/sign-in?group=${groupSlug}`);
-						      }}
-    >
-					      Logout
-					    </PrimaryButton>
+						isMobile={isMobile}
+						type="button"
+						onClick={() => {
+							navigate(`/sign-in?group=${groupSlug}`);
+						}}
+					>
+						Logout of ScoutBase
+					</PrimaryButton>
 				</>
 			)}
 
@@ -244,11 +500,14 @@ export default function YouthAttendancePage() {
 					parentName={parent.name}
 					onSign={handleSign}
 					onCancel={() => {
-						// go back to the list view
 						setStep('list');
 						setSelectedMember(null);
 					}}
-					latestStatus={latestStatusMap[selectedMember.id]}
+					latestStatus={
+						selectedMember.type === 'helper'
+							? helperStatusMap[selectedMember.parentId]
+							: latestStatusMap[selectedMember.id]
+					}
 				/>
 			)}
 		</PageWrapperParent>

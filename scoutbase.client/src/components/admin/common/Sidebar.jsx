@@ -5,8 +5,9 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown
+    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard, Info, HelpCircle
 } from 'lucide-react';
+import { SidebarButton } from '@/components/common/SharedStyles';
 
 import { can } from '@/utils/roleUtils';
 
@@ -25,7 +26,7 @@ const btnStyle = {
     transition: 'background 0.2s',
 };
 
-export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin }) {
+export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingAsAdmin, selectedKey }) {
     const [collapsed, setCollapsed] = useState(false);
     const [expandedSections, setExpandedSections] = useState(new Set());
 
@@ -37,7 +38,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             s.has(key) ? s.delete(key) : s.add(key);
             return s;
         });
-
+    
     /** ------------ NAV DEFINITIONS ------------ **/
     const navItems = [
         { key: 'admindashboard', label: 'Home', icon: <Home size={16} /> },
@@ -50,7 +51,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             expandable: true,
             children: [
                 (allow('parentCRUD') || allow('youthCRUD')) && { key: 'registrations', label: 'Registrations', icon: <ClipboardCheck size={16} /> },
-                allow('parentCRUD') && { key: 'add-parent', label: 'Parents', icon: <UserPlus size={16} /> },
+                allow('parentCRUD') && { key: 'add-parent', label: 'Adults', icon: <UserPlus size={16} /> },
                 allow('youthCRUD') && { key: 'add-youth', label: 'Youth', icon: <Users size={16} /> },
                 allow('patrolCRUD') && { key: 'patrol-management', label: 'Patrols', icon: <Flag size={16} /> },
             ].filter(Boolean),
@@ -65,9 +66,10 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             children: [
                 allow('reportAttendanceDaily') && { key: 'report-attendance', label: 'Attendance', icon: <CalendarCheck size={16} /> },
                 allow('reportAttendancePeriod') && { key: 'report-attendance-period', label: 'Attendance Period', icon: <CalendarClock size={16} /> },
+                allow('reportAttendanceAdult') && { key: 'report-attendance-adult', label: 'Adult Attendance', icon: <Calendar size={16} /> },
                 allow('inspection') && { key: 'inspection', label: 'Inspections', icon: <BookOpenCheck size={16} /> },
                 allow('badgeOrder') && { key: 'badge-order', label: 'Badge Order', icon: <Award size={16} /> }, 
-                allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Parent Emails', icon: <Mail size={16} /> },
+                allow('reportParentEmails') && { key: 'report-parent-emails', label: 'Adult Emails', icon: <Mail size={16} /> },
                 allow('reportYouthBySection') && { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 allow('reportAge') && { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
                 allow('reportLinkingHistory') && { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
@@ -101,12 +103,14 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('oasCRUD') && { key: 'oas-ref', label: 'OAS', icon: <Tent size={16} /> },
             ].filter(Boolean),
         },
+
         /* 🔐  Admin Tools */
         {
             key: 'admin',
             label: 'Admin Tools',
             icon: <Shield size={16} />,
             expandable: true,
+            
             children: [
                 /* Users / Settings (GL + up) */
                 allow('userAdmin') && { key: 'user-management', label: 'Users', icon: <User size={16} /> },
@@ -114,18 +118,31 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
 
                 /* Parent Links editable if group settings perm */
                 allow('settings') && { key: 'parent-header-links', label: 'Parent Links', icon: <FolderSymlink size={16} /> },
-
+                
                 /* Governance (Super Admin only) */
                 allow('groupAdmin') && { key: 'group-management', label: 'Groups', icon: <MapPin size={16} /> },
+                allow('groupRoles') && { key: 'group-roles', label: 'Group Roles', icon: <IdCardLanyard size={16} /> }, 
                 allow('auditLog') && { key: 'audit-log', label: 'Audit Log', icon: <FileText size={16} /> },
             ].filter(Boolean),
         },
-
+        {
+            key: 'help-group',
+            label: 'Help / About',
+            icon: <HelpCircle size={16} />,
+            expandable: true,
+            children: [
+                { key: 'changelog', label: 'Changelog', icon: <FileText size={16} /> },
+                { key: 'contact', label: 'Contact Us', icon: <Mail size={16} /> },
+                { key: 'about', label: 'About ScoutBase', icon: <Info size={16} /> },
+            ]
+        },
+        
         { key: 'logout', label: 'Logout', icon: <LogOut size={16} /> },
     ].filter(Boolean);
 
     /** ------------ RENDER ------------ **/
     return (
+        
         <div
             style={{
                 width: collapsed ? '60px' : '200px',
@@ -145,31 +162,61 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
             <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
                 {navItems.map(item => (
                     <li key={item.key} style={{ width: '100%' }}>
-                        <button
-                            onClick={() => {
-                                if (item.expandable) toggleSection(item.key);
-                                else onNavigate(item.key);
+                        <SidebarButton
+                            $selected={selectedKey === item.key}
+                            $collapsed={collapsed}
+                            // Only handle navigation on the main area (not arrow)
+                            onClick={() => !item.expandable && onNavigate(item.key)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between', // So arrow is on the right
+                                width: '100%',
+                                cursor: 'pointer'
                             }}
-                            style={btnStyle}
                         >
-                            <span>{item.icon}</span>
-                            {!collapsed && <span>{item.label}</span>}
+                            {/* Main clickable area */}
+                            <span
+                                style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '0.5rem' }}
+                                onClick={e => {
+                                    if (item.expandable) {
+                                        // Stop arrow click bubbling up
+                                        onNavigate(item.key);
+                                    }
+                                }}
+                            >
+                                {item.icon}
+                                {!collapsed && <span>{item.label}</span>}
+                            </span>
+
+                            {/* Arrow - only for expandable */}
                             {!collapsed && item.expandable && (
-                                expandedSections.has(item.key)
-                                    ? <ChevronDown size={16} />
-                                    : <ChevronRight size={16} />
+                                <span
+                                    style={{ marginLeft: 'auto', paddingLeft: 8, cursor: 'pointer' }}
+                                    onClick={e => {
+                                        e.stopPropagation(); // prevent parent click
+                                        toggleSection(item.key);
+                                    }}
+                                >
+                                    {expandedSections.has(item.key)
+                                        ? <ChevronDown size={16} />
+                                        : <ChevronRight size={16} />}
+                                </span>
                             )}
-                        </button>
+                        </SidebarButton>
 
                         {/* Child list */}
                         {!collapsed && item.expandable && expandedSections.has(item.key) && (
                             <ul style={{ listStyle: 'none', paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
                                 {item.children.map(child => (
                                     <li key={child.key}>
-                                        <button onClick={() => onNavigate(child.key)} style={btnStyle}>
+                                        <SidebarButton
+                                            $selected={selectedKey === child.key}
+                                            $collapsed={collapsed}
+                                            onClick={() => onNavigate(child.key)}>
                                             <span>{child.icon}</span>
                                             {!collapsed && <span>{child.label}</span>}
-                                        </button>
+                                        </SidebarButton>
                                     </li>
                                 ))}
                             </ul>

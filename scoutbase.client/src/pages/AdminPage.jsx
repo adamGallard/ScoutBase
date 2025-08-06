@@ -47,12 +47,17 @@ import MessageEmailPage from '@/components/admin/messages/MessageEmailPage';
 import SettingsPage from '@/components/admin/SettingsPage';
 import BadgeOrder from '@/components/admin/BadgeOrder';
 import RegistrationsPage from '@/components/admin/RegistrationsPage';
+import Members from '@/components/admin/Members';
+import Messages from '@/components/admin/Messages';
+import Reference from '@/components/admin/Reference';
+import HelpGroup from '@/components/admin/HelpAbout';
 
 // ✅ Report Views
 import ReportParentEmails from '@/components/admin/reports/ReportParentEmails';
 import ReportYouthBySection from '@/components/admin/reports/ReportYouthBySection';
 import ReportAge from '@/components/admin/reports/ReportAge';
 import ReportAttendanceView from '@/components/admin/reports/ReportAttendanceView';
+import ReportAttendanceAdult from '@/components/admin/reports/ReportLeaderAttendance';
 import InspectionPage from '@/components/admin/inspections/InspectionPage';
 import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
@@ -61,6 +66,13 @@ import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendanceP
 import ReportOAS from '../components/admin/reports/RefOAS';
 import BadgeOrderView from '../components/admin/BadgeOrder';
 import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
+import AdminTools from '../components/admin/AdminTools';
+import GroupRoles from '../components/admin/GroupRoles';
+
+import ChangelogPage from '@/components/admin/help/ChangelogPage';
+import AboutPage from '@/components/admin/help/AboutPage';
+import ContactPage from '@/components/admin/help/ContactPage';
+import HelpAbout from '../components/admin/HelpAbout';
 
 
 // ───────────────────────────────────────────────────────────
@@ -80,6 +92,20 @@ const PAGE_DEFINITIONS = {
             userInfo: ctx.userInfo,
         }),
     },
+    'report-attendance-adult': {
+        component: ReportAttendanceAdult,
+        permission: 'reportAttendanceAdult',   // add to roleUtils
+        passProps: (ctx) => ({
+            activeGroupId: ctx.activeGroupId,
+            selectedDate: ctx.selectedDate,
+            sectionFilter: ctx.sectionFilter,
+            onDateChange: ctx.setSelectedDate,
+            onSectionChange: ctx.setSectionFilter,
+            userInfo: ctx.userInfo,
+        }),
+    },
+
+
     'report-attendance-period': {
         component: ReportAttendancePeriod,
         permission: 'reportAttendancePeriod',  // add to roleUtils
@@ -112,6 +138,7 @@ const PAGE_DEFINITIONS = {
     'user-management': { component: UserManagementView, permission: 'userAdmin', passProps: (c) => ({ activeGroupId: c.activeGroupId, userInfo: c.userInfo }) },
     'group-management': { component: GroupManagementView, permission: 'groupAdmin' },
     'reports': { component: Reports, permission: 'reportParentEmails' /* just to gate the menu page */ },
+	'people': { component: Members, permission: 'youthCRUD' },
     'report-parent-emails': { component: ReportParentEmails, permission: 'reportParentEmails', passProps: (c) => ({ groupId: c.activeGroupId, userInfo: c.userInfo }) },
     'report-youth-by-section': { component: ReportYouthBySection, permission: 'reportYouthBySection', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'report-age': { component: ReportAge, permission: 'reportAge', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
@@ -127,7 +154,23 @@ const PAGE_DEFINITIONS = {
     'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'badge-order': { component: BadgeOrder, permission: 'badgeOrder', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
-
+    'messages-group': { component: Messages, permission: 'smsSend' },
+    'Ref-group': { component: Reference, permission: 'settings' },
+    'help-group': { component: HelpGroup, permission: 'settings' },
+    'admin': { component: AdminTools, permission: 'settings' },
+    'group-roles': { component: GroupRoles, permission: 'groupRoles' },
+    'changelog': {
+        component: ChangelogPage,
+        permission: 'settings'  // or any perm that all admins have
+    },
+    'about': {
+        component: AboutPage,
+        permission: 'settings'
+    },
+    'contact': {
+        component: ContactPage,
+        permission: 'settings'
+    },
     // add more pages here…
 };
 
@@ -220,7 +263,7 @@ export default function AdminPage() {
     const renderContent = () => {
         if (userLoading || !userInfo) return <p>Loading user info…</p>;
         if (!activeGroupId) return <p>Loading group data…</p>;
-
+        
         // 1. Dashboard fall‑throughs first
         if (!subPath || subPath === 'admindashboard') {
             if (userInfo.role === 'Super Admin')
@@ -302,6 +345,7 @@ export default function AdminPage() {
                     <Sidebar
                         onNavigate={(path) => navigate(`/admin/${path}`)}
                         userInfo={userInfo}
+                        selectedKey={subPath || 'admindashboard'} 
                         actingAsGroupId={actingAsGroupId}
                         actingAsAdmin={actingAsAdmin}
                     />
