@@ -5,7 +5,7 @@ import {
     FolderKanban, Cake, Repeat, Download, User, MapPin, Menu, ArrowLeft,
     LogOut, Home, CalendarCheck, QrCode, Flag, BookOpenCheck, Shield,
     Megaphone, FolderSymlink, FileCheck2, CalendarClock, MessageCircle,
-    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard, Info, HelpCircle
+    MessageSquare, Settings, BookOpen, Tent, Award, ClipboardCheck, TrendingUpDown, Calendar, IdCardLanyard, Info, HelpCircle, Link
 } from 'lucide-react';
 import { SidebarButton } from '@/components/common/SharedStyles';
 
@@ -73,6 +73,7 @@ export default function Sidebar({ onNavigate, userInfo, actingAsGroupId, actingA
                 allow('reportYouthBySection') && { key: 'report-youth-by-section', label: 'Youth by Section', icon: <FolderKanban size={16} /> },
                 allow('reportAge') && { key: 'report-age', label: 'Age Report', icon: <Cake size={16} /> },
                 allow('reportLinkingHistory') && { key: 'report-transitions', label: 'Linking History', icon: <Repeat size={16} /> },
+                allow('reportParentYouthLinks') && { key: 'report-parent-youth-links', label: 'Parent-Youth Links', icon: <Link size={16} /> },
                 allow('reportYouthProjection') && { key: 'report-projections', label: 'Youth Projections', icon: <TrendingUpDown size={16} /> },
                 allow('reportFullExport') && { key: 'report-full-export', label: 'Full Export', icon: <Download size={16} /> },
                 allow('reportDataQuality') && { key: 'report-data-quality', label: 'Data Quality', icon: <FileCheck2 size={16} /> },

@@ -63,16 +63,17 @@ import GroupQRCode from '@/components/admin/GroupQRCode';
 import ReportTransitionHistory from '@/components/admin/reports/ReportTransitionHistory';
 import ReportDataQuality from '@/components/admin/reports/ReportDataQuality';
 import ReportAttendancePeriod from '@/components/admin/reports/ReportAttendancePeriod';
-import ReportOAS from '../components/admin/reports/RefOAS';
-import BadgeOrderView from '../components/admin/BadgeOrder';
-import ReportYouthProjection from '../components/admin/reports/ReportYouthProjection';
-import AdminTools from '../components/admin/AdminTools';
-import GroupRoles from '../components/admin/GroupRoles';
+import ReportOAS from '@/components/admin/reports/RefOAS';
+import BadgeOrderView from '@/components/admin/BadgeOrder';
+import ReportYouthProjection from '@/components/admin/reports/ReportYouthProjection';
+import AdminTools from '@/components/admin/AdminTools';
+import GroupRoles from '@/components/admin/GroupRoles';
+import ReportParentYouthLinks from '../components/admin/reports/ReportParentYouthLinks';
 
 import ChangelogPage from '@/components/admin/help/ChangelogPage';
 import AboutPage from '@/components/admin/help/AboutPage';
 import ContactPage from '@/components/admin/help/ContactPage';
-import HelpAbout from '../components/admin/HelpAbout';
+import HelpAbout from '@/components/admin/HelpAbout';
 
 
 // ───────────────────────────────────────────────────────────
@@ -151,6 +152,7 @@ const PAGE_DEFINITIONS = {
     'parent-header-links': { component: ParentHeaderLinks, permission: 'settings', passProps: (c) => ({ groupId: c.activeGroupId }) },
     'report-transitions': { component: ReportTransitionHistory, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'report-data-quality': { component: ReportDataQuality, permission: 'reportDataQuality', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
+	'report-parent-youth-links': { component: ReportParentYouthLinks, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) }, 
     'settings': { component: SettingsPage, permission: 'settings', passProps: (c) => ({ groupId: c.userInfo.group_id }) },
     'badge-order': { component: BadgeOrder, permission: 'badgeOrder', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },
     'report-projections': { component: ReportYouthProjection, permission: 'reportLinkingHistory', passProps: (c) => ({ groupId: c.userInfo.group_id, userInfo: c.userInfo }) },

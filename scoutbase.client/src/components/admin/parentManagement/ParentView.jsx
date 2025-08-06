@@ -198,28 +198,6 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
             targetId: id,
             metadata: `Unlocked parent account`
         });
-        fetchParents();
-    };
-
-    const unlockParent = async (id) => {
-        const { error } = await supabase
-            .from('parent')
-            .update({ is_locked: false, failed_pin_attempts: 0 })
-            .eq('id', id);
-
-        if (error) {
-            alert("Failed to unlock parent: " + error.message);
-            return;
-        }
-        await logAuditEvent({
-            userId: userInfo.id,
-            groupId,
-            role: userInfo.role,
-            action: 'Unlock',
-            targetType: 'Parent',
-            targetId: id,
-            metadata: `Unlocked parent account`
-        });
         fetchParents(); // Refresh list
     };
 

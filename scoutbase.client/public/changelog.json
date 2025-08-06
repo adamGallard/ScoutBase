@@ -1,5 +1,18 @@
 [
 	{
+		"version": "1.3.20",
+		"date": "2024-08-06",
+		"changes": [
+			"Added Parent-Youth Links report, accessible via the admin sidebar.",
+			"Enabled filtering by section and membership status in the Parent-Youth Links report.",
+			"Added CSV export support to the Parent-Youth Links report.",
+			"Enhanced Parent Email Distribution report with a membership status filter.",
+			"Refined filtering and display logic in email and links reports.",
+			"Updated admin navigation and permissions for new reporting features.",
+			"Minor code refactoring and import path corrections for report integration."
+		]
+	},
+	{
 		"version": "1.3.19",
 		"date": "2025-08-06",
 		"changes": [
@@ -9,230 +22,230 @@
 			"Added per-member stale warning icons."
 		]
 	},
-		{
-			"version": "1.3.18",
-			"date": "2025-08-06",
-			"changes": [
-				"Added Help & About summary landing page for easy navigation to About, Changelog, Contact, and support resources",
-				"Created an About page inspired by modern software (like Microsoft Edge), including current version, license, open source and GitHub links",
-				"Improved formatting and icon usage in About and Changelog pages (now using Lucide and Simple Icons for visual consistency)",
-				"Changelog page now shows human-readable dates, better layout, and supports loading updates from JSON",
-				"Contact Support (admin) and Contact Us (public) forms both styled to match the app’s look and feel, with clear text and status feedback",
-				"Contact Support page now features a GitHub Issue Log link and clearer intro for feedback, bugs, or questions",
-				"Ensured that changelog and help resources are easy to find via sidebar navigation",
-				"General UI improvements: consistent iconography, updated colors, margins, and link styles in support/help pages",
-				"Removed the requirement for parent email addresses to be unique."
-			]
-		},
-		{
-			"version": "1.3.17",
-			"date": "2025-08-04",
-			"changes": [
-				"Added Group Roles management UI for leader/helper assignments",
-				"Improved layout and styling across the admin interface"
-			]
-		},
-		{
-			"version": "1.3.16",
-			"date": "2025-08-04",
-			"changes": [
-				"Created landing pages with summaries and icons for each admin section",
-				"Improved section descriptions and navigation clarity"
-			]
-		},
-		{
-			"version": "1.3.15",
-			"date": "2025-08-04",
-			"changes": [
-				"Refined sidebar styling and hover/active states",
-				"Added report landing page with overview summaries",
-				"Grouped adult helpers by role and improved attendance display logic"
-			]
-		},
-		{
-			"version": "1.3.14",
-			"date": "2025-08-04",
-			"changes": [
-				"Enhanced Adult/Parent Email Distribution List formatting and structure"
-			]
-		},
-		{
-			"version": "1.3.12",
-			"date": "2025-08-04",
-			"changes": [
-				"Implemented parent role management system with editable role titles",
-				"Improved parent sign-in and login UI handling"
-			]
-		},
-		{
-			"version": "1.3.10",
-			"date": "2025-07-30",
-			"changes": [
-				"Clarified attendance reporting layout and filters",
-				"Improved email distribution filtering for parents/youth",
-				"Added admin PIN reset and enforced lockouts on failed attempts"
-			]
-		},
-		{
-			"version": "1.3.9",
-			"date": "2025-07-29",
-			"changes": [
-				"Updated Parent Portal with grouped youth display",
-				"Introduced signers modal for sign-in tracking",
-				"Enabled swipeable calendar navigation in parent view"
-			]
-		},
-		{
-			"version": "1.3.8",
-			"date": "2025-07-17",
-			"changes": [
-				"Merged development changes to prepare for upcoming feature set"
-			]
-		},
-		{
-			"version": "1.3.6",
-			"date": "2025-07-13",
-			"changes": [
-				"Finalized youth transition workflows and terrain sync consistency",
-				"Bug fixes in transition logic and data handling"
-			]
-		},
-		{
-			"version": "1.2.12",
-			"date": "2025-05-28",
-			"changes": [
-				"Fixed Badge History Page rendering issues"
-			]
-		},
-		{
-			"version": "1.2.11",
-			"date": "2025-05-27",
-			"changes": [
-				"Refactored Terrain Sync logic for clarity and reliability"
-			]
-		},
-		{
-			"version": "1.2.10",
-			"date": "2025-05-27",
-			"changes": [
-				"Visual updates to Youth View and Details Modal"
-			]
-		},
-		{
-			"version": "1.2.9",
-			"date": "2025-05-27",
-			"changes": [
-				"Fixed bugs in Terrain sync logic and display"
-			]
-		},
-		{
-			"version": "1.2.8",
-			"date": "2025-05-27",
-			"changes": [
-				"Added Vercel analytics for usage tracking"
-			]
-		},
-		{
-			"version": "1.2.7",
-			"date": "2025-05-27",
-			"changes": [
-				"Internal improvements and version bump"
-			]
-		},
-		{
-			"version": "1.2.6",
-			"date": "2025-05-26",
-			"changes": [
-				"Improved dropdown handling in Parent/Youth linking modal"
-			]
-		},
-		{
-			"version": "1.2.5",
-			"date": "2025-05-26",
-			"changes": [
-				"Fixed patrol mission action buttons"
-			]
-		},
-		{
-			"version": "1.2.4",
-			"date": "2025-05-26",
-			"changes": [
-				"Ensured section data appears in Attendance Over Period report"
-			]
-		},
-		{
-			"version": "1.2.3",
-			"date": "2025-05-26",
-			"changes": [
-				"Added Awarded Badges view to youth details",
-				"Fixed badge order and display logic"
-			]
-		},
-		{
-			"version": "1.2.2",
-			"date": "2025-05-26",
-			"changes": [
-				"Enabled patrol member access from clicking patrol name"
-			]
-		},
-		{
-			"version": "1.2.1",
-			"date": "2025-05-25",
-			"changes": [
-				"Added stage filter to Youth by Section report",
-				"Improved GL visibility on Badge Order page"
-			]
-		},
-		{
-			"version": "1.2.0",
-			"date": "2025-05-23",
-			"changes": [
-				"Launched Badge Ordering workflow with new page for leaders"
-			]
-		},
-		{
-			"version": "1.1.0",
-			"date": "2025-04-16",
-			"changes": [
-				"Launched Inspection tracking and patrol reporting",
-				"Added scoped Section Leader access controls",
-				"Improved Attendance and Transition Reports with export options",
-				"Added pie chart breakdowns for attendance and membership"
-			]
-		},
-		{
-			"version": "1.0.1",
-			"date": "2025-04-07",
-			"changes": [
-				"Fixed UI layout bugs and cleaned up admin dashboard"
-			]
-		},
-		{
-			"version": "1.0.0",
-			"date": "2025-04-06",
-			"changes": [
-				"Initial release of ScoutBase",
-				"Parent PIN login and attendance capture",
-				"Admin views for youth/parent linking and section filtering",
-				"Reports: CSV export, youth by section, email list"
-			]
-		},
-		{
-			"version": "0.7.0",
-			"date": "2025-04-05",
-			"changes": [
-				"Parent PIN auth and reset support",
-				"Setup JWT login logic and access rules",
-				"Prepared reports and filters for email and transitions"
-			]
-		},
-		{
-			"version": "0.6.0",
-			"date": "2025-04-03",
-			"changes": [
-				"Initial database setup in Supabase",
-				"Built basic forms for parents, youth, and attendance",
-				"Created admin UI structure with routing and sidebar"
-			]
-		}
+	{
+		"version": "1.3.18",
+		"date": "2025-08-06",
+		"changes": [
+			"Added Help & About summary landing page for easy navigation to About, Changelog, Contact, and support resources",
+			"Created an About page inspired by modern software (like Microsoft Edge), including current version, license, open source and GitHub links",
+			"Improved formatting and icon usage in About and Changelog pages (now using Lucide and Simple Icons for visual consistency)",
+			"Changelog page now shows human-readable dates, better layout, and supports loading updates from JSON",
+			"Contact Support (admin) and Contact Us (public) forms both styled to match the app’s look and feel, with clear text and status feedback",
+			"Contact Support page now features a GitHub Issue Log link and clearer intro for feedback, bugs, or questions",
+			"Ensured that changelog and help resources are easy to find via sidebar navigation",
+			"General UI improvements: consistent iconography, updated colors, margins, and link styles in support/help pages",
+			"Removed the requirement for parent email addresses to be unique."
+		]
+	},
+	{
+		"version": "1.3.17",
+		"date": "2025-08-04",
+		"changes": [
+			"Added Group Roles management UI for leader/helper assignments",
+			"Improved layout and styling across the admin interface"
+		]
+	},
+	{
+		"version": "1.3.16",
+		"date": "2025-08-04",
+		"changes": [
+			"Created landing pages with summaries and icons for each admin section",
+			"Improved section descriptions and navigation clarity"
+		]
+	},
+	{
+		"version": "1.3.15",
+		"date": "2025-08-04",
+		"changes": [
+			"Refined sidebar styling and hover/active states",
+			"Added report landing page with overview summaries",
+			"Grouped adult helpers by role and improved attendance display logic"
+		]
+	},
+	{
+		"version": "1.3.14",
+		"date": "2025-08-04",
+		"changes": [
+			"Enhanced Adult/Parent Email Distribution List formatting and structure"
+		]
+	},
+	{
+		"version": "1.3.12",
+		"date": "2025-08-04",
+		"changes": [
+			"Implemented parent role management system with editable role titles",
+			"Improved parent sign-in and login UI handling"
+		]
+	},
+	{
+		"version": "1.3.10",
+		"date": "2025-07-30",
+		"changes": [
+			"Clarified attendance reporting layout and filters",
+			"Improved email distribution filtering for parents/youth",
+			"Added admin PIN reset and enforced lockouts on failed attempts"
+		]
+	},
+	{
+		"version": "1.3.9",
+		"date": "2025-07-29",
+		"changes": [
+			"Updated Parent Portal with grouped youth display",
+			"Introduced signers modal for sign-in tracking",
+			"Enabled swipeable calendar navigation in parent view"
+		]
+	},
+	{
+		"version": "1.3.8",
+		"date": "2025-07-17",
+		"changes": [
+			"Merged development changes to prepare for upcoming feature set"
+		]
+	},
+	{
+		"version": "1.3.6",
+		"date": "2025-07-13",
+		"changes": [
+			"Finalized youth transition workflows and terrain sync consistency",
+			"Bug fixes in transition logic and data handling"
+		]
+	},
+	{
+		"version": "1.2.12",
+		"date": "2025-05-28",
+		"changes": [
+			"Fixed Badge History Page rendering issues"
+		]
+	},
+	{
+		"version": "1.2.11",
+		"date": "2025-05-27",
+		"changes": [
+			"Refactored Terrain Sync logic for clarity and reliability"
+		]
+	},
+	{
+		"version": "1.2.10",
+		"date": "2025-05-27",
+		"changes": [
+			"Visual updates to Youth View and Details Modal"
+		]
+	},
+	{
+		"version": "1.2.9",
+		"date": "2025-05-27",
+		"changes": [
+			"Fixed bugs in Terrain sync logic and display"
+		]
+	},
+	{
+		"version": "1.2.8",
+		"date": "2025-05-27",
+		"changes": [
+			"Added Vercel analytics for usage tracking"
+		]
+	},
+	{
+		"version": "1.2.7",
+		"date": "2025-05-27",
+		"changes": [
+			"Internal improvements and version bump"
+		]
+	},
+	{
+		"version": "1.2.6",
+		"date": "2025-05-26",
+		"changes": [
+			"Improved dropdown handling in Parent/Youth linking modal"
+		]
+	},
+	{
+		"version": "1.2.5",
+		"date": "2025-05-26",
+		"changes": [
+			"Fixed patrol mission action buttons"
+		]
+	},
+	{
+		"version": "1.2.4",
+		"date": "2025-05-26",
+		"changes": [
+			"Ensured section data appears in Attendance Over Period report"
+		]
+	},
+	{
+		"version": "1.2.3",
+		"date": "2025-05-26",
+		"changes": [
+			"Added Awarded Badges view to youth details",
+			"Fixed badge order and display logic"
+		]
+	},
+	{
+		"version": "1.2.2",
+		"date": "2025-05-26",
+		"changes": [
+			"Enabled patrol member access from clicking patrol name"
+		]
+	},
+	{
+		"version": "1.2.1",
+		"date": "2025-05-25",
+		"changes": [
+			"Added stage filter to Youth by Section report",
+			"Improved GL visibility on Badge Order page"
+		]
+	},
+	{
+		"version": "1.2.0",
+		"date": "2025-05-23",
+		"changes": [
+			"Launched Badge Ordering workflow with new page for leaders"
+		]
+	},
+	{
+		"version": "1.1.0",
+		"date": "2025-04-16",
+		"changes": [
+			"Launched Inspection tracking and patrol reporting",
+			"Added scoped Section Leader access controls",
+			"Improved Attendance and Transition Reports with export options",
+			"Added pie chart breakdowns for attendance and membership"
+		]
+	},
+	{
+		"version": "1.0.1",
+		"date": "2025-04-07",
+		"changes": [
+			"Fixed UI layout bugs and cleaned up admin dashboard"
+		]
+	},
+	{
+		"version": "1.0.0",
+		"date": "2025-04-06",
+		"changes": [
+			"Initial release of ScoutBase",
+			"Parent PIN login and attendance capture",
+			"Admin views for youth/parent linking and section filtering",
+			"Reports: CSV export, youth by section, email list"
+		]
+	},
+	{
+		"version": "0.7.0",
+		"date": "2025-04-05",
+		"changes": [
+			"Parent PIN auth and reset support",
+			"Setup JWT login logic and access rules",
+			"Prepared reports and filters for email and transitions"
+		]
+	},
+	{
+		"version": "0.6.0",
+		"date": "2025-04-03",
+		"changes": [
+			"Initial database setup in Supabase",
+			"Built basic forms for parents, youth, and attendance",
+			"Created admin UI structure with routing and sidebar"
+		]
+	}
 ]

@@ -45,7 +45,8 @@ const rolePermissions = {
         'badgeOrder',
         'reportYouthProjection',
         'reportAttendanceAdult',
-        'groupRoles'
+        'groupRoles',
+       'reportParentYouthLinks'
     ],
 
     /* section level */
@@ -71,6 +72,7 @@ const rolePermissions = {
         'oasCRUD', 
         'reportAttendancePeriod',
         'reportAttendanceAdult',
+        'reportParentYouthLinks'
     ],
 
     /* view‑only */
@@ -78,6 +80,7 @@ const rolePermissions = {
         'dashboard',
         'qrCheckin',
         'reportYouthBySection',
+        'reportParentYouthLinks'
     ],
 };
 

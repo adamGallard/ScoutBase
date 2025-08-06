@@ -12,7 +12,7 @@ function uniqueArray(arr) {
 export default function ReportParentEmails({ groupId }) {
     const [adults, setAdults] = useState([]);
     const [loading, setLoading] = useState(false);
-
+    const [membershipStatus, setMembershipStatus] = useState('current'); // 'current' is default
     // Filters
     const [roleOptions, setRoleOptions] = useState([]);
     const [sectionOptions, setSectionOptions] = useState([]);
@@ -95,7 +95,7 @@ export default function ReportParentEmails({ groupId }) {
             // 3. Youth (with section info)
             const { data: youthData, error: youthErr } = await supabase
                 .from('youth')
-                .select('id, name, section')
+                .select('id, name, section,membership_stage')
                 .eq('group_id', groupId);
 
             if (youthErr) {
@@ -134,6 +134,33 @@ export default function ReportParentEmails({ groupId }) {
 
     // Filtering logic
     function filterAdults(a) {
+        // Membership status filter
+        // 1. Build a list of the youth (for this parent) that are retired
+        const hasYouths = a.youth.length > 0;
+        // Are ALL youth retired (and there is at least one youth)?
+        const allYouthRetired = hasYouths && a.youth.every(y => (y.membership_stage || '').toLowerCase() === 'retired');
+        // Are ANY youth not retired?
+        const hasCurrentYouth = a.youth.some(y => (y.membership_stage || '').toLowerCase() !== 'retired');
+        const isLeaderOrHelper =
+            ['leader', 'committee', 'parent_helper'].includes((a.roleGroup || '').toLowerCase()) &&
+            a.youth.some(y => y.is_primary);
+
+        if (membershipStatus === 'current') {
+            if (
+                hasYouths &&
+                !hasCurrentYouth &&
+                !isLeaderOrHelper
+            ) {
+                // Has only retired youth and is not a leader/helper/committee → filter out from "current"
+                return false;
+            }
+            // Show if they have at least one current youth, or have no youths, or are leader/helper/committee with a primary youth
+        } else if (membershipStatus === 'retired') {
+            // Only show if ALL youth are retired, NOT a leader/helper/committee, and HAS at least one youth
+            if (!allYouthRetired || isLeaderOrHelper) return false;
+            // If they have no youth, or any current youth, or are leader/helper/committee → filter out
+        }
+
         // 1. Filter by search (name/email/youth name)
         const searchText = search.toLowerCase().trim();
         if (
@@ -315,6 +342,23 @@ export default function ReportParentEmails({ groupId }) {
                         )}
                     </select>
                 </label>
+                <label style={{ fontWeight: 500, marginRight: 8 }}>
+                    Show:&nbsp;
+                    <select
+                        value={membershipStatus}
+                        onChange={e => setMembershipStatus(e.target.value)}
+                        style={{
+                            padding: '0.4rem',
+                            borderRadius: 6,
+                            border: '1px solid #ccc',
+                            minWidth: 120
+                        }}
+                    >
+                        <option value="current">Current</option>
+                        <option value="retired">Retired Only</option>
+                        <option value="all">All (Inc. Retired)</option>
+                    </select>
+                </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                     <input
                         type="checkbox"
@@ -350,7 +394,7 @@ export default function ReportParentEmails({ groupId }) {
                     <thead>
                         <tr style={{ background: '#f1f5f9' }}>
                             <th style={{ padding: 8, borderBottom: '1px solid #ddd', width: 40 }}></th>
-                            {['Name', 'Email', 'Role', 'Section', 'LinkedYouth', 'Primary'].map(col => (
+                            {['Name', 'Email', 'Role', 'Section', 'Linked Youth', 'Primary'].map(col => (
                                 <th
                                     key={col}
                                     style={{
@@ -393,9 +437,13 @@ export default function ReportParentEmails({ groupId }) {
                                         <td style={{ padding: 8 }}>{sections.find(s => s.code === adult.roleSection)?.label || adult.roleSection || ''}</td>
                                         <td style={{ padding: 8 }}>
                                             {primaryYouth.length
-                                                ? primaryYouth.map(y =>
-                                                    `${y.name} (${sections.find(s => s.code === y.section)?.label || y.section})`
-                                                ).join(', ')
+                                                ? primaryYouth.map(y => {
+                                                    const isRetired = (y.membership_stage || '').toLowerCase() === 'retired';
+                                                    const label = isRetired
+                                                        ? 'Retired'
+                                                        : (sections.find(s => s.code === y.section)?.label || y.section);
+                                                    return `${y.name} (${label})`;
+                                                }).join(', ')
                                                 : ''}
                                         </td>
                                         <td style={{ padding: 8, textAlign: 'center' }}>
