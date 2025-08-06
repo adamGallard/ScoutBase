@@ -1,6 +1,6 @@
 ﻿// src/pages/parent/YouthAttendancePage.jsx
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
 	fetchYouthByParentId,
@@ -25,6 +25,7 @@ import { AlertTriangle } from 'lucide-react'; // or your icon lib
 
 const codeToSectionLabel = code =>
 	sections.find(s => s.code === code)?.label ?? code;
+
 
 function toProperCase(str) {
 	if (!str) return '';
@@ -68,6 +69,37 @@ export default function YouthAttendancePage() {
 		}
 		loadRoles();
 	}, []);
+
+	// Combine all relevant members (youth + helpers)
+	const allMembers = useMemo(() => [
+		...helperRoles,
+		...youthList
+	], [helperRoles, youthList]);
+
+	const hasStaleAttendance = useMemo(() => {
+		// Check helpers
+		for (const h of helperRoles) {
+			const latest = helperStatusMap[h.parentId];
+			if (latest?.action === 'signed in' && latest.timestamp) {
+				const signedInTime = new Date(latest.timestamp);
+				const now = new Date();
+				const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+				if (diffDays >= 4) return true;
+			}
+		}
+		// Check youth
+		for (const y of youthList) {
+			const latest = latestStatusMap[y.id];
+			if (latest?.action === 'signed in' && latest.timestamp) {
+				const signedInTime = new Date(latest.timestamp);
+				const now = new Date();
+				const diffDays = (now - signedInTime) / (1000 * 60 * 60 * 24);
+				if (diffDays >= 4) return true;
+			}
+		}
+		return false;
+	}, [helperRoles, helperStatusMap, youthList, latestStatusMap]);
+
 
 	const nonParentRoleCodes = adultRoles
 		.filter(r => r.role_group !== 'parent')
@@ -363,6 +395,28 @@ export default function YouthAttendancePage() {
 			<PageTitle style={{ marginBottom: '1rem' }}>
 				{parent?.name}
 			</PageTitle>
+			{hasStaleAttendance && (
+				<div style={{
+					background: '#fffbe6',
+					border: '1px solid #f59e42',
+					borderRadius: 8,
+					padding: '1rem',
+					margin: '1rem auto',
+					maxWidth: 500,
+					color: '#b36a00',
+					display: 'flex',
+					alignItems: 'center',
+					gap: '0.75em',
+					fontWeight: 'bold',
+					fontSize: isMobile ? '0.7rem' : '1rem'
+				}}>
+					<AlertTriangle color="#f59e42" size={24} style={{ flexShrink: 0 }} />
+					<span>
+						<b>Warning:</b> At least one child or helper has not been signed out for more than 4 days.<br />
+						Please check and sign out any lingering attendances.
+					</span>
+				</div>
+			)}
 
 			{/* Instruction to Select a Child */}
 			{step === 'list' && (

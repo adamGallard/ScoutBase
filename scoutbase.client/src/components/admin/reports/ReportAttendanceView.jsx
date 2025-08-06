@@ -10,18 +10,28 @@ import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date ut
 import AttendanceModal from "@/components/admin/reports/AttendanceEditModal";
 // ...other imports
 
-function formatTimeWithDate(timestamp, eventDate) {
+function formatBrisbaneTimeWithDate(timestamp, eventDate) {
     if (!timestamp) return '';
-    const dt = new Date(timestamp);
-    const timeStr = dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const tsDate = dt.toISOString().slice(0, 10); // YYYY-MM-DD
-    // If eventDate is not provided or they match, return just time
-    if (!eventDate || tsDate === eventDate) {
-        return timeStr;
+    const utcDate = new Date(timestamp);
+
+    // For display
+    const dateOptions = { timeZone: 'Australia/Brisbane', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const timeOptions = { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit' };
+    const brisDateDisplay = utcDate.toLocaleDateString('en-AU', dateOptions); // "dd/mm/yyyy"
+    const brisTime = utcDate.toLocaleTimeString('en-AU', timeOptions);
+
+    // For comparison, create YYYY-MM-DD string
+    const year = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', year: 'numeric' });
+    const month = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', month: '2-digit' });
+    const day = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', day: '2-digit' });
+    const brisDateMachine = `${year}-${month}-${day}`; // "YYYY-MM-DD"
+
+    if (!eventDate || brisDateMachine === eventDate) {
+        return brisTime;
     }
-    // Otherwise, add the date
-    return `${dt.toLocaleDateString()} ${timeStr}`;
+    return `${brisDateDisplay} ${brisTime}`;
 }
+
 
 ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
@@ -266,9 +276,9 @@ export default function AttendanceView({
             ...filteredAttendance.map(({ youth, signIn, signOut }) => [
                 youth.name,
                 youth.section,
-                signIn ? new Date(signIn.timestamp).toLocaleString() : '',
+                signIn ? formatBrisbaneTimeWithDate(signIn.timestamp, selectedDate) : '',
                 signIn?.parent?.name || '',
-                signOut ? new Date(signOut.timestamp).toLocaleString() : '',
+                signOut ? formatBrisbaneTimeWithDate(signOut.timestamp, selectedDate) : '',
                 signOut?.parent?.name || ''
             ])
         ];
@@ -405,12 +415,12 @@ export default function AttendanceView({
                                 <td>{codeToLabel(youth.section)}</td>
                                 <td>
                                     {signIn
-                                        ? `${formatTimeWithDate(signIn.timestamp, selectedDate)} by ${signIn.parent?.name || 'Unknown'}`
+                                        ? `${formatBrisbaneTimeWithDate(signIn.timestamp, selectedDate)} by ${signIn.parent?.name || 'Unknown'}`
                                         : '-'}
                                 </td><td>{signIn?.comment || ''}</td>
                                 <td>
                                     {signOut
-                                        ? `${formatTimeWithDate(signOut.timestamp, selectedDate)} by ${signOut.parent?.name || 'Unknown'}`
+                                        ? `${formatBrisbaneTimeWithDate(signOut.timestamp, selectedDate)} by ${signOut.parent?.name || 'Unknown'}`
                                         : '-'}
                                 </td><td>{signOut?.comment || ''}</td>
                                 <td>
