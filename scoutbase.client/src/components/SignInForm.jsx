@@ -1,6 +1,3 @@
-// SignInForm.jsx
-// Updated for mobile responsiveness and consistent styling
-
 import { useState } from 'react';
 import { useIsMobile } from '../hooks/useIsMobile';
 import {
@@ -8,7 +5,7 @@ import {
     Main,
     Content,
     LogoWrapper,
-PrimaryButton
+    PrimaryButton
 } from '@/components/common/SharedStyles';
 
 export default function SignInForm({ member, parentName, onCancel, onSign, latestStatus, groupId }) {
@@ -16,15 +13,19 @@ export default function SignInForm({ member, parentName, onCancel, onSign, lates
     const [submitting, setSubmitting] = useState(false);
     const isMobile = useIsMobile();
 
+    // Determine if this is a helper
+    const isHelper = member?.type === 'helper';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSubmitting(true);
         try {
-            await onSign(member.id, {
+            // Use parent id if helper, youth id otherwise
+            const idToPass = isHelper ? member.parentId || member.id : member.id;
+            await onSign(idToPass, {
                 comment,
                 timestamp: new Date().toISOString(),
                 action: latestStatus?.action === 'signed in' ? 'signed out' : 'signed in',
-                group_id: groupId
             });
             setComment('');
         } finally {
@@ -35,7 +36,15 @@ export default function SignInForm({ member, parentName, onCancel, onSign, lates
     return (
         <form onSubmit={handleSubmit} style={{ textAlign: 'left', marginTop: '1rem' }}>
             <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
-                Signing {latestStatus?.action === 'signed in' ? 'out' : 'in'} for: <strong>{member.name}</strong>
+                Signing {latestStatus?.action === 'signed in' ? 'out' : 'in'} for:&nbsp;
+                <strong>
+                    {member.name}{" "}
+                    {isHelper && (
+                        <span style={{ fontWeight: 400, color: "#444", fontSize: "0.92em" }}>
+                            ({member.roleLabel})
+                        </span>
+                    )}
+                </strong>
             </p>
             <label htmlFor="comment" style={{ display: 'block', fontWeight: 500, marginBottom: '0.25rem' }}>Comment (optional):</label>
             <textarea
@@ -59,21 +68,21 @@ export default function SignInForm({ member, parentName, onCancel, onSign, lates
                 <PrimaryButton isMobile={isMobile}
                     type="submit"
                     disabled={submitting}
-
                 >
                     {latestStatus?.action === 'signed in' ? 'Sign Out' : 'Sign In'}
                 </PrimaryButton>
-
                 <button
                     type="button"
                     onClick={onCancel}
                     style={{
                         padding: isMobile ? '0.75rem 1.25rem' : '0.5rem 1rem',
                         fontSize: isMobile ? '1rem' : '0.875rem',
-                        backgroundColor: '#ccc',
-                        border: 'none',
+                        backgroundColor: '#eee',
+                        border: '1px solid #ccc',
                         borderRadius: '6px',
                         cursor: 'pointer',
+                        color: '#222',
+                        fontWeight: 500,
                     }}
                 >
                     Cancel

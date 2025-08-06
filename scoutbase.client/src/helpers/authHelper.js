@@ -45,12 +45,50 @@ export const verifyParentByIdentifierAndPin = async (identifier, enteredPin, gro
         return { success: false, error: 'Invalid name or PIN' };
     }
 
-    const isValid = await verifyPin(enteredPin, match.pin_hash);
-    if (!isValid) {
-        return { success: false, error: 'Invalid name or PIN' };
+    // 1. Check for lockout
+    if (match.is_locked) {
+        return {
+            success: false,
+            error: 'Too many incorrect PIN attempts. Please contact a leader to unlock your account.'
+        };
     }
 
-    return { success: true, parent: match };
+    // 2. Check the PIN
+    const isValid = await verifyPin(enteredPin, match.pin_hash);
+
+    if (!isValid) {
+        // increment failed attempts
+        const failedAttempts = (match.failed_pin_attempts || 0) + 1;
+        const isNowLocked = failedAttempts >= 5;
+        // update in DB
+        await supabase
+            .from('parent')
+            .update({
+                failed_pin_attempts: failedAttempts,
+                is_locked: isNowLocked
+            })
+            .eq('id', match.id);
+
+        return {
+            success: false,
+            error: isNowLocked
+                ? 'Too many incorrect PIN attempts. Please contact a leader to unlock your account.'
+                : `Invalid name or PIN (${failedAttempts}/5 attempts)`
+        };
+    }
+
+    // 3. PIN correct: reset counters
+    if (match.failed_pin_attempts > 0 || match.is_locked) {
+        await supabase
+            .from('parent')
+            .update({
+                failed_pin_attempts: 0,
+                is_locked: false
+            })
+            .eq('id', match.id);
+    }
+
+    return { success: true, parent: { ...match, failed_pin_attempts: 0, is_locked: false } };
 };
 
 export const updateParentPin = async (parentId, currentPin, newPin) => {

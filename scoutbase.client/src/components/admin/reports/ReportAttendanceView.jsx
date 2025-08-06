@@ -10,6 +10,30 @@ import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date ut
 import AttendanceModal from "@/components/admin/reports/AttendanceEditModal";
 // ...other imports
 
+
+function formatBrisbaneTimeWithDate(timestamp, eventDate) {
+    if (!timestamp) return '';
+    const utcDate = new Date(timestamp);
+
+    // For display
+    const dateOptions = { timeZone: 'Australia/Brisbane', year: 'numeric', month: '2-digit', day: '2-digit' };
+    const timeOptions = { timeZone: 'Australia/Brisbane', hour: '2-digit', minute: '2-digit' };
+    const brisDateDisplay = utcDate.toLocaleDateString('en-AU', dateOptions); // "dd/mm/yyyy"
+    const brisTime = utcDate.toLocaleTimeString('en-AU', timeOptions);
+
+    // For comparison, create YYYY-MM-DD string
+    const year = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', year: 'numeric' });
+    const month = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', month: '2-digit' });
+    const day = utcDate.toLocaleString('en-GB', { timeZone: 'Australia/Brisbane', day: '2-digit' });
+    const brisDateMachine = `${year}-${month}-${day}`; // "YYYY-MM-DD"
+
+    if (!eventDate || brisDateMachine === eventDate) {
+        return brisTime;
+    }
+    return `${brisDateDisplay} ${brisTime}`;
+}
+
+
 ChartJS.register(ArcElement, Tooltip, Legend); // ✅ move this outside the component
 export default function AttendanceView({
     activeGroupId,
@@ -253,9 +277,9 @@ export default function AttendanceView({
             ...filteredAttendance.map(({ youth, signIn, signOut }) => [
                 youth.name,
                 youth.section,
-                signIn ? new Date(signIn.timestamp).toLocaleString() : '',
+                signIn ? formatBrisbaneTimeWithDate(signIn.timestamp, selectedDate) : '',
                 signIn?.parent?.name || '',
-                signOut ? new Date(signOut.timestamp).toLocaleString() : '',
+                signOut ? formatBrisbaneTimeWithDate(signOut.timestamp, selectedDate) : '',
                 signOut?.parent?.name || ''
             ])
         ];
@@ -390,10 +414,20 @@ export default function AttendanceView({
                             <tr key={youth.id}>
                                 <td>{youth.name}</td>
                                 <td>{codeToLabel(youth.section)}</td>
-                                <td>{signIn ? `${new Date(signIn.timestamp).toLocaleTimeString()} by ${signIn.parent?.name || 'Unknown'}` : '-'}</td>
-                                <td>{signIn?.comment || ''}</td>
-                                <td>{signOut ? `${new Date(signOut.timestamp).toLocaleTimeString()} by ${signOut.parent?.name || 'Unknown'}` : '-'}</td>
-                                <td>{signOut?.comment || ''}</td>
+                                <td>
+                                    {signIn
+
+                                        ? `${formatBrisbaneTimeWithDate(signIn.timestamp, selectedDate)} by ${signIn.parent?.name || 'Unknown'}`
+
+                                        : '-'}
+                                </td><td>{signIn?.comment || ''}</td>
+                                <td>
+                                    {signOut
+
+                                        ? `${formatBrisbaneTimeWithDate(signOut.timestamp, selectedDate)} by ${signOut.parent?.name || 'Unknown'}`
+
+                                        : '-'}
+                                </td><td>{signOut?.comment || ''}</td>
                                 <td>
                                     <button onClick={() => handleEditAttendance(youth, signIn, signOut)}>
                                         Edit

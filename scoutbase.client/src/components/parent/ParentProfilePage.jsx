@@ -4,6 +4,7 @@ import { LogOut, Key, Edit2, UserCircle } from "lucide-react";
 import { PrimaryButton, ModalOverlay, ModalBox, ButtonRow, PageWrapperParent, PageTitle } from "@/components/common/SharedStyles";
 import { supabase } from "@/lib/supabaseClient";
 import { resetParentPin } from "@/helpers/authHelper"; // Adjust import path as needed
+import { fetchSignersForPrimaryChildren } from "@/helpers/attendanceHelper"; // Adjust import path as needed
 
 export default function ParentProfilePage() {
     const location = useLocation();
@@ -19,6 +20,9 @@ export default function ParentProfilePage() {
     const [loading, setLoading] = useState(!parentFromState);
     const [showPinModal, setShowPinModal] = useState(false);
     const [pinSuccess, setPinSuccess] = useState(false);
+    const [showSignersModal, setShowSignersModal] = useState(false);
+    const [signersData, setSignersData] = useState([]);
+    const [loadingSigners, setLoadingSigners] = useState(false);
 
     // Fetch parent from DB if not in state, or after updates
     useEffect(() => {
@@ -86,6 +90,13 @@ export default function ParentProfilePage() {
         alert("PIN changed!");
         setShowPinModal(false);
     }
+    async function openSignersModal() {
+        setShowSignersModal(true);
+        setLoadingSigners(true);
+        const data = await fetchSignersForPrimaryChildren(parent.id);
+        setSignersData(data || []);
+        setLoadingSigners(false);
+    }
 
     function handleSignOut() {
         // Your real sign-out/auth logic here
@@ -128,6 +139,9 @@ export default function ParentProfilePage() {
                         <PrimaryButton onClick={() => setShowPinModal(true)}>
                             <Key size={18} style={{ marginRight: 6 }} /> Change PIN
                         </PrimaryButton>
+                        <PrimaryButton onClick={openSignersModal}>
+                            Who can sign in/out my child?
+                        </PrimaryButton>
                         <PrimaryButton onClick={handleSignOut} style={{ background: "#eee", color: "#b91c1c" }}>
                             <LogOut size={18} style={{ marginRight: 6 }} /> Sign Out
                         </PrimaryButton>
@@ -158,6 +172,13 @@ export default function ParentProfilePage() {
                         setPinSuccess(true); // show the success message
                     }}
                     onCancel={() => setShowPinModal(false)}
+                />
+            )}
+            {showSignersModal && (
+                <SignersModal
+                    data={signersData}
+                    loading={loadingSigners}
+                    onClose={() => setShowSignersModal(false)}
                 />
             )}
         </PageWrapperParent>
@@ -228,6 +249,46 @@ function PinChangeModal({ parentId, onSave, onCancel }) {
                 <ButtonRow>
                     <PrimaryButton onClick={handleSave} disabled={saving}>Save</PrimaryButton>
                     <button onClick={onCancel} style={{ marginLeft: 12 }}>Cancel</button>
+                </ButtonRow>
+            </ModalBox>
+        </ModalOverlay>
+    );
+}
+function SignersModal({ data, loading, onClose }) {
+    return (
+        <ModalOverlay>
+            <ModalBox>
+                <h3>Who can sign in/out my child?</h3>
+                <div style={{
+                    marginBottom: "1rem",
+                    color: "#444",
+                    background: "#f3f4f6",
+                    borderRadius: "6px",
+                    padding: "8px 12px",
+                    fontSize: "1rem"
+                }}>
+                    To add or remove an approved adult, please see a leader.
+                </div>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : data.length === 0 ? (
+                    <p>No primary children found.</p>
+                ) : (
+                    data.map(({ youth, parents }) => (
+                        <div key={youth.id} style={{ marginBottom: "1.2rem" }}>
+                            <strong>{youth.name}</strong>
+                            <ul style={{ marginLeft: 16 }}>
+                                {parents.map(p => (
+                                    <li key={p.id}>
+                                        {p.name}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))
+                )}
+                <ButtonRow>
+                    <PrimaryButton onClick={onClose}>Close</PrimaryButton>
                 </ButtonRow>
             </ModalBox>
         </ModalOverlay>
