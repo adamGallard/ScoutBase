@@ -1,0 +1,8 @@
+﻿/.vercel
+/.vs
+/scoutbase.client/obj/Debug
+/scoutbase.client/supabase
+/scoutbase.client/generateChangelog.sh
+/scoutbase.client/scoutbase.client.esproj.user
+/ScoutBase.Server
+*.log
