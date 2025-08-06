@@ -10,6 +10,7 @@ import { getTodayDate } from '@/utils/dateUtils.js';  // ← import your date ut
 import AttendanceModal from "@/components/admin/reports/AttendanceEditModal";
 // ...other imports
 
+
 function formatBrisbaneTimeWithDate(timestamp, eventDate) {
     if (!timestamp) return '';
     const utcDate = new Date(timestamp);
@@ -415,12 +416,16 @@ export default function AttendanceView({
                                 <td>{codeToLabel(youth.section)}</td>
                                 <td>
                                     {signIn
+
                                         ? `${formatBrisbaneTimeWithDate(signIn.timestamp, selectedDate)} by ${signIn.parent?.name || 'Unknown'}`
+
                                         : '-'}
                                 </td><td>{signIn?.comment || ''}</td>
                                 <td>
                                     {signOut
+
                                         ? `${formatBrisbaneTimeWithDate(signOut.timestamp, selectedDate)} by ${signOut.parent?.name || 'Unknown'}`
+
                                         : '-'}
                                 </td><td>{signOut?.comment || ''}</td>
                                 <td>

@@ -201,6 +201,28 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
         fetchParents();
     };
 
+    const unlockParent = async (id) => {
+        const { error } = await supabase
+            .from('parent')
+            .update({ is_locked: false, failed_pin_attempts: 0 })
+            .eq('id', id);
+
+        if (error) {
+            alert("Failed to unlock parent: " + error.message);
+            return;
+        }
+        await logAuditEvent({
+            userId: userInfo.id,
+            groupId,
+            role: userInfo.role,
+            action: 'Unlock',
+            targetType: 'Parent',
+            targetId: id,
+            metadata: `Unlocked parent account`
+        });
+        fetchParents(); // Refresh list
+    };
+
     const deleteParent = async (id) => {
         if (confirm('Are you sure you want to delete this parent?')) {
             const { data: deletedParent } = await supabase
@@ -492,6 +514,7 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                     </>
                                 ) : !p.is_locked && (
                                     <>
+
                                         <button onClick={() => {
                                             setEditingParentId(p.id); setFormData({
                                                 name: p.name,
@@ -505,9 +528,11 @@ export default function ParentView({ groupId, onOpenPinModal, onOpenLinkModal, u
                                             <button onClick={() => openSkillsModal(p)} title="Skills & Interests"> <Lightbulb size={16} /></button>
                                             <button onClick={() => onOpenPinModal(p.id)} title="Reset pin"><KeyRound size={16} /></button>
                                             <button onClick={() => deleteParent(p.id)} title="Delete parent" style={{ color: '#C00' }}><Trash size={16} /></button>
+
                                     </>
                                 )}
                             </td>
+
                         </tr>
                     ))}
                     {/* Add new parent row */}
