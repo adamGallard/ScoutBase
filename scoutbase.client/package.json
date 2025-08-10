@@ -33,7 +33,7 @@
     "recharts": "^2.15.2",
     "resend": "^4.6.0",
     "styled-components": "^6.1.17",
-    "twilio": "^5.5.2",
+    "twilio": "^5.7.3",
     "uuid": "^11.1.0",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   },
